@@ -293,13 +293,6 @@ public class TreeCuttingMinigame : MonoBehaviour
     {
         if (isStriking) return;
 
-        // Panggil trigger animasi ayun kapak
-        if (playerAnimator != null)
-        {
-            if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.ResetTrigger(chopStrikeTrigger);
-            if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.SetTrigger(chopStrikeTrigger);
-        }
-
         float targetMin = isVertical ? 
             targetArea.anchoredPosition.y - (targetArea.rect.height / 2f) : 
             targetArea.anchoredPosition.x - (targetArea.rect.width / 2f);
@@ -320,12 +313,19 @@ public class TreeCuttingMinigame : MonoBehaviour
     {
         isStriking = true;
 
-        // Tunggu ayunan kapak sampai menyentuh pohon
-        yield return new WaitForSeconds(strikeHitDelay);
-
         if (isHit)
         {
             // SUKSES MENEBANG
+            // Panggil trigger animasi ayun kapak HANYA saat sukses
+            if (playerAnimator != null)
+            {
+                if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.ResetTrigger(chopStrikeTrigger);
+                if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.SetTrigger(chopStrikeTrigger);
+            }
+
+            // Tunggu ayunan kapak sampai menyentuh pohon
+            yield return new WaitForSeconds(strikeHitDelay);
+
             currentTree.currentHits++;
             UpdateTreeVisuals();
 
@@ -374,9 +374,27 @@ public class TreeCuttingMinigame : MonoBehaviour
             
             OnMinigameFailedRound?.Invoke();
 
-            // UI tetap terbuka, karakter kembali ke pose idle
-            // Tunggu delay pinalti sebelum garis jalan lagi
-            yield return new WaitForSeconds(failDelay);
+            // Animasi UI Bergetar saat gagal
+            RectTransform uiRect = minigameUI.GetComponent<RectTransform>();
+            Vector2 originalPos = Vector2.zero;
+            if (uiRect != null) originalPos = uiRect.anchoredPosition;
+
+            float shakeTimer = 0f;
+            while (shakeTimer < failDelay)
+            {
+                shakeTimer += Time.deltaTime;
+                if (uiRect != null)
+                {
+                    // Getar acak ke kiri-kanan dan atas-bawah dengan intensitas 10 pixel
+                    float offsetX = UnityEngine.Random.Range(-10f, 10f);
+                    float offsetY = UnityEngine.Random.Range(-5f, 5f);
+                    uiRect.anchoredPosition = originalPos + new Vector2(offsetX, offsetY);
+                }
+                yield return null;
+            }
+
+            // Kembalikan UI ke posisi semula setelah selesai getar
+            if (uiRect != null) uiRect.anchoredPosition = originalPos;
 
             // Perbarui kecepatan akibat pinalti gagal
             int countedFails = Mathf.Min(currentTree.currentFails, maxFailPenaltyCount);
