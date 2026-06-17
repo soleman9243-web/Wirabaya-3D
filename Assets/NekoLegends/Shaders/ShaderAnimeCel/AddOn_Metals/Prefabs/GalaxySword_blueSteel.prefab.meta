@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5beccbd806eb863429d312de58ce97a2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/Prefabs/GalaxySword_blueSteel.prefab
+  uploadId: 794136

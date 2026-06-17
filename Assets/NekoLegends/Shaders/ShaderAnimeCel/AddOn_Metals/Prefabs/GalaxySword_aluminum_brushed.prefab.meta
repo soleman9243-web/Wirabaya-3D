@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ccb9dc10d6c04474d9fa9dc8cd596428
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/Prefabs/GalaxySword_aluminum_brushed.prefab
+  uploadId: 794136

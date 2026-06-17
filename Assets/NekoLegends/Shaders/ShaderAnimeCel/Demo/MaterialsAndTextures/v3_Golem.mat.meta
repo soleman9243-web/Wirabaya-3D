@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0af5dbf5c2e955a4783bbc69612fa413
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/Demo/MaterialsAndTextures/v3_Golem.mat
+  uploadId: 794136

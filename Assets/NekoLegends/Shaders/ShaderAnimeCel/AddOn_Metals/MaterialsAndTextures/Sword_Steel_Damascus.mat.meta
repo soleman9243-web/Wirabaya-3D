@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 65046050908150c45903bd2bb99675d4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/MaterialsAndTextures/Sword_Steel_Damascus.mat
+  uploadId: 794136

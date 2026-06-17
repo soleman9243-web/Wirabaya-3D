@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 67556496eb9bf534794a0483cf26b2c4
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/Neko Legends
+    - AddOn Cel Shader Metals.pdf
+  uploadId: 794136

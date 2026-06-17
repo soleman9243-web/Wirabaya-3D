@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: dfbab73ad9842dd4ebf56562c68a777f
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/Demo/Scenes/MaterialTest.unity
+  uploadId: 794136

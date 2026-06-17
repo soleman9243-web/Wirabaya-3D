@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: D_Tutorial_Data
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: ...
+    dialogueText: Nama mu siapa
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: '[Wirabaya]'
+    dialogueText: Aku Wirabaya, Siapakah Engkau
+    hasChoices: 0
+    choices: []
+    cameraID: Player
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: '[Pelatih]'
+    dialogueText: Panggil saja saya Pelatih
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: '[Pelatih]'
+    dialogueText: Kamu harus segera latihan untuk memulai
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: '[Pelatih]'
+    dialogueText: Apakah kamu siap melakukannya
+    hasChoices: 1
+    choices:
+    - choiceText: Tentu saja..
+      branchNodes:
+      - speakerName: '[Pelatih]'
+        dialogueText: Baiklah kalo begitu kita mulai sekarang
+        hasChoices: 0
+        choices: []
+        cameraID: NPC
+        endDialogueAfterThis: 1
+        jumpToNode: 0
+        nextNodeId: 0
+      nextNodeId: 0
+    - choiceText: Sebenernya saya belum siap
+      branchNodes:
+      - speakerName: '[Pelatih]'
+        dialogueText: Serius kamu belom siap?
+        hasChoices: 1
+        choices:
+        - choiceText: Siap kok..
+          branchNodes:
+          - speakerName: '[Pelatih]'
+            dialogueText: Kaya ga yakin gitu
+            hasChoices: 0
+            choices: []
+            cameraID: NPC
+            endDialogueAfterThis: 0
+            jumpToNode: 0
+            nextNodeId: 0
+          - speakerName: '[Pelatih]'
+            dialogueText: Harus Siap! Berangkat
+            hasChoices: 0
+            choices: []
+            cameraID: NPC
+            endDialogueAfterThis: 1
+            jumpToNode: 0
+            nextNodeId: 0
+          nextNodeId: 0
+        - choiceText: Belom..
+          branchNodes:
+          - speakerName: '[Pelatih]'
+            dialogueText: Siap ga siap kamu harus siap!
+            hasChoices: 0
+            choices: []
+            cameraID: NPC
+            endDialogueAfterThis: 0
+            jumpToNode: 0
+            nextNodeId: 0
+          - speakerName: '[Wirabaya]'
+            dialogueText: Baik Pak!
+            hasChoices: 0
+            choices: []
+            cameraID: Player
+            endDialogueAfterThis: 1
+            jumpToNode: 0
+            nextNodeId: 0
+          nextNodeId: 0
+        cameraID: NPC
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      nextNodeId: 0
+    cameraID: choice
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0

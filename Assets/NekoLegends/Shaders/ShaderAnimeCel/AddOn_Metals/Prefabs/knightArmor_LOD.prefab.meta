@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1ef54247a37f50146abba16cede51d6b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/Prefabs/knightArmor_LOD.prefab
+  uploadId: 794136

@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: D_Pelatih 3
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: Pelatih
+    dialogueText: Eksekusi penyergapan yang sangat rapi! Namun, di medan perang yang
+      sesungguhnya, kau tidak selalu bisa mengandalkan sembunyi-sembunyi.
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Saya mengerti. Terkadang kita harus siap berhadapan pedang secara
+      langsung.
+    hasChoices: 0
+    choices: []
+    cameraID: Player
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Benar sekali! Sudah saatnya kau bertarung terbuka. Tekan tombol
+      R sekarang untuk mencabut (Equip) senjatamu dari sarungnya.
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Ada satu boneka yang sangat agresif dalam mengayun. Jangan lari
+      atau menghindar!
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Tekan Klik G tepat sebelum pedangnya mengenaimu untuk melakukan
+      Tangkisan (Parry), Kamu akan ada indikasi diatas kepalamu nanti
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Lakukan pada boneka itu sekarang!
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 1
+    jumpToNode: 0
+    nextNodeId: 0

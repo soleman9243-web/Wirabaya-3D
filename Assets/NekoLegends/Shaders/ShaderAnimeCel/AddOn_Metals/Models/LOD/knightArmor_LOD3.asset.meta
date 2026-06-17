@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c14b8773630e32f4283de70343a409f3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4300000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/Models/LOD/knightArmor_LOD3.asset
+  uploadId: 794136

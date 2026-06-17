@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a76df288f4efc494e8d83bd2a9ef69c5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/Demo/MaterialsAndTextures/CelTriplanar_Sphere_GrassAndDirt.mat
+  uploadId: 794136

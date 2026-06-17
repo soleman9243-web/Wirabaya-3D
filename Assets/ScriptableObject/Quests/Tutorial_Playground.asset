@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cfac588d229f434f83266ce44d7b567, type: 3}
+  m_Name: Tutorial_Playground
+  m_EditorClassIdentifier: Assembly-CSharp::QuestData
+  questId: q_tutorial
+  title: Tutorial
+  description: Finish the Tutorial
+  objectives:
+  - objectiveId: obj_BicaraKePelatih
+    description: Bicara ke Orang itu
+    type: 0
+    targetAmount: 1
+  - objectiveId: obj_SelesaikanParkour
+    description: Selesaikan Semua Rintangan
+    type: 3
+    targetAmount: 5
+  - objectiveId: obj_KumpulkanKayu
+    description: 'Ambil Kayu untuk Api Unggun '
+    type: 0
+    targetAmount: 5
+  - objectiveId: obj_TaruhKayu
+    description: Pasang Kayu untuk Api Unggun
+    type: 0
+    targetAmount: 5
+  - objectiveId: obj_BicaraKePelatih2
+    description: Bicara ke Pelatih
+    type: 0
+    targetAmount: 1
+  - objectiveId: obj_LakukanPenyergapan
+    description: Sergap boneka itu TANPA TERDETEKSI
+    type: 2
+    targetAmount: 1
+  - objectiveId: obj_BicaraKePelatih3
+    description: Bicara ke Pelatih
+    type: 0
+    targetAmount: 1
+  - objectiveId: obj_LakukanParry
+    description: Tangkis Dengan Tepat!
+    type: 0
+    targetAmount: 1
+  - objectiveId: obj_DatangiTempat
+    description: Masuk ke Bangunan itu
+    type: 3
+    targetAmount: 1
+  - objectiveId: obj_BicaraKePelatih4
+    description: Bicara ke Pelatih
+    type: 0
+    targetAmount: 1
+  - objectiveId: obj_LakukanCombat
+    description: Serang 5 Boneka itu!
+    type: 0
+    targetAmount: 5
+  - objectiveId: obj_BicaraKePelatih5
+    description: Laporan ke Pelatih
+    type: 0
+    targetAmount: 1

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 09d88a9ab4fca89468e065b67844f29a
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/Demo/CelShader_Metals.unity
+  uploadId: 794136

@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: D_Pelatih 1
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: ???
+    dialogueText: Selamat datang di kamp pelatihan, Rekrut!
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Aku adalah Pelatih Kepala yang akan menguji ketangkasan dan insting
+      bertahan hidupmu hari ini.
+    hasChoices: 1
+    choices:
+    - choiceText: Saya siap!
+      branchNodes:
+      - speakerName: Wirabaya
+        dialogueText: Saya sudah siap, Pelatih. Latihan apa yang menungguku hari
+          ini?
+        hasChoices: 0
+        choices: []
+        cameraID: Player
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      - speakerName: Pelatih
+        dialogueText: Semangat yang bagus! Sebagai permulaan, lewati rintangan parkour
+          di depan sana.
+        hasChoices: 0
+        choices: []
+        cameraID: NPC
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      - speakerName: Wirabaya
+        dialogueText: Sepertinya cukup mudah. Lalu apa tugas selanjutnya?
+        hasChoices: 0
+        choices: []
+        cameraID: Player
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      - speakerName: Pelatih
+        dialogueText: Kumpulkan kayu yang berserakan dan buatlah sebuah api unggun.
+          Temui aku lagi setelah apinya menyala. Bergerak!
+        hasChoices: 0
+        choices: []
+        cameraID: NPC
+        endDialogueAfterThis: 1
+        jumpToNode: 0
+        nextNodeId: 0
+      nextNodeId: 0
+    - choiceText: Latihannya berbahaya?
+      branchNodes:
+      - speakerName: Wirabaya
+        dialogueText: Apakah latihannya akan berbahaya, Pelatih?
+        hasChoices: 0
+        choices: []
+        cameraID: Player
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      - speakerName: Pelatih
+        dialogueText: Tidak jika kau mengikuti instruksiku dengan teliti. Sebagai
+          permulaan, lewati rintangan parkour di depan sana.
+        hasChoices: 0
+        choices: []
+        cameraID: NPC
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      - speakerName: Wirabaya
+        dialogueText: Baik. Lalu apa tugas selanjutnya setelah itu?
+        hasChoices: 0
+        choices: []
+        cameraID: Player
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+      - speakerName: Pelatih
+        dialogueText: Kumpulkan kayu yang berserakan dan buatlah sebuah api unggun.
+          Temui aku lagi setelah apinya menyala. Bergerak!
+        hasChoices: 0
+        choices: []
+        cameraID: NPC
+        endDialogueAfterThis: 1
+        jumpToNode: 0
+        nextNodeId: 0
+      nextNodeId: 0
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0

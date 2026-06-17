@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: D_Pelatih 2
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: Pelatih
+    dialogueText: Kerja bagus. Tapi bertahan hidup di alam liar bukan hanya soal
+      membuat api, melainkan juga menghindari ancaman.
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Ancaman seperti apa yang Anda maksud?
+    hasChoices: 0
+    choices: []
+    cameraID: Player
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Ancaman seperti apa yang Anda maksud?
+    hasChoices: 0
+    choices: []
+    cameraID: Player
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Lihat satu boneka penjaga di depan itu? Area merah di depannya
+      adalah jarak pandangnya.
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Saya melihatnya. Haruskah saya menghadapinya secara langsung?
+    hasChoices: 0
+    choices: []
+    cameraID: Player
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Pelatih
+    dialogueText: Tidak kali ini. Mengendap-endaplah dari belakangnya, pastikan kau
+      tidak terdeteksi, lalu lakukan Penyergapan (Takedown) secara diam-diam!
+    hasChoices: 0
+    choices: []
+    cameraID: NPC
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0

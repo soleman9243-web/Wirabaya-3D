@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 816ab32fb52869645bd574a605053ff0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/Demo/Scenes/PostProcessing
+    Profile v3.asset
+  uploadId: 794136

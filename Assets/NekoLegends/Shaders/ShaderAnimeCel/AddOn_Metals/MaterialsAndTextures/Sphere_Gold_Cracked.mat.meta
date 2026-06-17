@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7a379d5274144744ca57300bbfe822cc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 259864
+  packageName: Anime Cel Shader URP
+  packageVersion: 3.1.1
+  assetPath: Assets/NekoLegends/Shaders/ShaderAnimeCel/AddOn_Metals/MaterialsAndTextures/Sphere_Gold_Cracked.mat
+  uploadId: 794136
