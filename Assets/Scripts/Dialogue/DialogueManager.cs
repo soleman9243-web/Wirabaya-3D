@@ -104,6 +104,16 @@ public class DialogueManager : MonoBehaviour
             }
         }
 
+        // Cek dan masukkan pedang jika sedang dipegang
+        if (playerController != null)
+        {
+            PlayerControl pc = playerController.GetComponent<PlayerControl>();
+            if (pc != null && pc.hasSwordEquipped && !pc.isSwordSheathed)
+            {
+                pc.ToggleSwordSheath();
+            }
+        }
+
         // Matikan gerakan, tapi SEMBUNYIKAN kursor (akan muncul saat ada pilihan)
         if (playerInputs != null)
         {

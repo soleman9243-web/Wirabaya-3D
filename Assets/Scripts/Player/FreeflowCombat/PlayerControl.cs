@@ -43,6 +43,9 @@ public class PlayerControl : MonoBehaviour
     [SerializeField] private GameObject swordInHand;
     [SerializeField] private GameObject swordInSheath;
 
+    [Header("Item System")]
+    public bool isHoldingItem = false;
+
     private bool isHitstopping = false;
     private bool isAttacking = false;
 
@@ -101,7 +104,7 @@ public class PlayerControl : MonoBehaviour
 
     public void ToggleSwordSheath()
     {
-        if (isAttacking || isSheathingAnim) return;
+        if (isAttacking || isSheathingAnim || isHoldingItem) return;
 
         isSheathingAnim = true;
         TargetDetectionControl.instance.canChangeTarget = false;
@@ -167,6 +170,12 @@ public class PlayerControl : MonoBehaviour
             return;
         }
 
+        if (isHoldingItem)
+        {
+            Debug.Log("Tidak bisa menyerang karena sedang memegang item!");
+            return;
+        }
+
         // --- CEK DAN KURANGI STAMINA ---
         float staminaCost = (attackState == 0) ? quickAttackStaminaCost : heavyAttackStaminaCost;
         if (PlayerStatus.Instance.stamina < staminaCost)
@@ -203,10 +212,8 @@ public class PlayerControl : MonoBehaviour
     {
         int attackIndex = Random.Range(1, 3);
 
-        if (attackIndex == 1) anim.SetBool("heavyAttack1", true);
-        else anim.SetBool("heavyAttack2", true);
-
-        FaceThis(target.position);
+        if (attackIndex == 1) MoveTowardsTarget(target.position, heavyAttackDeltaDistance, "heavyAttack1");
+        else MoveTowardsTarget(target.position, heavyAttackDeltaDistance, "heavyAttack2");
     }
 
     public void ResetAttack()
