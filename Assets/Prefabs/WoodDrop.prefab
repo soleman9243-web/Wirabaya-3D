@@ -131,9 +131,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1891376285716132318}
-  - component: {fileID: 3296397716394647827}
-  - component: {fileID: 6440067306356965401}
-  - component: {fileID: 5272104117674144460}
+  - component: {fileID: 1360342457747380819}
+  - component: {fileID: -6590497227696773964}
+  - component: {fileID: 6567797578013034144}
   m_Layer: 0
   m_Name: WoodDrop
   m_TagString: Untagged
@@ -157,7 +157,7 @@ Transform:
   - {fileID: 526364931866870997}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!54 &3296397716394647827
+--- !u!54 &1360342457747380819
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -184,7 +184,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &6440067306356965401
+--- !u!65 &-6590497227696773964
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -203,9 +203,9 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.125, y: 0.125, z: 1}
+  m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5272104117674144460
+--- !u!114 &6567797578013034144
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -219,6 +219,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DroppedItem
   itemData: {fileID: 11400000, guid: 1d58a4d12421be9498d8f09440c62a22, type: 2}
   amount: 1
-  rb: {fileID: 3296397716394647827}
+  rb: {fileID: 1360342457747380819}
   pickupRadius: 2.5
+  pickupDelay: 3
+  floatHeightOffset: 0.5
+  autoBounceOnStart: 1
   visualsContainer: {fileID: 526364931866870997}

@@ -13,6 +13,14 @@ public class CuttableTree : MonoBehaviour
     [Tooltip("Titik yang akan difokuskan oleh kamera (Opsional). Jika kosong, kamera akan melihat ke tengah transform pohon.")]
     public Transform cameraFocusPoint;
 
+    [Header("Drop Settings")]
+    [Tooltip("Prefab item yang akan di-drop saat pohon tumbang (misalnya WoodDrop)")]
+    public GameObject dropPrefab;
+    [Tooltip("Jumlah item yang akan di-drop")]
+    public int dropAmount = 3;
+    [Tooltip("Titik spawn drop. Jika kosong, akan spawn agak di atas posisi pohon.")]
+    public Transform dropSpawnPoint;
+
     // Menyimpan progres pukulan pohon ini saja (jadi tiap pohon punya progres masing-masing)
     [HideInInspector] public int currentHits = 0;
     [HideInInspector] public int currentFails = 0;
@@ -78,6 +86,22 @@ public class CuttableTree : MonoBehaviour
         if (fallingTrunk != null && fallingTrunk.gameObject.activeInHierarchy)
         {
             StartCoroutine(FallAndDissolveRoutine(playerTransform));
+            StartCoroutine(SpawnDropsRoutine());
+        }
+    }
+
+    private IEnumerator SpawnDropsRoutine()
+    {
+        if (dropPrefab == null) yield break;
+
+        // Gunakan titik spawn custom, atau secara default 1 meter di atas tanah agar tidak nyangkut
+        Vector3 spawnPos = dropSpawnPoint != null ? dropSpawnPoint.position : transform.position + Vector3.up * 1f;
+
+        for (int i = 0; i < dropAmount; i++)
+        {
+            Instantiate(dropPrefab, spawnPos, Quaternion.identity);
+            // Beri jeda sedikit agar tidak saling bertumpuk dan meledak
+            yield return new WaitForSeconds(0.1f); 
         }
     }
 

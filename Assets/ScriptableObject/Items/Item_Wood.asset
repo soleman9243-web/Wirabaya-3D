@@ -15,8 +15,13 @@ MonoBehaviour:
   itemName: kayu
   maxStackSize: 5
   heldModelName: Wood
-  droppedPrefab: {fileID: 7446625190864689699, guid: 045af7938d69b5c438962516eb732266, type: 3}
+  droppedPrefab: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
   rotationSpeed: 50
   bounceForce: 5
   floatAmplitude: 0.2
   floatSpeed: 2
+  floatHeightOffset: 0.5
+  pickupRadius: 2.5
+  pickupDelay: 3
+  spawnOffset: {x: 0, y: 0, z: 1}
+  autoBounceOnStart: 1

@@ -1816,8 +1816,8 @@ MonoBehaviour:
   maxFailPenaltyCount: 3
   failDelay: 2
   strikeHitDelay: 1.2
-  playerTransform: {fileID: 0}
-  playerAnimator: {fileID: 0}
+  playerTransform: {fileID: 1374959251}
+  playerAnimator: {fileID: 1606277637}
   choppingDistance: 1.2
   playerRotationOffset: 80
   startChoppingTrigger: StartChopping
@@ -8733,6 +8733,11 @@ MonoBehaviour:
   rightHandItemContainer: {fileID: 236238973}
   dropKey: 113
   dropSpawnPoint: {fileID: 1462238922}
+--- !u!95 &1606277637 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 3376996853908346790, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+  m_PrefabInstance: {fileID: 1791146295}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1687012470
 GameObject:
   m_ObjectHideFlags: 0
@@ -9617,7 +9622,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.61
+      value: 2.61
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9629,19 +9634,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.50765556
+      value: -0.3732783
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.1657033
+      value: 0.13299832
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.8037422
+      value: 0.8648789
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.2623486
+      value: 0.30815464
       objectReference: {fileID: 0}
     - target: {fileID: 6932953351294578401, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: swordInHand
@@ -9752,6 +9757,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6847340928750016318, guid: d312b35dceb8e014eabecc02378aded8, type: 3}
+      propertyPath: dropPrefab
+      value: 
+      objectReference: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
+    - target: {fileID: 6847340928750016318, guid: d312b35dceb8e014eabecc02378aded8, type: 3}
       propertyPath: hitParticle
       value: 
       objectReference: {fileID: 198747954244408292, guid: a035dff9073c712488d88a29fdd76030, type: 3}
@@ -9852,6 +9861,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1730533080}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1843425925
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.1447036
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.09
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.1212761
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1891376285716132318, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
+      propertyPath: m_Name
+      value: WoodDrop
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 045af7938d69b5c438962516eb732266, type: 3}
 --- !u!1 &1869615886
 GameObject:
   m_ObjectHideFlags: 0
@@ -11780,7 +11846,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -14750,7 +14816,6 @@ GameObject:
   - component: {fileID: 7294258079567410367}
   - component: {fileID: 4381463003493750712}
   - component: {fileID: 386590103656387700}
-  - component: {fileID: 7704686297616536037}
   m_Layer: 7
   m_Name: Wood
   m_TagString: Untagged
@@ -20960,41 +21025,6 @@ Transform:
   - {fileID: 5043611922793502551}
   m_Father: {fileID: 1712148502735584942}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7704686297616536037
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5191371190963336285}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4b717cf14aca20a4fb31d5fe78f2f5ed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interactionText: Press F to Take it
-  useAreaTrigger: 0
-  onInteract:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 5191371190963336285}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  storyEvent: {fileID: 0}
-  objectiveId: obj_findwood
-  questAmount: 1
-  requireCompletedObjectiveId: 
-  useMinigame: 0
-  disableQuestProgressUntilMinigameComplete: 1
 --- !u!4 &7706540638667293327
 Transform:
   m_ObjectHideFlags: 0
@@ -22265,3 +22295,4 @@ SceneRoots:
   - {fileID: 283031306}
   - {fileID: 1798364788}
   - {fileID: 622239777}
+  - {fileID: 1843425925}

@@ -12,15 +12,15 @@ public class DroppedItem : MonoBehaviour
     [Header("Components")]
     [SerializeField] private Rigidbody rb;
 
-    [Header("Pickup Settings")]
-    [Tooltip("Radius jarak maksimal player bisa mengambil item ini")]
-    public float pickupRadius = 2.5f;
-    
     [Header("Visuals")]
     [Tooltip("Titik pusat untuk model item. Biasakan buat child object kosong bernama 'Visuals' lalu taruh model 3D di dalamnya.")]
     public Transform visualsContainer;
 
+    [Tooltip("Tandai true dari script Player saat membuang item dari inventori.")]
+    [HideInInspector] public bool isPlayerDrop = false;
+
     private bool isBeingSucked = false;
+    private bool canPickup = false;
     private Transform playerTarget;
     private PlayerItemController playerItemController;
 
@@ -31,10 +31,14 @@ public class DroppedItem : MonoBehaviour
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
         
+        // Kunci rotasi fisik agar item tidak jungkir balik saat menyentuh tanah,
+        // sehingga arah float (mengambang) selalu lurus ke atas.
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+
         // Buat SphereCollider otomatis khusus untuk mendeteksi area pickup
         SphereCollider triggerCol = gameObject.AddComponent<SphereCollider>();
         triggerCol.isTrigger = true;
-        triggerCol.radius = pickupRadius;
+        if (itemData != null) triggerCol.radius = itemData.pickupRadius;
 
         // BoxCollider bawaan JANGAN di-set isTrigger=true, 
         // biarkan berfungsi murni sebagai collider fisik agar item tidak tembus tanah.
@@ -42,18 +46,45 @@ public class DroppedItem : MonoBehaviour
 
     private void Start()
     {
-        // Beri sedikit dorongan ke atas saat pertama kali spawn (seperti Minecraft)
-        if (itemData != null && !isBeingSucked)
+        // Abaikan tabrakan fisik dengan Player agar tidak bisa ditendang/terdorong
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
         {
-            rb.AddForce(Vector3.up * itemData.bounceForce, ForceMode.Impulse);
+            Collider playerCol = player.GetComponent<Collider>();
+            Collider myCol = GetComponent<Collider>();
+            if (playerCol != null && myCol != null)
+            {
+                Physics.IgnoreCollision(myCol, playerCol);
+            }
+        }
+
+        if (itemData != null)
+        {
+            // Terapkan spawn offset HANYA jika bukan drop dari player (player biasanya drop dari tangan/tas)
+            if (!isPlayerDrop) transform.position += itemData.spawnOffset;
+
+            // Beri sedikit dorongan ke atas saat pertama kali spawn (seperti Minecraft)
+            if (itemData.autoBounceOnStart && !isBeingSucked)
+            {
+                float activeBounceForce = isPlayerDrop ? itemData.playerDropBounceForce : itemData.worldDropBounceForce;
+
+                rb.AddForce(Vector3.up * activeBounceForce, ForceMode.Impulse);
+                
+                // Beri dorongan acak sedikit ke samping agar menyebar jika spawn banyak
+                Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
+                rb.AddForce(randomDir * (activeBounceForce * 0.5f), ForceMode.Impulse);
+            }
             
-            // Beri dorongan acak sedikit ke samping agar menyebar jika spawn banyak
-            Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
-            rb.AddForce(randomDir * (itemData.bounceForce * 0.5f), ForceMode.Impulse);
+            Invoke(nameof(EnablePickup), itemData.pickupDelay);
         }
 
         startYPos = transform.position.y;
         SetupVisualStack();
+    }
+
+    private void EnablePickup()
+    {
+        canPickup = true;
     }
 
     private void Update()
@@ -68,13 +99,18 @@ public class DroppedItem : MonoBehaviour
 
         // Animasi Muter dan Naik Turun (Minecraft style)
         // Kita memutar dan menggerakkan container visualnya, BUKAN physics object utamanya
-        visualsContainer.Rotate(Vector3.up, itemData.rotationSpeed * Time.deltaTime, Space.World);
+        // Mengubah local rotasi Y saja agar sumbu X dan Z terkunci
+        visualsContainer.localEulerAngles = new Vector3(
+            visualsContainer.localEulerAngles.x,
+            visualsContainer.localEulerAngles.y + (itemData.rotationSpeed * Time.deltaTime),
+            visualsContainer.localEulerAngles.z
+        );
 
         // Hanya float jika benda sudah menyentuh tanah (kecepatan y mendekati 0)
         if (Mathf.Abs(rb.linearVelocity.y) < 0.1f)
         {
             float newY = Mathf.Sin(Time.time * itemData.floatSpeed) * itemData.floatAmplitude;
-            visualsContainer.localPosition = new Vector3(visualsContainer.localPosition.x, newY + 0.5f, visualsContainer.localPosition.z);
+            visualsContainer.localPosition = new Vector3(visualsContainer.localPosition.x, newY + itemData.floatHeightOffset, visualsContainer.localPosition.z);
         }
     }
 
@@ -107,7 +143,7 @@ public class DroppedItem : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (isBeingSucked) return;
+        if (!canPickup || isBeingSucked) return;
 
         if (other.CompareTag("Player"))
         {
@@ -139,8 +175,8 @@ public class DroppedItem : MonoBehaviour
 
         rb.isKinematic = true; // Matikan physics saat disedot
         
-        // Matikan semua collider di object ini saat disedot agar tidak mentok-mentok
-        Collider[] colliders = GetComponents<Collider>();
+        // Matikan semua collider (termasuk yang ada di child object) saat disedot agar tidak memblokir kamera/Cinemachine
+        Collider[] colliders = GetComponentsInChildren<Collider>();
         foreach (Collider col in colliders)
         {
             col.enabled = false;
@@ -162,4 +198,16 @@ public class DroppedItem : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmosSelected()
+    {
+        // Gambar lingkaran di Scene View agar radius pickup terlihat jelas
+        Gizmos.color = Color.cyan;
+        if (itemData != null)
+        {
+            Gizmos.DrawWireSphere(transform.position, itemData.pickupRadius);
+        }
+    }
+#endif
 }
