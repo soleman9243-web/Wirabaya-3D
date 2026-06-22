@@ -17,7 +17,8 @@ MonoBehaviour:
   heldModelName: Wood
   droppedPrefab: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
   rotationSpeed: 50
-  bounceForce: 5
+  worldDropBounceForce: 2
+  playerDropBounceForce: 5
   floatAmplitude: 0.2
   floatSpeed: 2
   floatHeightOffset: 0.5

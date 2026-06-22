@@ -9914,7 +9914,8 @@ PrefabInstance:
       value: WoodDrop
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 3604943839257043400, guid: 045af7938d69b5c438962516eb732266, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 045af7938d69b5c438962516eb732266, type: 3}
