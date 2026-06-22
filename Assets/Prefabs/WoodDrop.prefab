@@ -131,9 +131,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1891376285716132318}
-  - component: {fileID: 7067440376158580099}
-  - component: {fileID: 2509423769529859546}
-  - component: {fileID: 3697759796727719021}
+  - component: {fileID: 3296397716394647827}
+  - component: {fileID: 6440067306356965401}
+  - component: {fileID: 5272104117674144460}
   m_Layer: 0
   m_Name: WoodDrop
   m_TagString: Untagged
@@ -150,14 +150,14 @@ Transform:
   m_GameObject: {fileID: 6006109338500903849}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.33034, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 526364931866870997}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!54 &7067440376158580099
+--- !u!54 &3296397716394647827
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -184,7 +184,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &2509423769529859546
+--- !u!65 &6440067306356965401
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -199,13 +199,13 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.5, y: 0.5, z: 1}
+  m_Size: {x: 0.125, y: 0.125, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3697759796727719021
+--- !u!114 &5272104117674144460
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -219,6 +219,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DroppedItem
   itemData: {fileID: 11400000, guid: 1d58a4d12421be9498d8f09440c62a22, type: 2}
   amount: 1
-  rb: {fileID: 7067440376158580099}
-  pickupCollider: {fileID: 2509423769529859546}
+  rb: {fileID: 3296397716394647827}
+  pickupRadius: 2.5
   visualsContainer: {fileID: 526364931866870997}

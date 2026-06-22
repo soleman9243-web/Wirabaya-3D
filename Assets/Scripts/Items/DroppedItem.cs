@@ -11,7 +11,10 @@ public class DroppedItem : MonoBehaviour
 
     [Header("Components")]
     [SerializeField] private Rigidbody rb;
-    [SerializeField] private BoxCollider pickupCollider;
+
+    [Header("Pickup Settings")]
+    [Tooltip("Radius jarak maksimal player bisa mengambil item ini")]
+    public float pickupRadius = 2.5f;
     
     [Header("Visuals")]
     [Tooltip("Titik pusat untuk model item. Biasakan buat child object kosong bernama 'Visuals' lalu taruh model 3D di dalamnya.")]
@@ -27,9 +30,14 @@ public class DroppedItem : MonoBehaviour
     private void Awake()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
-        if (pickupCollider == null) pickupCollider = GetComponent<BoxCollider>();
+        
+        // Buat SphereCollider otomatis khusus untuk mendeteksi area pickup
+        SphereCollider triggerCol = gameObject.AddComponent<SphereCollider>();
+        triggerCol.isTrigger = true;
+        triggerCol.radius = pickupRadius;
 
-        pickupCollider.isTrigger = true; 
+        // BoxCollider bawaan JANGAN di-set isTrigger=true, 
+        // biarkan berfungsi murni sebagai collider fisik agar item tidak tembus tanah.
     }
 
     private void Start()
@@ -130,7 +138,13 @@ public class DroppedItem : MonoBehaviour
         playerItemController = controller;
 
         rb.isKinematic = true; // Matikan physics saat disedot
-        pickupCollider.enabled = false; // Matikan collider
+        
+        // Matikan semua collider di object ini saat disedot agar tidak mentok-mentok
+        Collider[] colliders = GetComponents<Collider>();
+        foreach (Collider col in colliders)
+        {
+            col.enabled = false;
+        }
     }
 
     private void HandleSuckAnimation()
