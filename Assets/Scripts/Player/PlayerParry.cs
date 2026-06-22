@@ -35,6 +35,7 @@ public class PlayerParry : MonoBehaviour
 
     public bool isParrying { get; private set; }
     private EnemyAI currentAttacker;
+    private BossAI currentBossAttacker;
 
     private void Awake()
     {
@@ -54,6 +55,10 @@ public class PlayerParry : MonoBehaviour
             if (currentAttacker != null)
             {
                 ExecuteParrySuccess(currentAttacker);
+            }
+            else if (currentBossAttacker != null)
+            {
+                ExecuteBossParrySuccess(currentBossAttacker);
             }
             else if (!isParrying)
             {
@@ -76,9 +81,16 @@ public class PlayerParry : MonoBehaviour
         if (spiderSenseIndicator != null) spiderSenseIndicator.SetActive(true);
     }
 
+    public void EnableBossSpiderSense(BossAI bossAttacker)
+    {
+        currentBossAttacker = bossAttacker;
+        if (spiderSenseIndicator != null) spiderSenseIndicator.SetActive(true);
+    }
+
     public void DisableSpiderSense()
     {
         currentAttacker = null;
+        currentBossAttacker = null;
         if (spiderSenseIndicator != null) spiderSenseIndicator.SetActive(false);
     }
 
@@ -102,6 +114,36 @@ public class PlayerParry : MonoBehaviour
         StartCoroutine(HitStopAndCameraRoutine());
 
         Debug.Log("Parry Berhasil! Player menghadap dan menempel ke musuh.");
+
+        if (QuestManager.Instance != null && !string.IsNullOrEmpty(parryObjectiveId))
+        {
+            if (QuestManager.Instance.IsObjectiveActive(parryObjectiveId))
+            {
+                QuestManager.Instance.AddProgress(parryObjectiveId, 1);
+            }
+        }
+    }
+
+    private void ExecuteBossParrySuccess(BossAI boss)
+    {
+        StarterAssets.ThirdPersonController tpc = GetComponent<StarterAssets.ThirdPersonController>();
+        if (tpc != null) tpc.IsInFinisher = true;
+
+        DisableSpiderSense();
+
+        StartCoroutine(SnapToEnemy(boss.transform));
+
+        animator.SetTrigger("Parry");
+        boss.TriggerStagger();
+
+        if (parryParticlePrefab != null && parryImpactPoint != null)
+        {
+            Instantiate(parryParticlePrefab, parryImpactPoint.position, Quaternion.identity);
+        }
+
+        StartCoroutine(HitStopAndCameraRoutine());
+
+        Debug.Log("Boss Parry Berhasil!");
 
         if (QuestManager.Instance != null && !string.IsNullOrEmpty(parryObjectiveId))
         {
