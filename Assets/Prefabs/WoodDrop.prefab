@@ -24,12 +24,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2408244901106107408}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.125, y: 0.125, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 526364931866870997}
+  m_Children:
+  - {fileID: 526364931866870997}
+  - {fileID: 1631271609153187432}
+  m_Father: {fileID: 1891376285716132318}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3808428851198131184
 GameObject:
@@ -59,12 +61,10 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.125, y: 0.125, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1908836778710851685}
-  - {fileID: 1631271609153187432}
-  m_Father: {fileID: 1891376285716132318}
+  m_Children: []
+  m_Father: {fileID: 1908836778710851685}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &294895532481743461
 MeshFilter:
@@ -135,7 +135,6 @@ GameObject:
   - component: {fileID: 1360342457747380819}
   - component: {fileID: -6590497227696773964}
   - component: {fileID: 6567797578013034144}
-  - component: {fileID: 480291322753579899}
   m_Layer: 0
   m_Name: WoodDrop
   m_TagString: Untagged
@@ -156,7 +155,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 526364931866870997}
+  - {fileID: 1908836778710851685}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &1360342457747380819
@@ -222,33 +221,18 @@ MonoBehaviour:
   itemData: {fileID: 11400000, guid: 1d58a4d12421be9498d8f09440c62a22, type: 2}
   amount: 1
   rb: {fileID: 1360342457747380819}
-  visualsContainer: {fileID: 526364931866870997}
+  visualsContainer: {fileID: 1908836778710851685}
   isPlayerDrop: 0
---- !u!114 &480291322753579899
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6006109338500903849}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Outline
-  outlineMode: 0
-  outlineColor: {r: 0.1490565, g: 1, b: 0.8466522, a: 1}
-  outlineWidth: 2
-  precomputeOutline: 0
-  bakeKeys: []
-  bakeValues: []
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 2048
 --- !u!1001 &7695214034943336372
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 526364931866870997}
+    m_TransformParent: {fileID: 1908836778710851685}
     m_Modifications:
     - target: {fileID: 5627696518775099638, guid: 1aecc0f9f19763444ac32af0292a1651, type: 3}
       propertyPath: m_Name

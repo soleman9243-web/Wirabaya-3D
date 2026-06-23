@@ -2293,6 +2293,7 @@ GameObject:
   - component: {fileID: 8785802371027616090}
   - component: {fileID: 411607606028634013}
   - component: {fileID: 5356236766156475636}
+  - component: {fileID: -3685172491161858484}
   m_Layer: 7
   m_Name: NPC
   m_TagString: Untagged
@@ -2399,6 +2400,7 @@ MonoBehaviour:
   storyEvent: {fileID: 0}
   objectiveId: 
   questAmount: 1
+  requireCompletedObjectiveId: 
   useMinigame: 0
   disableQuestProgressUntilMinigameComplete: 1
 --- !u!114 &411607606028634013
@@ -2421,6 +2423,7 @@ MonoBehaviour:
   onDialogueEnd:
     m_PersistentCalls:
       m_Calls: []
+  completeObjectiveIdOnEnd: 
   savedPath: 
 --- !u!65 &5356236766156475636
 BoxCollider:
@@ -2443,6 +2446,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3, y: 1, z: 3}
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &-3685172491161858484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8486089402129610709}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Outline
+  outlineMode: 1
+  outlineColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineWidth: 2
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &8498915520580914356
 GameObject:
   m_ObjectHideFlags: 0

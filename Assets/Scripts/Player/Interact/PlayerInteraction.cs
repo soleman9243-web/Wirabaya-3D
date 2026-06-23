@@ -48,6 +48,7 @@ public class PlayerInteraction : MonoBehaviour
         {
             if (currentInteractable != null)
             {
+                ToggleOutline(currentInteractable, false);
                 currentInteractable = null;
                 interactionText.SetActive(false);
             }
@@ -89,6 +90,7 @@ public class PlayerInteraction : MonoBehaviour
             {
                 if (currentInteractable != null)
                 {
+                    ToggleOutline(currentInteractable, false);
                     currentInteractable = null;
                     interactionText.SetActive(false);
                 }
@@ -101,7 +103,14 @@ public class PlayerInteraction : MonoBehaviour
 
                 if (currentInteractable != foundInteractable || textNeedsUpdate)
                 {
+                    if (currentInteractable != null && currentInteractable != foundInteractable)
+                    {
+                        ToggleOutline(currentInteractable, false);
+                    }
+
                     currentInteractable = foundInteractable;
+                    ToggleOutline(currentInteractable, true);
+
                     interactionText.SetActive(true);
 
                     if (textComponent != null)
@@ -116,8 +125,24 @@ public class PlayerInteraction : MonoBehaviour
             // Jika keluar dari area semua objek
             if (currentInteractable != null)
             {
+                ToggleOutline(currentInteractable, false);
                 currentInteractable = null;
                 interactionText.SetActive(false);
+            }
+        }
+    }
+
+    private void ToggleOutline(InteractObject interactObj, bool state)
+    {
+        if (interactObj != null)
+        {
+            // Cek apakah ada script Outline di objek interactable (atau anak-anaknya)
+            Outline outline = interactObj.GetComponent<Outline>();
+            if (outline == null) outline = interactObj.GetComponentInChildren<Outline>();
+
+            if (outline != null)
+            {
+                outline.enabled = state;
             }
         }
     }

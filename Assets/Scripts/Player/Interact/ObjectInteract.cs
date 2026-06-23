@@ -24,6 +24,18 @@ public class InteractObject : MonoBehaviour
     public bool useMinigame;
     public bool disableQuestProgressUntilMinigameComplete = true;
 
+    private void Awake()
+    {
+        // Otomatis matikan efek Outline di awal agar tidak perlu repot uncheck manual di Inspector
+        Outline outline = GetComponent<Outline>();
+        if (outline == null) outline = GetComponentInChildren<Outline>();
+
+        if (outline != null)
+        {
+            outline.enabled = false;
+        }
+    }
+
     public string GetInteractionText()
     {
         // Cek apakah interaksi ini dikunci oleh syarat objektif tertentu

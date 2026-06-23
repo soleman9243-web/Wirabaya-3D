@@ -15,6 +15,7 @@ MonoBehaviour:
   itemName: kayu
   maxStackSize: 5
   heldModelName: Wood
+  holdingAnimatorParameter: IsHoldingWood
   droppedPrefab: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
   rotationSpeed: 50
   worldDropBounceForce: 2
@@ -22,7 +23,11 @@ MonoBehaviour:
   floatAmplitude: 0.2
   floatSpeed: 2
   floatHeightOffset: 0.5
+  enableVisualStacking: 1
+  maxVisualStack: 5
+  visualStackOffset: {x: 0.1, y: 0.1, z: 0.1}
+  handStackOffset: {x: -0.02, y: 0.01, z: 0.02}
   pickupRadius: 2.5
   pickupDelay: 3
-  spawnOffset: {x: 0, y: 0, z: 1}
+  spawnOffset: {x: 0, y: 0, z: 2}
   autoBounceOnStart: 1

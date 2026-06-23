@@ -99,7 +99,7 @@ public class CuttableTree : MonoBehaviour
 
         for (int i = 0; i < dropAmount; i++)
         {
-            Instantiate(dropPrefab, spawnPos, Quaternion.identity);
+            Instantiate(dropPrefab, spawnPos, transform.rotation);
             // Beri jeda sedikit agar tidak saling bertumpuk dan meledak
             yield return new WaitForSeconds(0.1f); 
         }

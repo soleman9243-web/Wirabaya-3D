@@ -14,7 +14,11 @@ public class PlayerItemController : MonoBehaviour
     public KeyCode dropKey = KeyCode.Q;
     public Transform dropSpawnPoint;
 
+    [Header("Animator (Opsional)")]
+    public Animator playerAnimator;
+
     private PlayerControl playerControl;
+    private System.Collections.Generic.List<GameObject> spawnedHandVisuals = new System.Collections.Generic.List<GameObject>();
 
     private void Awake()
     {
@@ -39,6 +43,33 @@ public class PlayerItemController : MonoBehaviour
         {
             playerControl.isHoldingItem = (currentItem != null && currentAmount > 0);
         }
+
+#if UNITY_EDITOR
+        // Fitur Live Update: Agar kamu bisa melihat perubahan posisi kayu secara langsung (Realtime) saat mengubah nilai di ScriptableObject
+        if (currentItem != null && currentAmount > 1 && spawnedHandVisuals.Count > 0)
+        {
+            if (!string.IsNullOrEmpty(currentItem.heldModelName))
+            {
+                Transform heldModel = rightHandItemContainer.Find(currentItem.heldModelName);
+                if (heldModel != null)
+                {
+                    for (int i = 0; i < spawnedHandVisuals.Count; i++)
+                    {
+                        if (spawnedHandVisuals[i] != null)
+                        {
+                            int stackIndex = i + 1;
+                            Vector3 localOffset = new Vector3(
+                                stackIndex * currentItem.handStackOffset.x,
+                                stackIndex * currentItem.handStackOffset.y,
+                                stackIndex * currentItem.handStackOffset.z
+                            );
+                            spawnedHandVisuals[i].transform.position = heldModel.position + (heldModel.rotation * localOffset);
+                        }
+                    }
+                }
+            }
+        }
+#endif
     }
 
     public bool CanPickup(ItemData item, int amount)
@@ -77,15 +108,22 @@ public class PlayerItemController : MonoBehaviour
         if (dropSpawnPoint != null) spawnPos = dropSpawnPoint.position;
 
         // Munculkan item yang jatuh
-        GameObject droppedObj = Instantiate(currentItem.droppedPrefab, spawnPos, Quaternion.identity);
+        GameObject droppedObj = Instantiate(currentItem.droppedPrefab, spawnPos, transform.rotation);
         DroppedItem droppedItem = droppedObj.GetComponent<DroppedItem>();
         if (droppedItem != null)
         {
+            droppedItem.isPlayerDrop = true;
             droppedItem.itemData = currentItem;
             droppedItem.amount = currentAmount;
         }
 
         Debug.Log($"Dropped {currentAmount} {currentItem.itemName}.");
+
+        // Matikan parameter animasi di Animator (jika ada) sebelum mengosongkan item
+        if (playerAnimator != null && !string.IsNullOrEmpty(currentItem.holdingAnimatorParameter))
+        {
+            playerAnimator.SetBool(currentItem.holdingAnimatorParameter, false);
+        }
 
         // Kosongkan tangan
         currentItem = null;
@@ -98,23 +136,66 @@ public class PlayerItemController : MonoBehaviour
     {
         if (rightHandItemContainer == null) return;
 
-        // Matikan semua child di dalam container tangan terlebih dahulu
+        // Bersihkan tumpukan visual sebelumnya (jika ada)
+        foreach (GameObject spawned in spawnedHandVisuals)
+        {
+            if (spawned != null) Destroy(spawned);
+        }
+        spawnedHandVisuals.Clear();
+
+        // Matikan semua child base model di dalam container tangan terlebih dahulu
         foreach (Transform child in rightHandItemContainer)
         {
             child.gameObject.SetActive(false);
         }
 
-        // Jika sedang memegang item, cari child dengan nama yang sesuai di ItemData.heldModelName
-        if (currentItem != null && currentAmount > 0 && !string.IsNullOrEmpty(currentItem.heldModelName))
+        if (currentItem != null && currentAmount > 0)
         {
-            Transform heldModel = rightHandItemContainer.Find(currentItem.heldModelName);
-            if (heldModel != null)
+            // Update Animator jika ada parameternya
+            if (playerAnimator != null && !string.IsNullOrEmpty(currentItem.holdingAnimatorParameter))
             {
-                heldModel.gameObject.SetActive(true);
+                playerAnimator.SetBool(currentItem.holdingAnimatorParameter, true);
             }
-            else
+
+            // Cari model dasar
+            if (!string.IsNullOrEmpty(currentItem.heldModelName))
             {
-                Debug.LogWarning($"Tidak menemukan model dengan nama '{currentItem.heldModelName}' di dalam {rightHandItemContainer.name}!");
+                Transform heldModel = rightHandItemContainer.Find(currentItem.heldModelName);
+                if (heldModel != null)
+                {
+                    heldModel.gameObject.SetActive(true);
+
+                    // Buat tumpukan visual jika amount > 1 dan fitur diaktifkan
+                    if (currentItem.enableVisualStacking && currentAmount > 1)
+                    {
+                        int visualCount = Mathf.Min(currentAmount, currentItem.maxVisualStack);
+                        for (int i = 1; i < visualCount; i++)
+                        {
+                            GameObject newVisual = Instantiate(heldModel.gameObject, rightHandItemContainer);
+                            newVisual.SetActive(true);
+                            
+                            // Gunakan offset khusus tangan yang menumpuk lurus (tanpa zig-zag)
+                            Vector3 localOffset = new Vector3(
+                                i * currentItem.handStackOffset.x,
+                                i * currentItem.handStackOffset.y,
+                                i * currentItem.handStackOffset.z
+                            );
+
+                            // Mengalikan rotasi dengan offset agar posisinya mengikuti arah kayu,
+                            // NAMUN tidak terpengaruh oleh skala kayu yang mengecil (misal scale 0.01).
+                            // Ini menjamin kayunya pasti bergeser sejauh nilai di Inspector (dalam hitungan meter).
+                            newVisual.transform.position = heldModel.position + (heldModel.rotation * localOffset);
+                            newVisual.transform.localRotation = heldModel.localRotation;
+                            newVisual.transform.localScale = heldModel.localScale;
+
+                            spawnedHandVisuals.Add(newVisual);
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"Tidak menemukan model dengan nama '{currentItem.heldModelName}' di dalam {rightHandItemContainer.name}!");
+                }
             }
         }
     }

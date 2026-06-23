@@ -19,6 +19,9 @@ public class DroppedItem : MonoBehaviour
     [Tooltip("Tandai true dari script Player saat membuang item dari inventori.")]
     [HideInInspector] public bool isPlayerDrop = false;
 
+    [Header("Physics & Ground Detection")]
+    public LayerMask groundLayer = ~0;
+
     private bool isBeingSucked = false;
     private bool canPickup = false;
     private Transform playerTarget;
@@ -27,12 +30,17 @@ public class DroppedItem : MonoBehaviour
     private float startYPos;
     private List<Transform> spawnedVisuals = new List<Transform>();
 
+    private Vector3 currentVelocity;
+    private bool hasLanded = false;
+    private float landYPos;
+
     private void Awake()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
         
-        // Kunci rotasi fisik agar item tidak jungkir balik saat menyentuh tanah,
-        // sehingga arah float (mengambang) selalu lurus ke atas.
+        // Karena kita akan menggunakan raycast, Rigidbody bisa di-set ke kinematic
+        // agar tidak dipengaruhi fisika bawaan Unity
+        rb.isKinematic = true;
         rb.constraints = RigidbodyConstraints.FreezeRotation;
 
         // Buat SphereCollider otomatis khusus untuk mendeteksi area pickup
@@ -40,39 +48,35 @@ public class DroppedItem : MonoBehaviour
         triggerCol.isTrigger = true;
         if (itemData != null) triggerCol.radius = itemData.pickupRadius;
 
-        // BoxCollider bawaan JANGAN di-set isTrigger=true, 
-        // biarkan berfungsi murni sebagai collider fisik agar item tidak tembus tanah.
+        // Ubah BoxCollider menjadi trigger sesuai permintaan agar tidak ada tabrakan sama sekali
+        BoxCollider boxCol = GetComponent<BoxCollider>();
+        if (boxCol != null)
+        {
+            boxCol.isTrigger = true;
+        }
     }
 
     private void Start()
     {
-        // Abaikan tabrakan fisik dengan Player agar tidak bisa ditendang/terdorong
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            Collider playerCol = player.GetComponent<Collider>();
-            Collider myCol = GetComponent<Collider>();
-            if (playerCol != null && myCol != null)
-            {
-                Physics.IgnoreCollision(myCol, playerCol);
-            }
-        }
 
         if (itemData != null)
         {
-            // Terapkan spawn offset HANYA jika bukan drop dari player (player biasanya drop dari tangan/tas)
-            if (!isPlayerDrop) transform.position += itemData.spawnOffset;
+            // Terapkan spawn offset (gunakan rotasi lokal agar tidak global)
+            if (!isPlayerDrop) 
+            {
+                transform.position += transform.right * itemData.spawnOffset.x + transform.up * itemData.spawnOffset.y + transform.forward * itemData.spawnOffset.z;
+            }
 
-            // Beri sedikit dorongan ke atas saat pertama kali spawn (seperti Minecraft)
+            // Beri sedikit dorongan ke atas saat pertama kali spawn (secara manual)
             if (itemData.autoBounceOnStart && !isBeingSucked)
             {
                 float activeBounceForce = isPlayerDrop ? itemData.playerDropBounceForce : itemData.worldDropBounceForce;
 
-                rb.AddForce(Vector3.up * activeBounceForce, ForceMode.Impulse);
+                currentVelocity = Vector3.up * activeBounceForce;
                 
                 // Beri dorongan acak sedikit ke samping agar menyebar jika spawn banyak
                 Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f)).normalized;
-                rb.AddForce(randomDir * (activeBounceForce * 0.5f), ForceMode.Impulse);
+                currentVelocity += randomDir * (activeBounceForce * 0.5f);
             }
             
             Invoke(nameof(EnablePickup), itemData.pickupDelay);
@@ -97,46 +101,96 @@ public class DroppedItem : MonoBehaviour
 
         if (itemData == null || visualsContainer == null) return;
 
-        // Animasi Muter dan Naik Turun (Minecraft style)
-        // Kita memutar dan menggerakkan container visualnya, BUKAN physics object utamanya
-        // Mengubah local rotasi Y saja agar sumbu X dan Z terkunci
-        visualsContainer.localEulerAngles = new Vector3(
-            visualsContainer.localEulerAngles.x,
-            visualsContainer.localEulerAngles.y + (itemData.rotationSpeed * Time.deltaTime),
-            visualsContainer.localEulerAngles.z
-        );
-
-        // Hanya float jika benda sudah menyentuh tanah (kecepatan y mendekati 0)
-        if (Mathf.Abs(rb.linearVelocity.y) < 0.1f)
+        // Fisika Manual & Raycast untuk mendeteksi tanah
+        if (!hasLanded)
         {
+            currentVelocity += Physics.gravity * Time.deltaTime;
+            transform.position += currentVelocity * Time.deltaTime;
+
+            // Jika sedang jatuh ke bawah, cek raycast
+            if (currentVelocity.y <= 0f)
+            {
+                // Raycast ke bawah. Gunakan jarak pendek untuk mendeteksi tanah, dan batasi dengan groundLayer
+                if (Physics.Raycast(transform.position + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 0.6f, groundLayer))
+                {
+                    hasLanded = true;
+                    landYPos = hit.point.y;
+                    
+                    // Posisikan tepat di tanah
+                    transform.position = new Vector3(transform.position.x, landYPos, transform.position.z);
+                    currentVelocity = Vector3.zero;
+                }
+            }
+        }
+        else
+        {
+            // Animasi Muter dan Naik Turun (Hanya berjalan jika sudah mendarat di tanah)
+            visualsContainer.localEulerAngles = new Vector3(
+                visualsContainer.localEulerAngles.x,
+                visualsContainer.localEulerAngles.y + (itemData.rotationSpeed * Time.deltaTime),
+                visualsContainer.localEulerAngles.z
+            );
+
             float newY = Mathf.Sin(Time.time * itemData.floatSpeed) * itemData.floatAmplitude;
             visualsContainer.localPosition = new Vector3(visualsContainer.localPosition.x, newY + itemData.floatHeightOffset, visualsContainer.localPosition.z);
+        }
+
+        // --- Dynamic Visual Stacking Update ---
+        // Jika kamu mengubah value di ScriptableObject secara realtime, posisi tumpukannya akan otomatis terupdate!
+        if (itemData != null && itemData.enableVisualStacking && spawnedVisuals.Count > 1)
+        {
+            Transform baseVisual = spawnedVisuals[0];
+            for (int i = 1; i < spawnedVisuals.Count; i++)
+            {
+                if (spawnedVisuals[i] != null)
+                {
+                    // Gunakan fixed offset agar pasti terlihat bertumpuk dan tidak tertutup sempurna
+                    float offsetX = (i % 2 != 0 ? 1 : -1) * itemData.visualStackOffset.x;
+                    float offsetZ = (i % 2 != 0 ? -1 : 1) * itemData.visualStackOffset.z;
+                    float offsetY = i * itemData.visualStackOffset.y; // Bertumpuk ke atas 
+
+                    spawnedVisuals[i].localPosition = baseVisual.localPosition + new Vector3(offsetX, offsetY, offsetZ);
+                    spawnedVisuals[i].localRotation = baseVisual.localRotation;
+                }
+            }
         }
     }
 
     private void SetupVisualStack()
     {
-        if (visualsContainer == null || visualsContainer.childCount == 0) return;
+        if (itemData == null || visualsContainer == null || visualsContainer.childCount == 0 || !itemData.enableVisualStacking) return;
 
-        // Ambil visual utama (model pertama yang ada di dalam container)
-        Transform baseVisual = visualsContainer.GetChild(0);
+        int visualCount = Mathf.Min(amount, itemData.maxVisualStack); 
+        
+        Debug.Log($"SetupVisualStack for {itemData.itemName}: Amount={amount}, VisualCount={visualCount}");
+
+        if (visualCount <= 1) return;
+
+        // BUNGKUS SEMUA CHILD KE DALAM SATU OBJEK BASE
+        // Ini untuk mencegah masalah jika child pertama (index 0) ternyata bukan model 3D (misal efek partikel atau lampu).
+        GameObject baseVisualObj = new GameObject("BaseVisualGroup");
+        baseVisualObj.transform.SetParent(visualsContainer, false);
+        baseVisualObj.transform.localPosition = Vector3.zero;
+        baseVisualObj.transform.localRotation = Quaternion.identity;
+        baseVisualObj.transform.localScale = Vector3.one;
+
+        // Pindahkan semua child asli ke dalam BaseVisualGroup
+        while (visualsContainer.childCount > 1)
+        {
+            Transform child = visualsContainer.GetChild(0);
+            if (child == baseVisualObj.transform)
+            {
+                child = visualsContainer.GetChild(1);
+            }
+            child.SetParent(baseVisualObj.transform, false);
+        }
+
+        Transform baseVisual = baseVisualObj.transform;
         spawnedVisuals.Add(baseVisual);
 
-        // Jika jumlahnya > 1, kita akan menduplikasi visualnya agar kelihatan bertumpuk
-        int visualCount = Mathf.Min(amount, 5); // Maksimal 5 tumpukan visual agar tidak berat
-        
         for (int i = 1; i < visualCount; i++)
         {
             Transform newVisual = Instantiate(baseVisual.gameObject, visualsContainer).transform;
-            
-            // Berikan offset posisi dan rotasi sedikit
-            float offsetX = Random.Range(-0.15f, 0.15f);
-            float offsetZ = Random.Range(-0.15f, 0.15f);
-            float offsetRotY = Random.Range(0, 360f);
-
-            newVisual.localPosition = baseVisual.localPosition + new Vector3(offsetX, i * 0.05f, offsetZ);
-            newVisual.localRotation = Quaternion.Euler(baseVisual.localEulerAngles.x, offsetRotY, baseVisual.localEulerAngles.z);
-            
             spawnedVisuals.Add(newVisual);
         }
     }
