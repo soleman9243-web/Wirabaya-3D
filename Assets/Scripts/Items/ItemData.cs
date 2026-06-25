@@ -1,10 +1,13 @@
 using UnityEngine;
 
+public enum ItemType { Resource, Weapon }
+
 [CreateAssetMenu(fileName = "New Item Data", menuName = "System/Item Data")]
 public class ItemData : ScriptableObject
 {
     [Header("Item Info")]
     public string itemName;
+    public ItemType itemType = ItemType.Resource;
     public int maxStackSize = 5;
 
     [Header("Visual Settings")]

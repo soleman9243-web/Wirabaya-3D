@@ -15,7 +15,7 @@ MonoBehaviour:
   animName: JumpUp
   obstacleTag: 
   minHeight: 0.8
-  maxHeight: 1.5
+  maxHeight: 1.75
   rotateToObstacle: 1
   postActionDelay: 0.4
   enableTargetMatching: 1

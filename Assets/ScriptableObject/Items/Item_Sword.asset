@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26916d34b2f3a4d40ac7a5b8724e690b, type: 3}
+  m_Name: Item_Sword
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemName: katana
+  itemType: 1
+  maxStackSize: 1
+  heldModelName: 
+  holdingAnimatorParameter: 
+  droppedPrefab: {fileID: 0}
+  rotationSpeed: 50
+  worldDropBounceForce: 5
+  playerDropBounceForce: 2
+  floatAmplitude: 0.2
+  floatSpeed: 2
+  floatHeightOffset: 0.5
+  enableVisualStacking: 1
+  maxVisualStack: 3
+  visualStackOffset: {x: 0.1, y: 0.1, z: 0.1}
+  handStackOffset: {x: 0, y: 0.1, z: 0}
+  pickupRadius: 2.5
+  pickupDelay: 2.5
+  spawnOffset: {x: 0, y: 0.5, z: 0}
+  autoBounceOnStart: 1

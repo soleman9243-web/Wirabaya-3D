@@ -74,6 +74,12 @@ public class PlayerItemController : MonoBehaviour
 
     public bool CanPickup(ItemData item, int amount)
     {
+        // Jika item adalah senjata, pastikan belum punya senjata
+        if (item.itemType == ItemType.Weapon)
+        {
+            return (playerControl != null && !playerControl.hasSwordEquipped);
+        }
+
         // Jika tangan kosong, bisa ambil
         if (currentItem == null || currentAmount == 0) return true;
 
@@ -85,6 +91,16 @@ public class PlayerItemController : MonoBehaviour
 
     public void PickupItem(ItemData item, int amount)
     {
+        if (item.itemType == ItemType.Weapon)
+        {
+            if (playerControl != null)
+            {
+                playerControl.UnlockWeapon();
+                Debug.Log($"Weapon picked up and unlocked: {item.itemName}");
+            }
+            return;
+        }
+
         if (currentItem == null || currentAmount == 0)
         {
             currentItem = item;

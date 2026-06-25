@@ -113,7 +113,7 @@ public class ParkourController : MonoBehaviour
             }
 
             // Eksekusi Target Matching
-            if (action.EnableTargetMatching && !animator.isMatchingTarget)
+            if (action.EnableTargetMatching && !animator.isMatchingTarget && !animator.IsInTransition(0))
             {
                 animator.MatchTarget(matchPosition, transform.rotation, action.MatchBodyPart,
                     new MatchTargetWeightMask(action.MatchPositionWeight, 0),

@@ -16,8 +16,6 @@ public class BossAI : MonoBehaviour
     public float engageDistance = 15f;
 
     [Header("Parry & Stagger")]
-    public float knockbackDistance = 2f;
-    public float knockbackDuration = 0.2f;
 
     [Header("Events")]
     public UnityEvent<float, float> OnBossHealthChanged;
@@ -31,7 +29,6 @@ public class BossAI : MonoBehaviour
     private bool isAttacking = false;
 
     private Coroutine combatCoroutine;
-    private Coroutine knockbackCoroutine;
     private PlayerParry playerParry;
 
     private void Start()
@@ -198,7 +195,6 @@ public class BossAI : MonoBehaviour
         if (isDead) return;
 
         if (combatCoroutine != null) StopCoroutine(combatCoroutine);
-        if (knockbackCoroutine != null) StopCoroutine(knockbackCoroutine);
 
         if (playerParry != null) playerParry.DisableSpiderSense();
 
@@ -206,28 +202,9 @@ public class BossAI : MonoBehaviour
 
         isAttacking = false;
         StartCoroutine(StaggerRoutine());
-        knockbackCoroutine = StartCoroutine(KnockbackRoutine());
     }
 
-    private IEnumerator KnockbackRoutine()
-    {
-        Vector3 startPos = transform.position;
-        Vector3 knockbackDir = (transform.position - player.position).normalized;
-        knockbackDir.y = 0;
 
-        Vector3 targetPos = startPos + (knockbackDir * knockbackDistance);
-        float time = 0f;
-
-        while (time < knockbackDuration)
-        {
-            time += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, time / knockbackDuration);
-            transform.position = Vector3.Lerp(startPos, targetPos, t);
-            yield return null;
-        }
-
-        transform.position = targetPos;
-    }
 
     private IEnumerator StaggerRoutine()
     {

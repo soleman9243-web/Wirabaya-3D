@@ -9661,6 +9661,10 @@ PrefabInstance:
       propertyPath: swordInSheath
       value: 
       objectReference: {fileID: 1387117997}
+    - target: {fileID: 6932953351294578401, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+      propertyPath: hasSwordEquipped
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7577698961811635459, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_IsActive
       value: 0

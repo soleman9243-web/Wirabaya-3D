@@ -36,7 +36,7 @@ public class PlayerControl : MonoBehaviour
     [SerializeField] private float heavyShakeForce = 1.5f;
 
     [Header("Sword Mechanics")]
-    public bool hasSwordEquipped = true;
+    public bool hasSwordEquipped = false;
     public bool isSwordSheathed = true;
     private bool isSheathingAnim = false;
 
@@ -67,9 +67,28 @@ public class PlayerControl : MonoBehaviour
         // Setup visual awal saat game dimulai
         if (hasSwordEquipped)
         {
-            if (isSwordSheathed) SheathSwordVisual();
-            else EquipSwordVisual();
+            if (isSwordSheathed) 
+            {
+                SheathSwordVisual();
+            }
+            else 
+            {
+                EquipSwordVisual();
+                if (anim != null) anim.SetBool("isArmed", true);
+            }
         }
+        else
+        {
+            if (swordInHand != null) swordInHand.SetActive(false);
+            if (swordInSheath != null) swordInSheath.SetActive(false);
+        }
+    }
+
+    public void UnlockWeapon()
+    {
+        hasSwordEquipped = true;
+        isSwordSheathed = true;
+        SheathSwordVisual();
     }
 
     void Update()
