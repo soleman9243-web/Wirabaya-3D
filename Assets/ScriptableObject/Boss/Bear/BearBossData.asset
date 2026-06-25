@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dad6fbb10554c5a458d29327f8fcd1f3, type: 3}
+  m_Name: BearBossData
+  m_EditorClassIdentifier: Assembly-CSharp::BossData
+  bossName: Hewan yang Kaya
+  maxHealth: 100
+  phases:
+  - healthThresholdPercentage: 1
+    allowedAttacks:
+    - {fileID: 11400000, guid: 115fdbd525fc7f04f8e3d9da24834c64, type: 2}
+  - healthThresholdPercentage: 0.5
+    allowedAttacks:
+    - {fileID: 11400000, guid: 3f7bc25855a7f1c47a80337a2ce1adbe, type: 2}
+    - {fileID: 11400000, guid: 9763cbf7c37a3ae40bd32103aeac443d, type: 2}

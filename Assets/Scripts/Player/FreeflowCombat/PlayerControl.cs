@@ -55,6 +55,9 @@ public class PlayerControl : MonoBehaviour
     private EnemyAI oldTarget;
     private EnemyAI currentTarget;
 
+    private BossAI oldBossTarget;
+    private BossAI currentBossTarget;
+
     private Coroutine moveRoutine;
     private Coroutine rotateRoutine;
     private Coroutine hitstopRoutine;
@@ -256,17 +259,25 @@ public class PlayerControl : MonoBehaviour
 
         foreach (Collider enemy in hitEnemies)
         {
-            Rigidbody enemyRb = enemy.GetComponent<Rigidbody>();
-            EnemyAI enemyBase = enemy.GetComponent<EnemyAI>();
+            Rigidbody enemyRb = enemy.GetComponentInParent<Rigidbody>();
+            EnemyAI enemyBase = enemy.GetComponentInParent<EnemyAI>();
+            BossAI bossBase = enemy.GetComponentInParent<BossAI>();
 
-            if (enemyRb != null)
+            if (enemyRb != null || bossBase != null) // boss mungkin ditaruh collider di parent
             {
                 hasHitTarget = true;
 
-                Vector3 knockDir = enemy.transform.position - transform.position;
-                knockDir.y = airknockbackForce;
+                if (enemyRb != null)
+                {
+                    Vector3 knockDir = enemy.transform.position - transform.position;
+                    knockDir.y = airknockbackForce;
 
-                enemyRb.AddForce(knockDir.normalized * knockbackForce, ForceMode.Impulse);
+                    // Bos biasanya tidak kena knockback kecil
+                    if (bossBase == null)
+                    {
+                        enemyRb.AddForce(knockDir.normalized * knockbackForce, ForceMode.Impulse);
+                    }
+                }
 
                 if (enemyBase != null) 
                 {
@@ -275,6 +286,14 @@ public class PlayerControl : MonoBehaviour
                     // Hitung damage
                     float damageAmount = (currentAttackState == 0) ? PlayerStatus.Instance.damage1 : PlayerStatus.Instance.damage2;
                     enemyBase.TakeDamage(damageAmount);
+                }
+                else if (bossBase != null)
+                {
+                    bossBase.SpawnHitVfx(bossBase.transform.position);
+
+                    // Hitung damage bos
+                    float damageAmount = (currentAttackState == 0) ? PlayerStatus.Instance.damage1 : PlayerStatus.Instance.damage2;
+                    bossBase.TakeDamage(damageAmount);
                 }
             }
         }
@@ -312,12 +331,17 @@ public class PlayerControl : MonoBehaviour
         if (target == target_ || isHitstopping) return;
 
         if (oldTarget != null) oldTarget.ActiveTarget(false);
+        if (oldBossTarget != null) oldBossTarget.ActiveTarget(false);
 
         target = target_;
         currentTarget = target_.GetComponent<EnemyAI>();
+        currentBossTarget = target_.GetComponent<BossAI>();
+        
         oldTarget = currentTarget;
+        oldBossTarget = currentBossTarget;
 
         if (currentTarget != null) currentTarget.ActiveTarget(true);
+        if (currentBossTarget != null) currentBossTarget.ActiveTarget(true);
     }
 
     public void NoTarget()
@@ -325,9 +349,14 @@ public class PlayerControl : MonoBehaviour
         if (isHitstopping) return;
 
         if (currentTarget != null) currentTarget.ActiveTarget(false);
+        if (currentBossTarget != null) currentBossTarget.ActiveTarget(false);
 
         currentTarget = null;
         oldTarget = null;
+
+        currentBossTarget = null;
+        oldBossTarget = null;
+        
         target = null;
     }
 

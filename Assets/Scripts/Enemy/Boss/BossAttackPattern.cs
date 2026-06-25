@@ -10,6 +10,9 @@ public class BossAttackPattern : ScriptableObject
     [Tooltip("Damage yang diberikan ke player")]
     public float damage = 20f;
     
+    [Tooltip("Jarak minimal player agar serangan ini dipicu. (Isi besar untuk Dash agar tidak dipakai saat dekat)")]
+    public float minAttackRange = 0f;
+
     [Tooltip("Jarak maksimal serangan ini bisa mengenai player")]
     public float attackRange = 3f;
 
@@ -21,4 +24,14 @@ public class BossAttackPattern : ScriptableObject
 
     [Tooltip("Apakah serangan ini bisa di-parry oleh player?")]
     public bool canBeParried = true;
+
+    [Header("Dash / Charge Settings")]
+    [Tooltip("Centang jika serangan ini adalah tipe berlari maju / menerjang")]
+    public bool isDashAttack = false;
+    
+    [Tooltip("Kecepatan lari maju saat serangan aktif")]
+    public float dashSpeed = 15f;
+    
+    [Tooltip("Jarak maksimal boss melesat maju (Meter)")]
+    public float dashDistance = 10f;
 }

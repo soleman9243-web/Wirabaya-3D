@@ -23,12 +23,12 @@ public class BossArenaManager : MonoBehaviour
     {
         if (bossAI == null)
         {
-            bossAI = FindObjectOfType<BossAI>();
+            bossAI = FindFirstObjectByType<BossAI>();
         }
 
         if (bossUI == null)
         {
-            bossUI = FindObjectOfType<BossUI>();
+            bossUI = FindFirstObjectByType<BossUI>();
         }
 
         if (bossAI != null && bossUI != null)

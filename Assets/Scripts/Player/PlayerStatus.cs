@@ -44,6 +44,10 @@ public class PlayerStatus : MonoBehaviour
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private CinemachineFreeLook deathCamera;
 
+    [Header("VFX")]
+    [Tooltip("Prefab efek darah atau benturan saat player terkena serangan")]
+    [SerializeField] private GameObject hitVfx;
+
     private bool isDead = false;
 
     private void Awake()
@@ -218,10 +222,22 @@ public class PlayerStatus : MonoBehaviour
         StarterAssets.ThirdPersonController tpc = GetComponent<StarterAssets.ThirdPersonController>();
         if (tpc != null && tpc.IsInFinisher) return;
 
+        if (hitVfx != null)
+        {
+            Instantiate(hitVfx, transform.position + Vector3.up * 1.2f, Quaternion.identity);
+        }
+
         health -= damage;
         health = Mathf.Clamp(health, 0, maxHealth);
 
         timeSinceLastHit = 0f;
+
+        // Batalin kesempatan parry kalau sudah terlanjur kena pukul
+        PlayerParry parry = GetComponent<PlayerParry>();
+        if (parry != null)
+        {
+            parry.DisableSpiderSense();
+        }
 
         Debug.Log("Player kena damage: " + damage + " | Sisa HP: " + health);
 

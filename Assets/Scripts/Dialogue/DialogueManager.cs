@@ -96,8 +96,8 @@ public class DialogueManager : MonoBehaviour
         // Cari player inputs & controller jika belum ada
         if (playerInputs == null)
         {
-            playerInputs = FindObjectOfType<StarterAssetsInputs>();
-            playerController = FindObjectOfType<ThirdPersonController>();
+            playerInputs = FindFirstObjectByType<StarterAssetsInputs>();
+            playerController = FindFirstObjectByType<ThirdPersonController>();
             if (playerController != null)
             {
                 playerAnimator = playerController.GetComponent<Animator>();

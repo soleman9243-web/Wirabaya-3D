@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class BossUI : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject bossUIPanel;
-    public Text bossNameText;
+    public TextMeshProUGUI bossNameText;
     public Image healthFill;
     public Image healthEaseFill;
 
@@ -14,7 +15,7 @@ public class BossUI : MonoBehaviour
 
     private float targetFillAmount = 1f;
 
-    private void Start()
+    private void Awake()
     {
         if (bossUIPanel != null)
         {
@@ -35,8 +36,8 @@ public class BossUI : MonoBehaviour
         }
 
         targetFillAmount = 1f;
-        if (healthFill != null) healthFill.fillAmount = 1f;
-        if (healthEaseFill != null) healthEaseFill.fillAmount = 1f;
+        if (healthFill != null) healthFill.rectTransform.localScale = new Vector3(1f, 1f, 1f);
+        if (healthEaseFill != null) healthEaseFill.rectTransform.localScale = new Vector3(1f, 1f, 1f);
     }
 
     public void UpdateHealth(float currentHealth, float maxHealth)
@@ -45,7 +46,7 @@ public class BossUI : MonoBehaviour
         
         if (healthFill != null)
         {
-            healthFill.fillAmount = targetFillAmount;
+            healthFill.rectTransform.localScale = new Vector3(targetFillAmount, 1f, 1f);
         }
     }
 
@@ -53,9 +54,13 @@ public class BossUI : MonoBehaviour
     {
         if (healthEaseFill != null && healthFill != null)
         {
-            if (healthEaseFill.fillAmount != healthFill.fillAmount)
+            float targetScale = healthFill.rectTransform.localScale.x;
+            float currentScale = healthEaseFill.rectTransform.localScale.x;
+
+            if (currentScale != targetScale)
             {
-                healthEaseFill.fillAmount = Mathf.Lerp(healthEaseFill.fillAmount, healthFill.fillAmount, Time.deltaTime * easeSpeed);
+                float newScale = Mathf.Lerp(currentScale, targetScale, Time.deltaTime * easeSpeed);
+                healthEaseFill.rectTransform.localScale = new Vector3(newScale, 1f, 1f);
             }
         }
     }

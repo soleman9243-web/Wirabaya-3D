@@ -43,17 +43,31 @@ public class TargetDetectionControl : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f, whatIsEnemy))
         {
+            Transform targetTransform = null;
+            
             EnemyAI enemy = hit.collider.GetComponentInParent<EnemyAI>();
-
             if (enemy != null)
             {
-                float distance = Vector3.Distance(playerControl.transform.position, enemy.transform.position);
+                targetTransform = enemy.transform;
+            }
+            else
+            {
+                BossAI boss = hit.collider.GetComponentInParent<BossAI>();
+                if (boss != null)
+                {
+                    targetTransform = boss.transform;
+                }
+            }
+
+            if (targetTransform != null)
+            {
+                float distance = Vector3.Distance(playerControl.transform.position, targetTransform.position);
 
                 if (distance <= detectionRange)
                 {
-                    playerControl.ChangeTarget(enemy.transform);
+                    playerControl.ChangeTarget(targetTransform);
 
-                    if (debug) Debug.Log("Target: " + enemy.name);
+                    if (debug) Debug.Log("Target: " + targetTransform.name);
 
                     return; // Target valid ditemukan, keluar dari fungsi
                 }
