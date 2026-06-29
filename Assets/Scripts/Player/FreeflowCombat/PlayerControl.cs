@@ -102,6 +102,10 @@ public class PlayerControl : MonoBehaviour
         {
             attackTrail.emitting = false;
         }
+        if (ghostTrail != null)
+        {
+            ghostTrail.StopTrail();
+        }
     }
 
     public void UnlockWeapon()
@@ -116,6 +120,12 @@ public class PlayerControl : MonoBehaviour
         if (isHitstopping) return;
 
         HandleInput();
+
+        // Failsafe: Pastikan bayangan blur mati kalau lagi nggak nyerang
+        if (!isAttacking && ghostTrail != null)
+        {
+            ghostTrail.StopTrail();
+        }
     }
 
     private void FixedUpdate()
