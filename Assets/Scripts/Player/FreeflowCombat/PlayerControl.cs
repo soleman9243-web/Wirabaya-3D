@@ -43,6 +43,12 @@ public class PlayerControl : MonoBehaviour
     [SerializeField] private GameObject swordInHand;
     [SerializeField] private GameObject swordInSheath;
 
+    [Header("Attack Trail")]
+    [Tooltip("TrailRenderer yang ada di sword/weapon GameObject")]
+    [SerializeField] private TrailRenderer attackTrail;
+    [Tooltip("Berapa detik trail tetap muncul setelah serangan selesai sebelum hilang")]
+    [SerializeField] private float trailHideDelay = 0.3f;
+
     [Header("Item System")]
     public bool isHoldingItem = false;
 
@@ -62,6 +68,7 @@ public class PlayerControl : MonoBehaviour
     private Coroutine rotateRoutine;
     private Coroutine hitstopRoutine;
     private Coroutine sheathFailsafeRoutine; // Coroutine baru untuk pengaman
+    private Coroutine trailHideRoutine;      // Coroutine untuk hide trail setelah delay
 
     private int currentAttackState = 0;
 
@@ -84,6 +91,12 @@ public class PlayerControl : MonoBehaviour
         {
             if (swordInHand != null) swordInHand.SetActive(false);
             if (swordInSheath != null) swordInSheath.SetActive(false);
+        }
+
+        // Pastikan trail mati di awal
+        if (attackTrail != null)
+        {
+            attackTrail.emitting = false;
         }
     }
 
@@ -249,8 +262,49 @@ public class PlayerControl : MonoBehaviour
         thirdPersonController.DisableMovement = false;
         TargetDetectionControl.instance.canChangeTarget = true;
 
+        // Sembunyikan trail setelah delay yang bisa diatur
+        HideTrailWithDelay();
+
         isAttacking = false;
     }
+
+    // ─── Trail Methods ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Dipanggil lewat Animation Event saat frame serangan dimulai.
+    /// Nyalakan trail di sini supaya muncul hanya saat animasi menyerang.
+    /// </summary>
+    public void ShowAttackTrail()
+    {
+        if (attackTrail == null) return;
+
+        // Batalkan coroutine hide yang mungkin sedang berjalan
+        if (trailHideRoutine != null) StopCoroutine(trailHideRoutine);
+
+        attackTrail.Clear();      // Bersihkan sisa trail sebelumnya
+        attackTrail.emitting = true;
+    }
+
+    /// <summary>
+    /// Mulai coroutine untuk menyembunyikan trail setelah trailHideDelay detik.
+    /// Dipanggil otomatis dari ResetAttack().
+    /// </summary>
+    private void HideTrailWithDelay()
+    {
+        if (attackTrail == null) return;
+
+        if (trailHideRoutine != null) StopCoroutine(trailHideRoutine);
+        trailHideRoutine = StartCoroutine(HideTrailRoutine());
+    }
+
+    private IEnumerator HideTrailRoutine()
+    {
+        yield return new WaitForSeconds(trailHideDelay);
+        if (attackTrail != null) attackTrail.emitting = false;
+        trailHideRoutine = null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     public void PerformAttack()
     {

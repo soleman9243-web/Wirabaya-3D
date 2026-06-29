@@ -356,6 +356,7 @@ MonoBehaviour:
   damage3: 25
   playerAnimator: {fileID: 0}
   deathCamera: {fileID: 0}
+  hitVfx: {fileID: 0}
 --- !u!114 &6587180599738422085
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -506,6 +507,9 @@ MonoBehaviour:
   isSwordSheathed: 1
   swordInHand: {fileID: 0}
   swordInSheath: {fileID: 0}
+  attackTrail: {fileID: 0}
+  trailHideDelay: 0.3
+  isHoldingItem: 0
   debug: 0
 --- !u!114 &5914696884341250975
 MonoBehaviour:

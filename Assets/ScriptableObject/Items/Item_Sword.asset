@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: katana
   itemType: 1
   maxStackSize: 1
-  heldModelName: 
+  heldModelName: SwordInHand
   holdingAnimatorParameter: 
   droppedPrefab: {fileID: 0}
   rotationSpeed: 50
