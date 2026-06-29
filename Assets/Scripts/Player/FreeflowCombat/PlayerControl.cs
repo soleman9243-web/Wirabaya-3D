@@ -49,6 +49,10 @@ public class PlayerControl : MonoBehaviour
     [Tooltip("Berapa detik trail tetap muncul setelah serangan selesai sebelum hilang")]
     [SerializeField] private float trailHideDelay = 0.3f;
 
+    [Header("Ghost Trail Effect")]
+    [Tooltip("Script GhostTrail untuk efek bayangan karakter")]
+    [SerializeField] private GhostTrail ghostTrail;
+
     [Header("Item System")]
     public bool isHoldingItem = false;
 
@@ -276,13 +280,19 @@ public class PlayerControl : MonoBehaviour
     /// </summary>
     public void ShowAttackTrail()
     {
-        if (attackTrail == null) return;
+        if (attackTrail != null)
+        {
+            // Batalkan coroutine hide yang mungkin sedang berjalan
+            if (trailHideRoutine != null) StopCoroutine(trailHideRoutine);
 
-        // Batalkan coroutine hide yang mungkin sedang berjalan
-        if (trailHideRoutine != null) StopCoroutine(trailHideRoutine);
+            attackTrail.Clear();      // Bersihkan sisa trail sebelumnya
+            attackTrail.emitting = true;
+        }
 
-        attackTrail.Clear();      // Bersihkan sisa trail sebelumnya
-        attackTrail.emitting = true;
+        if (ghostTrail != null)
+        {
+            ghostTrail.StartTrail();
+        }
     }
 
     /// <summary>
@@ -291,10 +301,16 @@ public class PlayerControl : MonoBehaviour
     /// </summary>
     private void HideTrailWithDelay()
     {
-        if (attackTrail == null) return;
+        if (attackTrail != null)
+        {
+            if (trailHideRoutine != null) StopCoroutine(trailHideRoutine);
+            trailHideRoutine = StartCoroutine(HideTrailRoutine());
+        }
 
-        if (trailHideRoutine != null) StopCoroutine(trailHideRoutine);
-        trailHideRoutine = StartCoroutine(HideTrailRoutine());
+        if (ghostTrail != null)
+        {
+            ghostTrail.StopTrail();
+        }
     }
 
     private IEnumerator HideTrailRoutine()
