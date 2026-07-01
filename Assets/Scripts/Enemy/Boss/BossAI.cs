@@ -40,6 +40,21 @@ public class BossAI : MonoBehaviour
     public float runSpeed = 6f;
 
     [Header("Parry & Stagger")]
+    [Tooltip("Efek visual pusing saat boss kena parry")]
+    public GameObject dizzyEffect;
+
+    [System.Serializable]
+    public class PhaseVisual
+    {
+        [Tooltip("Objek/Model/Aura yang akan diaktifkan pada fase ini")]
+        public GameObject visualObject;
+        [Tooltip("Isi jika ganti model agar Animator Boss ikut berubah. Kosongkan jika hanya nambah aura.")]
+        public Animator overrideAnimator;
+    }
+
+    [Header("Phase Visuals")]
+    [Tooltip("Pengaturan visual (dan Animator) per fase. (Indeks 0 = Fase 1, dst)")]
+    public List<PhaseVisual> phaseVisuals;
 
     [Header("Events")]
     public UnityEvent<float, float> OnBossHealthChanged = new UnityEvent<float, float>();
@@ -75,6 +90,9 @@ public class BossAI : MonoBehaviour
         }
 
         if (weaponCollider != null) weaponCollider.enabled = false;
+
+        if (dizzyEffect != null) dizzyEffect.SetActive(false);
+        UpdatePhaseVisuals();
 
         ActiveTarget(false); // Matikan indikator visual saat game baru dimulai
 
@@ -167,8 +185,28 @@ public class BossAI : MonoBehaviour
                 {
                     currentPhaseIndex = i;
                     Debug.Log($"Boss {bossData.bossName} entering Phase {i + 1}");
+                    UpdatePhaseVisuals();
                     // Opsional: Mainkan animasi transisi fase
                 }
+            }
+        }
+    }
+
+    private void UpdatePhaseVisuals()
+    {
+        for (int i = 0; i < phaseVisuals.Count; i++)
+        {
+            bool isCurrentPhase = (i == currentPhaseIndex);
+
+            if (phaseVisuals[i].visualObject != null)
+            {
+                phaseVisuals[i].visualObject.SetActive(isCurrentPhase);
+            }
+
+            // Ganti referensi animator jika kita di fase yang benar dan ada overrideAnimator
+            if (isCurrentPhase && phaseVisuals[i].overrideAnimator != null)
+            {
+                animator = phaseVisuals[i].overrideAnimator;
             }
         }
     }
@@ -365,11 +403,13 @@ public class BossAI : MonoBehaviour
     {
         isStaggered = true;
         if (animator != null) animator.SetTrigger("Stagger");
+        if (dizzyEffect != null) dizzyEffect.SetActive(true);
 
         yield return new WaitForSeconds(2.5f); // Waktu boss terdiam saat kena parry
 
         isStaggered = false;
         if (animator != null) animator.SetTrigger("Recover");
+        if (dizzyEffect != null) dizzyEffect.SetActive(false);
 
         // Mulai ulang rutinitas combat
         combatCoroutine = StartCoroutine(CombatRoutine());

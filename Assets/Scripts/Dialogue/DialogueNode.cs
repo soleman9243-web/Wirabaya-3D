@@ -16,8 +16,16 @@ public class DialogueChoice
     public int nextNodeId = -1;
 }
 
+public enum DialogueCameraType
+{
+    NPC,
+    Player,
+    Choice,
+    None
+}
+
 [Serializable]
-public class DialogueNode
+public class DialogueNode : ISerializationCallbackReceiver
 {
     public string speakerName;
     [TextArea(3, 5)]
@@ -29,8 +37,28 @@ public class DialogueNode
     public DialogueChoice[] choices;
 
     [Header("Cinemachine")]
-    [Tooltip("Optional: Tag or name of the virtual camera to switch to (e.g., 'PlayerCam', 'NPCCam', 'ChoiceCam')")]
-    public string cameraID;
+    [Tooltip("Pilih kamera mana yang ingin diaktifkan saat dialog ini muncul.")]
+    public DialogueCameraType cameraType = DialogueCameraType.NPC;
+    
+    [HideInInspector]
+    public string cameraID; // Disembunyikan, hanya untuk migrasi data lama
+
+    public void OnBeforeSerialize() {}
+    
+    public void OnAfterDeserialize()
+    {
+        // Migrasi data otomatis: jika ada string lama, ubah ke Enum lalu hapus string-nya
+        if (!string.IsNullOrEmpty(cameraID))
+        {
+            string lower = cameraID.ToLower();
+            if (lower.Contains("npc")) cameraType = DialogueCameraType.NPC;
+            else if (lower.Contains("player")) cameraType = DialogueCameraType.Player;
+            else if (lower.Contains("choice")) cameraType = DialogueCameraType.Choice;
+            else cameraType = DialogueCameraType.None;
+            
+            cameraID = ""; 
+        }
+    }
 
     [Header("Linear Flow")]
     [Tooltip("Jika dicentang, dialog akan LANGSUNG BERHENTI setelah teks ini selesai dibaca.")]

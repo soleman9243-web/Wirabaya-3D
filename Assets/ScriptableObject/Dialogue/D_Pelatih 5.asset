@@ -20,44 +20,48 @@ MonoBehaviour:
     choices:
     - choiceText: Terlalu Mudah
       branchNodes:
-      - speakerName: Wirabaya
-        dialogueText: Itu ujian yang terlalu mudah bagiku.
+      - speakerName: 
+        dialogueText: 
         hasChoices: 0
         choices: []
-        cameraID: Player
+        cameraType: 0
+        cameraID: 
         endDialogueAfterThis: 0
         jumpToNode: 0
         nextNodeId: 0
-      - speakerName: Pelatih
-        dialogueText: Jangan sombong dulu, Nak. Ingatlah bahwa musuh di luar sana
-          jauh lebih buas daripada tumpukan kayu.
+      - speakerName: 
+        dialogueText: 
         hasChoices: 0
         choices: []
-        cameraID: NPC
+        cameraType: 0
+        cameraID: 
         endDialogueAfterThis: 0
         jumpToNode: 0
         nextNodeId: 0
       nextNodeId: 0
     - choiceText: Terimakasih
       branchNodes:
-      - speakerName: Wirabaya
-        dialogueText: Terima kasih atas semua bimbingannya, Pelatih.
+      - speakerName: 
+        dialogueText: 
         hasChoices: 0
         choices: []
-        cameraID: Player
+        cameraType: 0
+        cameraID: 
         endDialogueAfterThis: 0
         jumpToNode: 0
         nextNodeId: 0
-      - speakerName: Pelatih
-        dialogueText: Sama-sama. Kau berhak mendapatkannya atas kerja kerasmu.
+      - speakerName: 
+        dialogueText: 
         hasChoices: 0
         choices: []
-        cameraID: NPC
+        cameraType: 0
+        cameraID: 
         endDialogueAfterThis: 0
         jumpToNode: 0
         nextNodeId: 0
       nextNodeId: 0
-    cameraID: NPC
+    cameraType: 0
+    cameraID: 
     endDialogueAfterThis: 0
     jumpToNode: 0
     nextNodeId: 0
@@ -65,7 +69,8 @@ MonoBehaviour:
     dialogueText: Lalu apa langkah saya selanjutnya?
     hasChoices: 0
     choices: []
-    cameraID: Player
+    cameraType: 1
+    cameraID: 
     endDialogueAfterThis: 0
     jumpToNode: 0
     nextNodeId: 0
@@ -74,7 +79,8 @@ MonoBehaviour:
       akan segera mengujimu. Semoga berhasil!
     hasChoices: 0
     choices: []
-    cameraID: NPC
+    cameraType: 0
+    cameraID: 
     endDialogueAfterThis: 0
     jumpToNode: 0
     nextNodeId: 0

@@ -7,6 +7,6 @@ public class TimelineSceneLoader : MonoBehaviour
     public void LoadScene(string sceneName)
     {
         Debug.Log("Pindah ke scene: " + sceneName);
-        SceneManager.LoadScene(sceneName);
+        SceneManager.LoadScene(sceneName); // Langsung pindah karena animasi fade sudah diatur di Timeline
     }
 }

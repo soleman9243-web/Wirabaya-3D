@@ -819,8 +819,13 @@ MonoBehaviour:
   - {fileID: 2740648555542023099}
   hitParticle: {fileID: 198238514888277984, guid: a2fb9b0b61d53f84fa1ad79391935742, type: 3}
   cameraFocusPoint: {fileID: 0}
+  dropPrefab: {fileID: 0}
+  dropAmount: 3
+  dropSpawnPoint: {fileID: 0}
   currentHits: 0
+  currentFails: 0
   fallingTrunk: {fileID: 4536674683879647046}
+  dissolveMaterial: {fileID: 0}
   fallDuration: 1.5
   dissolveDuration: 2
   fallRotationAxis: {x: 1, y: 0, z: 0}

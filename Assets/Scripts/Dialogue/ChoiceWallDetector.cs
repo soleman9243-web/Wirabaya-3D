@@ -44,20 +44,11 @@ public class ChoiceWallDetector : MonoBehaviour
                 Vector3 dirToTarget = (targetPos - camPos).normalized;
                 float distToTarget = Vector3.Distance(camPos, targetPos);
 
-                // Debug visualisasi garis di tab Scene (Merah = Kena tembok, Hijau = Aman)
-                Debug.DrawLine(camPos, targetPos, Color.green);
-
                 RaycastHit hit;
                 // Tarik garis (Raycast) dari KAMERA ke TARGET (untuk mencegah bug jika target berada di dalam tembok)
                 if (Physics.Raycast(camPos, dirToTarget, out hit, distToTarget, obstacleLayer))
                 {
                     isBlocked = true;
-                    Debug.DrawLine(camPos, hit.point, Color.red);
-                    Debug.Log("KAMERA TERHALANG OLEH: " + hit.collider.gameObject.name);
-                }
-                else
-                {
-                    Debug.Log("JALUR KAMERA AMAN! Tidak mendeteksi ada collider di layer Ground/Obstacle.");
                 }
             }
 

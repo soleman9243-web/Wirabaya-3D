@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BearBossData
   m_EditorClassIdentifier: Assembly-CSharp::BossData
   bossName: Hewan yang Kaya
-  maxHealth: 1000
+  maxHealth: 100
   phases:
   - healthThresholdPercentage: 1
     allowedAttacks:

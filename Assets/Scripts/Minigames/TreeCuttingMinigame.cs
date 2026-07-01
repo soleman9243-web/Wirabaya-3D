@@ -165,7 +165,7 @@ public class TreeCuttingMinigame : MonoBehaviour
             
             playerTransform.position = newPos;
 
-            // 3. Putar badan pemain menghadap persis ke tengah pohon
+            // 4. Putar badan pemain menghadap persis ke tengah pohon
             Vector3 lookPos = currentTree.transform.position;
             lookPos.y = playerTransform.position.y;
             playerTransform.LookAt(lookPos);
@@ -181,6 +181,14 @@ public class TreeCuttingMinigame : MonoBehaviour
             if (playerMovement == null) playerMovement = playerTransform.GetComponent("StarterAssets.ThirdPersonController") as MonoBehaviour;
             
             if (playerMovement != null) playerMovement.enabled = false;
+
+            // 4. Putar pohon agar bagian depannya (tempat luka tebangan 3D) selalu menghadap pemain
+            if (dirToPlayer != Vector3.zero)
+            {
+                // Karena posisinya terbalik, kita memutar rotasinya 180 derajat (atau menggunakan -dirToPlayer)
+                // agar bagian luka yang ada di belakang berputar ke depan menghadap player.
+                currentTree.transform.rotation = Quaternion.LookRotation(-dirToPlayer);
+            }
         }
 
         // Reset state

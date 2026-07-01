@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using Cinemachine;
 using StarterAssets;
 
@@ -134,7 +135,7 @@ public class DialogueManager : MonoBehaviour
         if (playerAnimator != null)
         {
             playerAnimator.SetFloat("Speed", 0f);
-            playerAnimator.SetFloat("MotionSpeed", 0f);
+            playerAnimator.SetFloat("MotionSpeed", 1f); // SET KE 1 AGAR IDLE TIDAK KE-PAUSE
         }
 
         // Bikin Saling Hadap
@@ -182,11 +183,18 @@ public class DialogueManager : MonoBehaviour
         currentNodeIndex = index;
 
         DialogueNode node = currentBranch[index];
+        if (node == null)
+        {
+            Debug.LogError($"[DialogueManager] DialogueNode at index {index} is NULL! Pastikan tidak ada elemen kosong di Inspector DialogueData.");
+            EndDialogue();
+            return;
+        }
+
         speakerNameText.text = node.speakerName;
         
         // Handle Camera & Animasi
-        SwitchCamera(node.cameraID);
-        SetTalkingAnimation(node.cameraID);
+        SwitchCamera(node.cameraType.ToString());
+        SetTalkingAnimation(node.cameraType.ToString());
 
         // Clear choices
         isShowingChoices = false;
@@ -229,10 +237,12 @@ public class DialogueManager : MonoBehaviour
         }
         isTyping = false;
         
-        // Berhenti bicara saat teks selesai
-        SetTalkingAnimation("None");
-
-        if (node.hasChoices)
+        // Berhenti bicara saat teks selesai, kecuali jika ada pilihan (agar animasi tidak berhenti)
+        if (!node.hasChoices)
+        {
+            SetTalkingAnimation("None");
+        }
+        else
         {
             ShowChoices(node);
         }
@@ -242,10 +252,10 @@ public class DialogueManager : MonoBehaviour
     {
         if (!subtitlePanel.activeSelf) return;
 
-        // Advance dialogue on Left Click, Space, or Enter
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             DialogueNode node = currentBranch[currentNodeIndex];
+            if (node == null) return; // Mencegah error jika node null
 
             if (isTyping)
             {
@@ -253,9 +263,12 @@ public class DialogueManager : MonoBehaviour
                 StopCoroutine(typingCoroutine);
                 dialogueText.text = node.dialogueText;
                 isTyping = false;
-                SetTalkingAnimation("None");
                 
-                if (node.hasChoices)
+                if (!node.hasChoices)
+                {
+                    SetTalkingAnimation("None");
+                }
+                else
                 {
                     ShowChoices(node);
                 }
@@ -342,6 +355,16 @@ public class DialogueManager : MonoBehaviour
                     {
                         btn.onClick.AddListener(() => OnChoiceSelected(nIndex, cIndex, choice));
                     }
+
+                    // --- Tambahan Efek Hover Smooth Munculkan Background ---
+                    Image bgImage = btnObj.GetComponent<Image>();
+                    if (bgImage != null)
+                    {
+                        ButtonHoverFade fader = btnObj.GetComponent<ButtonHoverFade>();
+                        if (fader == null) fader = btnObj.AddComponent<ButtonHoverFade>();
+                        fader.bgImage = bgImage;
+                    }
+                    // ------------------------------------------------
                 }
             }
         }
@@ -410,6 +433,7 @@ public class DialogueManager : MonoBehaviour
 
     private void EndDialogue()
     {
+        SetTalkingAnimation("None");
         subtitlePanel.SetActive(false);
         isShowingChoices = false;
         
@@ -449,4 +473,57 @@ public class DialogueManager : MonoBehaviour
 
         onDialogueComplete?.Invoke();
     }
+
+public class ButtonHoverFade : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+{
+    public Image bgImage;
+    public float fadeSpeed = 10f; // Kecepatan transisi fade
+
+    private Coroutine fadeCoroutine;
+
+    private void Awake()
+    {
+        if (bgImage == null) bgImage = GetComponent<Image>();
+        
+        // Pastikan di awal alpha-nya 0 (transparan)
+        if (bgImage != null)
+        {
+            Color c = bgImage.color;
+            c.a = 0f;
+            bgImage.color = c;
+        }
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (fadeCoroutine != null) StopCoroutine(fadeCoroutine);
+        fadeCoroutine = StartCoroutine(FadeTo(1f));
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (fadeCoroutine != null) StopCoroutine(fadeCoroutine);
+        fadeCoroutine = StartCoroutine(FadeTo(0f));
+    }
+
+    private IEnumerator FadeTo(float targetAlpha)
+    {
+        if (bgImage == null) yield break;
+
+        Color c = bgImage.color;
+        
+        // Lakukan interpolasi agar nilainya smooth berubah perlahan
+        while (Mathf.Abs(c.a - targetAlpha) > 0.01f)
+        {
+            c.a = Mathf.Lerp(c.a, targetAlpha, Time.deltaTime * fadeSpeed);
+            bgImage.color = c;
+            yield return null;
+        }
+
+        // Setel nilai pastinya di akhir agar tidak tanggung
+        c.a = targetAlpha;
+        bgImage.color = c;
+    }
+}
+
 }
