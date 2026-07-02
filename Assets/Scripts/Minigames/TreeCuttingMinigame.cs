@@ -498,5 +498,3 @@ public class TreeCuttingMinigame : MonoBehaviour
         }
     }
 }
-
-

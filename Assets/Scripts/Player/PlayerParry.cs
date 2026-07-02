@@ -215,4 +215,3 @@ public class PlayerParry : MonoBehaviour
         if (tpc != null) tpc.IsInFinisher = false;
     }
 }
-

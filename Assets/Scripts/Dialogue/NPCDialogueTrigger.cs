@@ -68,5 +68,3 @@ public class NPCDialogueTrigger : MonoBehaviour
         onDialogueEnd?.Invoke();
     }
 }
-
-
