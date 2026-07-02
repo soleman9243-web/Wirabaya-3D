@@ -1,5 +1,5 @@
 using System;
-using Unity.Cinemachine;
+using Cinemachine;
 using UnityEngine;
 using UnityEditor;
 
@@ -68,7 +68,7 @@ namespace Unity.FantasyKingdom
         [Header("Refs")]
         [SerializeField]
         [Tooltip("The Cinemachine Virtual Camera to be controlled by the controller.")]
-        public CinemachineCamera VirtualCamera;
+        public CinemachineVirtualCamera VirtualCamera;
 
         [SerializeField]
         [Tooltip("The target for the camera to follow.")]
@@ -101,7 +101,7 @@ namespace Unity.FantasyKingdom
 
         private IInputProvider _inputProvider;
         private Vector2 _currentMousePosition;
-        private CinemachinePositionComposer _framingTransposer;
+        private CinemachineFramingTransposer _framingTransposer;
         private GameObject _virtualCameraGameObject;
         private float _currentCameraZoom;
         private float _currentCameraRotate;
@@ -137,8 +137,8 @@ namespace Unity.FantasyKingdom
         {
             currentSettings = Settings[0];
             _virtualCameraGameObject = VirtualCamera.gameObject;
-            _framingTransposer = VirtualCamera.GetComponent<CinemachinePositionComposer>();
-            _currentCameraZoom = _framingTransposer.CameraDistance;
+            _framingTransposer = VirtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
+            _currentCameraZoom = _framingTransposer.m_CameraDistance;
             _startingZoomLevel = _currentCameraZoom;
             _targetCameraRotate = _virtualCameraGameObject.transform.localRotation.eulerAngles.y;
             _currentCameraRotate = _targetCameraRotate;
@@ -359,7 +359,7 @@ namespace Unity.FantasyKingdom
             {
                 if (zoomInput != 0)
                 {
-                    _startingZoomLevel = _framingTransposer.CameraDistance;
+                    _startingZoomLevel = _framingTransposer.m_CameraDistance;
                     _zoomDone = false;
                 }
                 _currentCameraZoom -= zoomInput * currentSettings.CameraZoomSpeed;
@@ -367,7 +367,7 @@ namespace Unity.FantasyKingdom
             }
             
             // It's important for this value to be the real distance between the target and the camera,
-            // not _framingTransposer.CameraDistance, which is the distance the camera eases towards,
+            // not _framingTransposer.m_CameraDistance, which is the distance the camera eases towards,
             // as the real distance has to be used to lerp fog properties.
             float cameraDistance = (CameraTarget.position - VirtualCamera.transform.position).magnitude;
             
@@ -404,7 +404,7 @@ namespace Unity.FantasyKingdom
                 }
             }
             
-            _framingTransposer.CameraDistance = Mathf.Lerp(_startingZoomLevel, _currentCameraZoom, t / currentSettings.CameraZoomSmoothTime);
+            _framingTransposer.m_CameraDistance = Mathf.Lerp(_startingZoomLevel, _currentCameraZoom, t / currentSettings.CameraZoomSmoothTime);
             
             if (Mathf.Abs(cameraDistance - _currentCameraZoom) < 5.0f)
             {
@@ -413,8 +413,8 @@ namespace Unity.FantasyKingdom
                   _zoomDone = true;
                     t = 0;
                     _prevZoomIndex = _zoomLevelIndex;
-                    _framingTransposer.CameraDistance = _currentCameraZoom;
-                    _startingZoomLevel = _framingTransposer.CameraDistance;
+                    _framingTransposer.m_CameraDistance = _currentCameraZoom;
+                    _startingZoomLevel = _framingTransposer.m_CameraDistance;
                     if (currentSettings.IsRestricted)
                     {
                         OnZoomDone?.Invoke(this, new OnZoomDoneEventArgs
@@ -457,7 +457,7 @@ namespace Unity.FantasyKingdom
                 minZoom = currentSettings.CameraZoomMin;
             }
 
-            float relativeZoomCameraMoveSpeed = _framingTransposer.CameraDistance / minZoom;
+            float relativeZoomCameraMoveSpeed = _framingTransposer.m_CameraDistance / minZoom;
             Vector3 camForward = _virtualCameraGameObject.transform.forward;
             Vector3 camRight = _virtualCameraGameObject.transform.right;
             camForward.y = 0f;
@@ -516,3 +516,4 @@ namespace Unity.FantasyKingdom
 
     }
 }
+

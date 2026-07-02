@@ -69,3 +69,5 @@ public class BossTrigger : MonoBehaviour
         SceneManager.LoadScene(bossSceneName);
     }
 }
+
+

@@ -9561,6 +9561,10 @@ PrefabInstance:
       propertyPath: frontCanvas
       value: 
       objectReference: {fileID: 1422941830}
+    - target: {fileID: 3372686199482082213, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+      propertyPath: obstacleLayer.m_Bits
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4009775649484065458, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -9632,6 +9636,14 @@ PrefabInstance:
     - target: {fileID: 6220736131757287576, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: field of view
       value: 60.000004
+      objectReference: {fileID: 0}
+    - target: {fileID: 6220736131757287576, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+      propertyPath: far clip plane
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 6220736131757287576, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+      propertyPath: orthographic size
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6220736131757287583, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalPosition.x

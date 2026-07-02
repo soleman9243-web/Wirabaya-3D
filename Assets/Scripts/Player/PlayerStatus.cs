@@ -295,3 +295,4 @@ public class PlayerStatus : MonoBehaviour
         SceneManager.LoadScene("LoseScene");
     }
 }
+

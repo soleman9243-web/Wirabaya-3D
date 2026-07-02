@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using Unity.Cinemachine;
+using Cinemachine;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -16,7 +16,7 @@ namespace Unity.FantasyKingdom
     {
         public QualitySettingsController qualityController;
         public GameObject VolumeHolder;
-        public CinemachineCamera VirtualCamera;
+        public CinemachineVirtualCamera VirtualCamera;
         private Volume freeCamVolume;
         
         public RTSCameraController camController;
@@ -110,8 +110,8 @@ namespace Unity.FantasyKingdom
             else if (targetZoomLevel < currentZoomLevel)
                 volumes[currentZoomLevel].weight = Mathf.Lerp(1, 0, t);
             urp.shadowDistance = Mathf.Lerp(args.prevShadowDist, args.shadowDist, t);
-            VirtualCamera.Lens.NearClipPlane = Mathf.Lerp(args.prevData.CameraNearPlane, args.data.CameraNearPlane, t);
-            VirtualCamera.Lens.FarClipPlane = Mathf.Lerp(args.prevData.CameraFarPlane, args.data.CameraFarPlane, t);
+            VirtualCamera.m_Lens.NearClipPlane = Mathf.Lerp(args.prevData.CameraNearPlane, args.data.CameraNearPlane, t);
+            VirtualCamera.m_Lens.FarClipPlane = Mathf.Lerp(args.prevData.CameraFarPlane, args.data.CameraFarPlane, t);
         }
         private void ZoomDone(object sender, OnZoomDoneEventArgs args)
         {
@@ -122,8 +122,8 @@ namespace Unity.FantasyKingdom
                 volumes[currentZoomLevel].weight = 0;
             currentZoomLevel = args.zoomLevel;
             urp.shadowDistance = args.shadowDist;
-            VirtualCamera.Lens.NearClipPlane = args.data.CameraNearPlane;
-            VirtualCamera.Lens.FarClipPlane = args.data.CameraFarPlane;
+            VirtualCamera.m_Lens.NearClipPlane = args.data.CameraNearPlane;
+            VirtualCamera.m_Lens.FarClipPlane = args.data.CameraFarPlane;
         }
         
         private void StartLerpFog(object sender, OnCameraSettingsChangedEventArgs args)
@@ -170,8 +170,8 @@ namespace Unity.FantasyKingdom
                     QualitySettings.lodBias = 50000;
                 }
             }
-            float nearClip = VirtualCamera.Lens.NearClipPlane;
-            float farClip = VirtualCamera.Lens.FarClipPlane; 
+            float nearClip = VirtualCamera.m_Lens.NearClipPlane;
+            float farClip = VirtualCamera.m_Lens.FarClipPlane; 
             while (time < LerpTime)
             {
                 float t = time / LerpTime;
@@ -181,12 +181,12 @@ namespace Unity.FantasyKingdom
                 // freeCamVolume has higher priority than all the other volumes, so we just fade it in or out
                 freeCamVolume.weight = settingsIndex == 1 ? Mathf.Lerp(0, 1, t) : Mathf.Lerp(1, 0, t);
                 time += Time.deltaTime;
-                VirtualCamera.Lens.NearClipPlane = Mathf.Lerp(nearClip, near, t);
-                VirtualCamera.Lens.FarClipPlane = Mathf.Lerp(farClip,far, t);
+                VirtualCamera.m_Lens.NearClipPlane = Mathf.Lerp(nearClip, near, t);
+                VirtualCamera.m_Lens.FarClipPlane = Mathf.Lerp(farClip,far, t);
                 yield return null;
             }
-            VirtualCamera.Lens.NearClipPlane = near;
-            VirtualCamera.Lens.FarClipPlane = far;
+            VirtualCamera.m_Lens.NearClipPlane = near;
+            VirtualCamera.m_Lens.FarClipPlane = far;
             freeCamVolume.weight = settingsIndex == 1 ? 1 : 0;
 
         }
@@ -226,3 +226,4 @@ namespace Unity.FantasyKingdom
         }
     }
 }
+
