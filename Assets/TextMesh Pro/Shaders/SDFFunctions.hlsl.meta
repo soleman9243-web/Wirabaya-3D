@@ -8,3 +8,10 @@ ShaderImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 298128
+  packageName: Fantasy Kingdom in Unity 6 | URP
+  packageVersion: 1.0
+  assetPath: Assets/TextMesh Pro/Shaders/SDFFunctions.hlsl
+  uploadId: 703470
