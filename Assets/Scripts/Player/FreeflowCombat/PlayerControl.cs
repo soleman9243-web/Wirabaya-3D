@@ -27,6 +27,12 @@ public class PlayerControl : MonoBehaviour
 
     [SerializeField] private LayerMask enemyLayer;
 
+    [Header("Attack Input Settings")]
+    [Tooltip("Durasi menahan tombol (dalam detik) untuk memicu Heavy Attack")]
+    [SerializeField] private float heavyAttackHoldDuration = 0.4f;
+    private float attackHoldTime = 0f;
+    private bool isHoldingAttack = false;
+
     [Header("Hitstop & Camera Shake Settings")]
     [SerializeField] private float quickAttackHitstopDuration = 0.07f;
     [SerializeField] private float heavyAttackHitstopDuration = 0.15f;
@@ -142,8 +148,38 @@ public class PlayerControl : MonoBehaviour
     {
         if (isSheathingAnim) return;
 
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.J)) Attack(0);
-        if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.K)) Attack(1);
+        // Mulai hold input serangan (Klik Kiri / J)
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.J))
+        {
+            isHoldingAttack = true;
+            attackHoldTime = 0f;
+        }
+
+        // Selama tombol ditahan
+        if (isHoldingAttack && (Input.GetMouseButton(0) || Input.GetKey(KeyCode.J)))
+        {
+            attackHoldTime += Time.deltaTime;
+            
+            // Jika ditahan lebih lama dari batas waktu, otomatis memicu Heavy Attack
+            if (attackHoldTime >= heavyAttackHoldDuration)
+            {
+                Attack(1); // 1 = Heavy Attack
+                isHoldingAttack = false;
+            }
+        }
+
+        // Jika dilepas sebelum batas waktu tercapai, picu Quick Attack
+        if (Input.GetMouseButtonUp(0) || Input.GetKeyUp(KeyCode.J))
+        {
+            if (isHoldingAttack)
+            {
+                if (attackHoldTime < heavyAttackHoldDuration)
+                {
+                    Attack(0); // 0 = Quick Attack
+                }
+                isHoldingAttack = false;
+            }
+        }
 
         if (hasSwordEquipped && Input.GetKeyDown(KeyCode.R))
         {

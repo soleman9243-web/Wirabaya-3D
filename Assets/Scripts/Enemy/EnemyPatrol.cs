@@ -6,10 +6,16 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyPatrol : MonoBehaviour
 {
+    public enum CombatMovementStyle { CircleStrafe, KeepDistance, Aggressive }
+
     [Header("Freeflow Combat Settings")]
     [Tooltip("Gunakan sistem keroyokan Arkham Style? Jika ya, pastikan attackInterval di EnemyAI lama di-set ke 9999.")]
     public bool useFreeflowCombat = true;
+    [Tooltip("Pilih pergerakan saat musuh menunggu giliran memukul.")]
+    public CombatMovementStyle movementStyle = CombatMovementStyle.CircleStrafe;
     public float circleRadius = 4f;
+    [Tooltip("Hanya untuk mode KeepDistance: Jarak yang dipertahankan dari player.")]
+    public float keepDistanceRadius = 5f;
     [Tooltip("Jarak seberapa dekat musuh maju sebelum memukul. Biasanya 1.5 atau 2 meter.")]
     public float meleeAttackDistance = 1.5f;
 
@@ -195,13 +201,55 @@ public class EnemyPatrol : MonoBehaviour
             }
             else
             {
-                // Mengitari player
-                if (agent.isStopped) agent.isStopped = false;
-                agent.speed = patrolSpeed; // Jalan pelan saat mengelilingi
-                agent.stoppingDistance = 0.5f;
+                // Musuh menunggu giliran menyerang
+                switch (movementStyle)
+                {
+                    case CombatMovementStyle.CircleStrafe:
+                        // Mengitari player menyamping
+                        if (agent.isStopped) agent.isStopped = false;
+                        agent.speed = patrolSpeed;
+                        agent.stoppingDistance = 0.5f;
+                        Vector3 circlePos = EnemyCombatManager.Instance.GetCirclePosition(this, circleRadius);
+                        agent.SetDestination(circlePos);
+                        break;
 
-                Vector3 circlePos = EnemyCombatManager.Instance.GetCirclePosition(this, circleRadius);
-                agent.SetDestination(circlePos);
+                    case CombatMovementStyle.KeepDistance:
+                        // Untuk hewan / musuh yang menjaga jarak
+                        float dist = Vector3.Distance(transform.position, enemyAI.player.position);
+                        agent.speed = patrolSpeed;
+                        
+                        if (dist < keepDistanceRadius - 1f)
+                        {
+                            // Player terlalu dekat, mundur 
+                            if (agent.isStopped) agent.isStopped = false;
+                            Vector3 dirAway = (transform.position - enemyAI.player.position).normalized;
+                            agent.SetDestination(transform.position + dirAway * 2f);
+                            agent.stoppingDistance = 0f;
+                        }
+                        else if (dist > keepDistanceRadius + 1f)
+                        {
+                            // Terlalu jauh, maju mendekati radius
+                            if (agent.isStopped) agent.isStopped = false;
+                            agent.SetDestination(enemyAI.player.position);
+                            agent.stoppingDistance = keepDistanceRadius;
+                        }
+                        else
+                        {
+                            // Jarak pas, diam di tempat
+                            if (!agent.isStopped) agent.isStopped = true;
+                        }
+                        break;
+
+                    case CombatMovementStyle.Aggressive:
+                        // Terus maju menempel player (agresif) walau tidak menyerang, tanpa mengitari
+                        if (agent.isStopped) agent.isStopped = false;
+                        agent.speed = patrolSpeed;
+                        agent.SetDestination(enemyAI.player.position);
+                        agent.stoppingDistance = meleeAttackDistance; // Berhenti pas di depan player
+                        break;
+                }
+                
+                // Selalu pastikan musuh menatap player saat menunggu giliran
                 FaceTarget(enemyAI.player.position);
             }
         }
@@ -424,8 +472,8 @@ public class EnemyPatrol : MonoBehaviour
 
             if (!string.IsNullOrEmpty(strafeXAnimatorParameter) && !string.IsNullOrEmpty(strafeYAnimatorParameter))
             {
-                // Cek apakah musuh sedang dalam mode mengitari player (circling)
-                bool isCircling = (useFreeflowCombat && enemyAI.isAlerted && !hasAttackToken && EnemyCombatManager.Instance != null);
+                // Hanya gunakan mode circling (X menyamping) jika movement style adalah CircleStrafe
+                bool isCircling = (useFreeflowCombat && enemyAI.isAlerted && !hasAttackToken && EnemyCombatManager.Instance != null && movementStyle == CombatMovementStyle.CircleStrafe);
 
                 if (isCircling)
                 {
@@ -436,9 +484,13 @@ public class EnemyPatrol : MonoBehaviour
                 }
                 else
                 {
-                    // Saat jalan biasa (patroli) atau lari mengejar (punya token), matikan gerakan menyamping (X = 0)
-                    // Lempar semua kecepatan ke sumbu Y (Maju) agar animasi lurusnya terlihat bagus
+                    // Paksa gerakan menyamping (X = 0) agar hewan/agresif tidak "menggeret" ke samping
                     enemyAI.EnemyAnimator.SetFloat(strafeXAnimatorParameter, 0f);
+
+                    // Karena animasi mundur tidak ada, jika hewan bergerak mundur menjauhi player,
+                    // dia akan memutar animasi jalan maju (terlihat seperti moonwalk) karena kita mengoper nilai kecepatan positif.
+                    // Jika kamu ingin dia tergelincir diam saat mundur, bisa dikasih logic: if (localZ < 0) SetFloat(Y, 0).
+                    // Tapi moonwalk biasanya lebih oke daripada diam mematung.
                     enemyAI.EnemyAnimator.SetFloat(strafeYAnimatorParameter, currentSpeed);
                 }
             }
