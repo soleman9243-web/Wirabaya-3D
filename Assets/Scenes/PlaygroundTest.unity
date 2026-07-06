@@ -4232,7 +4232,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 883021462}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.05766887, y: 0.9214921, z: -0.15035467, w: 0.35344034}
+  m_LocalRotation: {x: 0.057668872, y: 0.9214921, z: -0.1503547, w: 0.3534403}
   m_LocalPosition: {x: -1.181, y: 1.674, z: 1.304}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -9232,6 +9232,10 @@ PrefabInstance:
     - target: {fileID: 2996078575457265250, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4009775649484065458, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4877860848507772114, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalRotation.x
@@ -23487,8 +23491,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueTrigger
   dialogue: {fileID: 11400000, guid: 600bccdeb4d555e4bb0bd70944c39703, type: 2}
   npcCamera: {fileID: 7974145161818946494}
-  playerCamera: {fileID: 0}
-  choiceCamera: {fileID: 0}
+  playerCamera: {fileID: 2712697032603734780}
+  choiceCamera: {fileID: 8352161494086355029}
   npcAnimator: {fileID: 6176366514235174153}
   onDialogueEnd:
     m_PersistentCalls:
@@ -23532,7 +23536,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2
-  m_BaseOffset: 0
+  m_BaseOffset: -0.1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!4 &8420107762112172450
