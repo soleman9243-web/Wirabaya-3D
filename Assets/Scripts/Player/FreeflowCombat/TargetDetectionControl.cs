@@ -32,10 +32,17 @@ public class TargetDetectionControl : MonoBehaviour
 
     public void DetectTargetByMouse()
     {
-        // Jika sedang menyerang, atau pedang belum dicabut, atau sedang melakukan takedown
-        if (!canChangeTarget || playerControl.isSwordSheathed || playerControl.GetComponent<StarterAssets.ThirdPersonController>().IsInFinisher)
+        // Jika pedang belum dicabut, atau sedang melakukan takedown
+        if (playerControl.isSwordSheathed || playerControl.GetComponent<StarterAssets.ThirdPersonController>().IsInFinisher)
         {
             playerControl.NoTarget();
+            return;
+        }
+
+        // Jika sedang di-lock (karena hold attack atau sedang dalam animasi serangan), 
+        // pertahankan target saat ini dan jangan mencari target baru.
+        if (!canChangeTarget)
+        {
             return;
         }
 
