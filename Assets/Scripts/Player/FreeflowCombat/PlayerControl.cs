@@ -107,6 +107,29 @@ public class PlayerControl : MonoBehaviour
         if (attackTrail != null)
         {
             attackTrail.emitting = false;
+
+            // --- Peningkatan Visibilitas Trail Senjata (Blur) untuk Grafik Rendah ---
+            // Memaksimalkan alpha pada gradient trail agar solid dan terlihat tebal tanpa efek Bloom
+            Color startCol = attackTrail.startColor;
+            startCol.a = 1f; 
+            attackTrail.startColor = startCol;
+
+            Color endCol = attackTrail.endColor;
+            endCol.a = Mathf.Max(endCol.a, 0.5f); 
+            attackTrail.endColor = endCol;
+
+            // Memperpanjang durasi ekor trail sedikit agar tidak putus-putus atau terlalu pendek saat FPS rendah
+            attackTrail.time = Mathf.Max(attackTrail.time, 0.35f);
+
+            // Opsional: Memperlebar trail sedikit agar lebih tegas
+            attackTrail.widthMultiplier = attackTrail.widthMultiplier * 1.3f;
+
+            if (attackTrail.material != null && attackTrail.material.HasProperty("_BaseColor"))
+            {
+                Color matColor = attackTrail.material.GetColor("_BaseColor");
+                matColor.a = 1f;
+                attackTrail.material.SetColor("_BaseColor", matColor);
+            }
         }
         if (ghostTrail != null)
         {
@@ -144,6 +167,8 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
+    private Transform lockedTargetOnPress;
+
     void HandleInput()
     {
         if (isSheathingAnim) return;
@@ -153,6 +178,9 @@ public class PlayerControl : MonoBehaviour
         {
             isHoldingAttack = true;
             attackHoldTime = 0f;
+            
+            // Simpan target awal saat pencetan pertama (hanya akan digunakan jika jadi Heavy Attack)
+            lockedTargetOnPress = target;
         }
 
         // Selama tombol ditahan
@@ -163,8 +191,15 @@ public class PlayerControl : MonoBehaviour
             // Jika ditahan lebih lama dari batas waktu, otomatis memicu Heavy Attack
             if (attackHoldTime >= heavyAttackHoldDuration)
             {
-                Attack(1); // 1 = Heavy Attack
                 isHoldingAttack = false;
+                
+                // Panggil kembali target yang pertama kali di-lock sebelum nge-hold
+                if (lockedTargetOnPress != null)
+                {
+                    ChangeTarget(lockedTargetOnPress);
+                }
+
+                Attack(1); // 1 = Heavy Attack
             }
         }
 
@@ -173,11 +208,12 @@ public class PlayerControl : MonoBehaviour
         {
             if (isHoldingAttack)
             {
+                isHoldingAttack = false;
                 if (attackHoldTime < heavyAttackHoldDuration)
                 {
+                    // Quick Attack menggunakan target saat ini (bebas pindah dengan cepat)
                     Attack(0); // 0 = Quick Attack
                 }
-                isHoldingAttack = false;
             }
         }
 
@@ -482,7 +518,7 @@ public class PlayerControl : MonoBehaviour
         FaceThis(targetPos);
 
         Vector3 finalPos = TargetOffset(targetPos, deltaDistance);
-        finalPos.y = transform.position.y;
+        // Membiarkan finalPos menggunakan Y dari target agar bisa menyerang miring (ke atas/bawah)
 
         if (moveRoutine != null) StopCoroutine(moveRoutine);
 
@@ -497,7 +533,7 @@ public class PlayerControl : MonoBehaviour
         FaceThis(t);
 
         Vector3 finalPos = TargetOffset(t, 1.4f);
-        finalPos.y = transform.position.y;
+        // Membiarkan Y
 
         if (moveRoutine != null) StopCoroutine(moveRoutine);
         moveRoutine = StartCoroutine(MoveTo(finalPos, 0.2f));
@@ -513,21 +549,17 @@ public class PlayerControl : MonoBehaviour
         {
             time += Time.deltaTime;
             
-            // Hitung posisi selanjutnya berdasarkan interpolasi waktu (Lerp)
+            // Lerp 3D penuh (X, Y, Z)
             Vector3 nextPos = Vector3.Lerp(startPos, targetPos, time / duration);
             
-            // Hitung jarak yang harus ditempuh frame ini
             Vector3 moveDelta = nextPos - transform.position;
             
             if (cc != null && cc.enabled)
             {
-                // Berikan gravitasi secukupnya agar menempel di tanah (jika isGrounded)
-                // Jika sedang melayang, beri gravitasi penuh.
-                // Ini mencegah Player menginjak musuh dan membenamkannya ke tanah!
-                if (!cc.isGrounded) moveDelta.y -= 9.81f * Time.deltaTime;
-                else moveDelta.y -= 1f * Time.deltaTime;
-
-                // Gunakan fungsi Move bawaan Unity agar menabrak collider dengan benar
+                // JANGAN kurangi moveDelta.y dengan gravitasi selama dash berlangsung!
+                // Supaya player bisa benar-benar melesat lurus secara diagonal ke arah target (atas maupun bawah)
+                // tanpa ditarik turun oleh gravitasi palsu yang membuatnya stuck/ngambang salah tempat.
+                
                 cc.Move(moveDelta);
             }
             else
@@ -546,7 +578,10 @@ public class PlayerControl : MonoBehaviour
 
     public Vector3 TargetOffset(Vector3 targetPos, float delta)
     {
-        return Vector3.MoveTowards(targetPos, transform.position, delta);
+        // Hitung arah mundur di bidang XZ saja agar saat menyerang dari atas, 
+        // jarak mundurnya murni secara horizontal (tidak landing di atas kepala musuh)
+        Vector3 playerPosXZ = new Vector3(transform.position.x, targetPos.y, transform.position.z);
+        return Vector3.MoveTowards(targetPos, playerPosXZ, delta);
     }
 
     public void FaceThis(Vector3 targetPos)
