@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 2214129845454480768}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.3796692, y: 0.26197433, z: -0.13785172}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -108,7 +108,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3388803228650947466
 Transform:
   m_ObjectHideFlags: 0
@@ -117,13 +117,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2478643734978314504}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.3796692, y: 0.26197433, z: -0.13785172}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8573804986812611642}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!33 &8993085744219880518
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -200,7 +200,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2822079197563033101
 Transform:
   m_ObjectHideFlags: 0
@@ -209,13 +209,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4223679788668967429}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.3796692, y: 0.26197433, z: -0.13785172}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8573804986812611642}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!33 &6069628165416653400
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -292,7 +292,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &7296183279635338815
 Transform:
   m_ObjectHideFlags: 0
@@ -301,13 +301,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5449421521393930750}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.3796692, y: 0.26197433, z: -0.13785172}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8573804986812611642}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
 --- !u!33 &8954683121093562509
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -376,7 +376,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8573804986812611642}
-  m_Layer: 0
+  - component: {fileID: 2738951538458288561}
+  - component: {fileID: 5863130092901874539}
+  - component: {fileID: 7491664296951499069}
+  m_Layer: 7
   m_Name: Pohon Tebang
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -392,7 +395,7 @@ Transform:
   m_GameObject: {fileID: 6700505352132190484}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -435.31113, y: 33.84663, z: 36.74088}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -403,6 +406,92 @@ Transform:
   - {fileID: 528530929449106283}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2738951538458288561
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6700505352132190484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 470d5e9fc19d3df43ae4d88becfdf577, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CuttableTree
+  treeStages:
+  - {fileID: 8190406793189721734}
+  - {fileID: 2478643734978314504}
+  - {fileID: 5449421521393930750}
+  - {fileID: 4223679788668967429}
+  hitParticle: {fileID: 198238514888277984, guid: a2fb9b0b61d53f84fa1ad79391935742, type: 3}
+  cameraFocusPoint: {fileID: 8573804986812611642}
+  dropPrefab: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
+  dropAmount: 3
+  dropSpawnPoint: {fileID: 0}
+  currentHits: 0
+  currentFails: 0
+  fallingTrunk: {fileID: 2822079197563033101}
+  dissolveMaterial: {fileID: 2100000, guid: 20df751eff41e7d44994b0b1686ca646, type: 2}
+  fallDuration: 1.5
+  dissolveDuration: 2
+  fallRotationAxis: {x: 1, y: 0, z: 0}
+  fallAngle: 90
+--- !u!114 &5863130092901874539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6700505352132190484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b717cf14aca20a4fb31d5fe78f2f5ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractObject
+  interactionText: Pencet F Untuk Menebang
+  useAreaTrigger: 0
+  onInteract:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2738951538458288561}
+        m_TargetAssemblyTypeName: CuttableTree, Assembly-CSharp
+        m_MethodName: InteractWithTree
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  storyEvent: {fileID: 0}
+  objectiveId: 
+  questAmount: 1
+  requireCompletedObjectiveId: 
+  useMinigame: 0
+  disableQuestProgressUntilMinigameComplete: 1
+--- !u!65 &7491664296951499069
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6700505352132190484}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.5, y: 5, z: 0.5}
+  m_Center: {x: 0, y: 2.5, z: 0}
 --- !u!1001 &2058050472813530147
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -413,15 +502,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2778375277922949123, guid: c6095b3b2640bdd4d82a2845c2ac9bb3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.3796692
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2778375277922949123, guid: c6095b3b2640bdd4d82a2845c2ac9bb3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.26197433
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2778375277922949123, guid: c6095b3b2640bdd4d82a2845c2ac9bb3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.13785172
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2778375277922949123, guid: c6095b3b2640bdd4d82a2845c2ac9bb3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -467,5 +556,10 @@ PrefabInstance:
 --- !u!4 &4179744627881088032 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2778375277922949123, guid: c6095b3b2640bdd4d82a2845c2ac9bb3, type: 3}
+  m_PrefabInstance: {fileID: 2058050472813530147}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8190406793189721734 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7864834802093197989, guid: c6095b3b2640bdd4d82a2845c2ac9bb3, type: 3}
   m_PrefabInstance: {fileID: 2058050472813530147}
   m_PrefabAsset: {fileID: 0}
