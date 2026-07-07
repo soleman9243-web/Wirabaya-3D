@@ -28,6 +28,10 @@ public class CuttableTree : MonoBehaviour
     [Header("Fall & Dissolve Animation")]
     [Tooltip("Objek batang pohon (Trunk) yang akan jatuh dan menghilang. Pastikan objek ini adalah bagian dari Stage terakhir (misal child dari Tunggul).")]
     public Transform fallingTrunk;
+    
+    [Tooltip("Objek sisa tebangan (Stump/Tunggul) yang akan otomatis diaktifkan setelah pohon ditebang (Opsional).")]
+    public GameObject cutStump;
+
     [Tooltip("Material yang menggunakan shader Custom/URP_SimpleDissolve (Sama seperti musuh)")]
     public Material dissolveMaterial;
     [Tooltip("Waktu yang dibutuhkan pohon untuk jatuh (detik).")]
@@ -85,6 +89,12 @@ public class CuttableTree : MonoBehaviour
     {
         if (fallingTrunk != null && fallingTrunk.gameObject.activeInHierarchy)
         {
+            // Aktifkan sisa tunggul (stump) secara langsung saat pohon mulai tumbang
+            if (cutStump != null)
+            {
+                cutStump.SetActive(true);
+            }
+
             StartCoroutine(FallAndDissolveRoutine(playerTransform));
             StartCoroutine(SpawnDropsRoutine());
         }
@@ -232,9 +242,9 @@ public class CuttableTree : MonoBehaviour
             
             foreach (Material mat in activeDissolveMaterials)
             {
-                if (mat != null && mat.HasProperty(dissolveAmountProp))
+                if (mat != null)
                 {
-                    mat.SetFloat(dissolveAmountProp, t);
+                    mat.SetFloat("_DissolveAmount", t);
                 }
             }
             yield return null;
