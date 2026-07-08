@@ -13,6 +13,8 @@ public class ScreenFader : MonoBehaviour
 
     [SerializeField] private Image fadeImage;
     [SerializeField] private float fadeDuration = 0.5f;
+    [Tooltip("Pilih apakah layar otomatis pudar dari hitam ke terang saat scene dimulai.")]
+    [SerializeField] private bool fadeInOnStart = true;
 
     private void Awake()
     {
@@ -23,6 +25,19 @@ public class ScreenFader : MonoBehaviour
         }
 
         Instance = this;
+    }
+
+    private void Start()
+    {
+        // Pastikan layar hitam full di awal frame, lalu mulai memudar
+        if (fadeInOnStart && fadeImage != null)
+        {
+            Color c = fadeImage.color;
+            c.a = 1f;
+            fadeImage.color = c;
+            
+            StartCoroutine(FadeIn());
+        }
     }
 
     public IEnumerator FadeOut()

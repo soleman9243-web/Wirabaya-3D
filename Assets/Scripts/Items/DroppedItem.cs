@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -21,6 +22,10 @@ public class DroppedItem : MonoBehaviour
 
     [Header("Physics & Ground Detection")]
     public LayerMask groundLayer = ~0;
+
+    [Header("Events (Optional)")]
+    [Tooltip("Event yang akan terpanggil tepat saat item ini disedot dan masuk ke kantong pemain. Berguna jika item spesifik ditaruh di map.")]
+    public UnityEvent onPickup;
 
     private bool isBeingSucked = false;
     private bool canPickup = false;
@@ -46,7 +51,12 @@ public class DroppedItem : MonoBehaviour
         // Buat SphereCollider otomatis khusus untuk mendeteksi area pickup
         SphereCollider triggerCol = gameObject.AddComponent<SphereCollider>();
         triggerCol.isTrigger = true;
-        if (itemData != null) triggerCol.radius = itemData.pickupRadius;
+        if (itemData != null) 
+        {
+            // Menyesuaikan radius dengan skala objek agar tidak mengecil jika objeknya di-scale down
+            float maxScale = Mathf.Max(transform.lossyScale.x, Mathf.Max(transform.lossyScale.y, transform.lossyScale.z));
+            triggerCol.radius = maxScale > 0 ? itemData.pickupRadius / maxScale : itemData.pickupRadius;
+        }
 
         // Ubah BoxCollider menjadi trigger sesuai permintaan agar tidak ada tabrakan sama sekali
         BoxCollider boxCol = GetComponent<BoxCollider>();
@@ -203,10 +213,10 @@ public class DroppedItem : MonoBehaviour
         {
             PlayerControl playerControl = other.GetComponent<PlayerControl>();
             
-            // Syarat ambil item: Pedang harus disarungkan (sheathed)
-            if (playerControl != null && !playerControl.isSwordSheathed)
+            // Syarat ambil item: Jika sudah punya pedang, pedang harus disarungkan (sheathed)
+            if (playerControl != null && playerControl.hasSwordEquipped && !playerControl.isSwordSheathed)
             {
-                return; // Gagal mengambil karena masih pegang pedang
+                return; // Gagal mengambil karena masih pegang pedang di tangan
             }
 
             PlayerItemController itemController = other.GetComponent<PlayerItemController>();
@@ -237,6 +247,8 @@ public class DroppedItem : MonoBehaviour
         }
     }
 
+    private bool hasBeenPickedUp = false;
+
     private void HandleSuckAnimation()
     {
         // Gerak menuju pemain
@@ -246,9 +258,11 @@ public class DroppedItem : MonoBehaviour
         transform.localScale = Vector3.Lerp(transform.localScale, Vector3.zero, 10f * Time.deltaTime);
 
         // Jika sudah sangat dekat dengan pemain, ambil itemnya
-        if (Vector3.Distance(transform.position, playerTarget.position + Vector3.up * 1f) < 0.2f)
+        if (!hasBeenPickedUp && Vector3.Distance(transform.position, playerTarget.position + Vector3.up * 1f) < 0.2f)
         {
-            playerItemController.PickupItem(itemData, amount);
+            hasBeenPickedUp = true;
+            onPickup?.Invoke();
+            playerItemController.PickupItem(itemData, amount, isPlayerDrop);
             Destroy(gameObject);
         }
     }

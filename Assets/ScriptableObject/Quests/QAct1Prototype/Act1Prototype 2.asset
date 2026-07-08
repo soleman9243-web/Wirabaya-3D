@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: Act1Prototype 2
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: Wirabaya
+    dialogueText: '"Nenek, dagingnya sudah selesai dimasak. Nenek harus makan agar
+      cepat...'
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Nenek
+    dialogueText: Uhuk! Uhuk! ...Napas nenek sesak, cu. Simpan saja dulu makanannya...
+    hasChoices: 0
+    choices: []
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Nenek! Badan Nenek semakin panas. Ini bukan sekadar masuk angin
+      biasa seperti kata Nenek tadi pagi!
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Tahanlah sebentar, Nek. Aku ingat ada tumbuhan obat langka di dekat
+      Gua Beruang. Aku akan kesana untuk mengambilnya!
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 1
+    jumpToNode: 0
+    nextNodeId: 0
+  references:
+    version: 2
+    RefIds: []

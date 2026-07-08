@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: Act1Prototype 1
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: Nenek
+    dialogueText: Wirabaya... uhuk. Kamu sudah bangun, cucuku?
+    hasChoices: 0
+    choices: []
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Iya, Nek. Nenek terlihat pucat, apakah Nenek merasa tidak enak
+      badan?
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Nenek
+    dialogueText: Hanya masuk angin, cu. Udara pagi ini terasa sangat dingin. Bisakah
+      kamu menyalakan api unggun di luar rumah?
+    hasChoices: 1
+    choices:
+    - choiceText: Nenek gapapa..?
+      branchNodes:
+      - rid: 8176893335650435072
+      - rid: 8176893335650435073
+      - rid: 8176893335650435074
+      nextNodeId: 0
+    - choiceText: Tentu saja!
+      branchNodes:
+      - rid: 8176893335650435072
+      nextNodeId: 0
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 8176893335650435072
+      type: {class: DialogueNode, ns: , asm: Assembly-CSharp}
+      data:
+        speakerName: Wirabaya
+        dialogueText: Aku akan mencari kayu manis untuk apinya, lalu berburu agar
+          kita bisa memasak daging.
+        hasChoices: 0
+        choices: []
+        cameraType: 1
+        cameraID: 
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+    - rid: 8176893335650435073
+      type: {class: DialogueNode, ns: , asm: Assembly-CSharp}
+      data:
+        speakerName: Nenek
+        dialogueText: Nenek masih kuat, cu. Pergilah...
+        hasChoices: 0
+        choices: []
+        cameraType: 0
+        cameraID: 
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+    - rid: 8176893335650435074
+      type: {class: DialogueNode, ns: , asm: Assembly-CSharp}
+      data:
+        speakerName: Wirabaya
+        dialogueText: Baiklah, aku akan mencari kayu manis dan daging buruan dengan
+          cepat agar bisa segera memasak untuk Nenek.
+        hasChoices: 0
+        choices: []
+        cameraType: 1
+        cameraID: 
+        endDialogueAfterThis: 1
+        jumpToNode: 0
+        nextNodeId: 0

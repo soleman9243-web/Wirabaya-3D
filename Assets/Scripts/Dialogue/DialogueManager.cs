@@ -54,15 +54,38 @@ public class DialogueManager : MonoBehaviour
     private List<int> currentPath = new List<int>();
     private Action<List<int>> onDialogueStateChanged;
 
+    private Material alwaysOnTopMat;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
+        // Buat material khusus agar UI tidak tembus/tenggelam ke dalam tembok
+        alwaysOnTopMat = new Material(Shader.Find("UI/Default"));
+        alwaysOnTopMat.SetInt("unity_GUIZTestMode", (int)UnityEngine.Rendering.CompareFunction.Always);
+
         if (subtitlePanel) subtitlePanel.SetActive(false);
         if (choicePanels != null)
         {
-            foreach (var panel in choicePanels) if (panel) panel.SetActive(false);
+            foreach (var panel in choicePanels)
+            {
+                if (panel)
+                {
+                    panel.SetActive(false);
+                    // Terapkan material anti-tembok ke semua UI dasar di dalam panel pilihan
+                    ApplyAlwaysOnTopMaterial(panel);
+                }
+            }
+        }
+    }
+
+    private void ApplyAlwaysOnTopMaterial(GameObject targetObj)
+    {
+        Graphic[] graphics = targetObj.GetComponentsInChildren<Graphic>(true);
+        foreach (var g in graphics)
+        {
+            g.material = alwaysOnTopMat;
         }
     }
 
@@ -343,6 +366,9 @@ public class DialogueManager : MonoBehaviour
                     btnObj.transform.localPosition = Vector3.zero;
                     btnObj.transform.localRotation = Quaternion.identity;
                     btnObj.transform.localScale = Vector3.one;
+                    
+                    // Terapkan material anti-tembok ke tombol yang baru dispawn
+                    ApplyAlwaysOnTopMaterial(btnObj);
 
                     TextMeshProUGUI textComp = btnObj.GetComponentInChildren<TextMeshProUGUI>();
                     if (textComp != null)

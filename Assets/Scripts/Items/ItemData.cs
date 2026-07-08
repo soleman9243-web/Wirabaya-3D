@@ -7,6 +7,8 @@ public class ItemData : ScriptableObject
 {
     [Header("Item Info")]
     public string itemName;
+    [Tooltip("Isi dengan ID Objektif dari QuestData jika item ini saat dipungut harus menyelesaikan quest. Kosongkan jika bukan item quest.")]
+    public string questObjectiveId;
     public ItemType itemType = ItemType.Resource;
     public int maxStackSize = 5;
 

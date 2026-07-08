@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cfac588d229f434f83266ce44d7b567, type: 3}
+  m_Name: QAct1Prototype 3
+  m_EditorClassIdentifier: Assembly-CSharp::QuestData
+  questId: act1_quest_03
+  title: Makan Hari ini
+  description: Aku bertemu dengan babi hutan agresif. Aku harus mengalahkannya, mengambil
+    dagingnya, lalu memanggangnya di api unggun rumah.
+  objectives:
+  - objectiveId: obj_KalahkanBabi
+    description: Kalahkan Babi Hutan
+    type: 2
+    targetAmount: 3
+  - objectiveId: obj_AmbilBabi
+    description: Ambil Daging Babi Tersebut
+    type: 1
+    targetAmount: 3
+  - objectiveId: obj_NyalakanApi
+    description: Masak daging di api unggun rumah
+    type: 0
+    targetAmount: 1

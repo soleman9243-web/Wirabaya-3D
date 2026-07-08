@@ -10,20 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26916d34b2f3a4d40ac7a5b8724e690b, type: 3}
-  m_Name: Item_Wood
+  m_Name: Item_RawMeatPrototype
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: kayu
+  itemName: dagingmentah
+  questObjectiveId: obj_AmbilBabi
+  itemType: 0
   maxStackSize: 5
-  heldModelName: Wood
+  heldModelName: RawMeat
   holdingAnimatorParameter: IsHoldingWood
-  droppedPrefab: {fileID: 6006109338500903849, guid: 045af7938d69b5c438962516eb732266, type: 3}
+  droppedPrefab: {fileID: 6006109338500903849, guid: e1e85928eabe90340afc63c35e3ab273, type: 3}
   rotationSpeed: 50
   worldDropBounceForce: 2
   playerDropBounceForce: 5
   floatAmplitude: 0.2
   floatSpeed: 2
   floatHeightOffset: 0.5
-  enableVisualStacking: 1
+  enableVisualStacking: 0
   maxVisualStack: 5
   visualStackOffset: {x: 0.1, y: 0.1, z: 0.1}
   handStackOffset: {x: -0.02, y: 0.01, z: 0.02}

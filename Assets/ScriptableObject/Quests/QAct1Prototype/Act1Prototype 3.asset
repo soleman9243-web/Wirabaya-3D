@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: Act1Prototype 3
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: Wirabaya
+    dialogueText: Nenek, aku sudah membawa obatnya. Cepatlah minum ini.
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Nenek
+    dialogueText: (Meminum obat) Uhuk... Maafkan nenek, cu. Rasanya... tubuh nenek
+      tetap tidak membaik.
+    hasChoices: 0
+    choices: []
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Apa yang bisa saya lakukan lagi nek...
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Nenek
+    dialogueText: DI daerah bagian bawah lereng gunung ada tabib yang terkenal nak..
+      kamu bisa coba kesana
+    hasChoices: 0
+    choices: []
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 1
+    jumpToNode: 0
+    nextNodeId: 0
+  references:
+    version: 2
+    RefIds: []

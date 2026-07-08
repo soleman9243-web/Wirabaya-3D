@@ -14,6 +14,12 @@ public class PlayerItemController : MonoBehaviour
     public KeyCode dropKey = KeyCode.Q;
     public Transform dropSpawnPoint;
 
+    [Header("Starting Item")]
+    [Tooltip("Item bawaan saat scene baru dimulai (kosongkan jika tidak ada)")]
+    public ItemData startingItem;
+    [Tooltip("Jumlah item bawaan saat scene baru dimulai")]
+    public int startingAmount = 1;
+
     [Header("Animator (Opsional)")]
     public Animator playerAnimator;
 
@@ -27,7 +33,15 @@ public class PlayerItemController : MonoBehaviour
 
     private void Start()
     {
-        UpdateHandVisual();
+        // Inisialisasi item awal jika ada
+        if (startingItem != null && currentItem == null)
+        {
+            PickupItem(startingItem, startingAmount);
+        }
+        else
+        {
+            UpdateHandVisual();
+        }
     }
 
     private void Update()
@@ -89,8 +103,15 @@ public class PlayerItemController : MonoBehaviour
         return false;
     }
 
-    public void PickupItem(ItemData item, int amount)
+    public void PickupItem(ItemData item, int amount, bool isFromPlayerDrop = false)
     {
+        // Quest Integration: Lakukan ini pertama kali agar item bertipe Weapon tetap terhitung questnya
+        // Pastikan hanya menambah quest jika bukan hasil drop dari pemain
+        if (!isFromPlayerDrop && QuestManager.Instance != null && !string.IsNullOrEmpty(item.questObjectiveId))
+        {
+            QuestManager.Instance.AddProgress(item.questObjectiveId, amount);
+        }
+
         if (item.itemType == ItemType.Weapon)
         {
             if (playerControl != null)
@@ -213,6 +234,27 @@ public class PlayerItemController : MonoBehaviour
                     Debug.LogWarning($"Tidak menemukan model dengan nama '{currentItem.heldModelName}' di dalam {rightHandItemContainer.name}!");
                 }
             }
+        }
+    }
+
+    // [New] Fungsi untuk menghapus item dari tangan (contoh: saat selesai dimasak/dipakai)
+    public void ConsumeCurrentItem()
+    {
+        if (currentItem == null) return;
+
+        // Matikan parameter animasi di Animator (jika ada) sebelum mengosongkan item
+        if (playerAnimator != null && !string.IsNullOrEmpty(currentItem.holdingAnimatorParameter))
+        {
+            playerAnimator.SetBool(currentItem.holdingAnimatorParameter, false);
+        }
+
+        currentItem = null;
+        currentAmount = 0;
+        UpdateHandVisual();
+        
+        if (playerControl != null)
+        {
+            playerControl.isHoldingItem = false;
         }
     }
 }

@@ -19,13 +19,29 @@ public class QuestManager : MonoBehaviour
     public UnityEvent<QuestData> onQuestStarted;
     public UnityEvent<QuestData> onQuestCompleted;
     public UnityEvent<QuestData> onQuestUpdated; 
+    
+    [Header("End Game Events")]
+    public UnityEvent onAllQuestsCompleted;
 
     // Simpan riwayat agar objektif bisa dicek meski quest sudah selesai dan currentQuest jadi null
     public List<string> allCompletedObjectives = new List<string>();
 
+    [Header("Auto Start Settings")]
+    [Tooltip("Masukkan QuestData ke sini jika ingin quest ini otomatis berjalan saat scene/game dimulai.")]
+    public QuestData autoStartQuest;
+
     private void Awake()
     {
         Instance = this;
+    }
+
+    private void Start()
+    {
+        // Jalankan quest otomatis jika sudah di-set di Inspector
+        if (autoStartQuest != null)
+        {
+            StartQuest(autoStartQuest);
+        }
     }
 
     public void StartQuest(QuestData questData)
@@ -115,8 +131,30 @@ public class QuestManager : MonoBehaviour
         }
 
         currentQuest.isCompleted = true;
-        onQuestCompleted?.Invoke(currentQuest.data);
-        Debug.Log("Quest Completed: " + currentQuest.data.title);
+        QuestData completedQuestData = currentQuest.data;
+        
+        onQuestCompleted?.Invoke(completedQuestData);
+        Debug.Log("Quest Completed: " + completedQuestData.title);
+        
         currentQuest = null;
+
+        // Auto Start Next Quest logic
+        if (QuestDatabase.Instance != null && QuestDatabase.Instance.allQuests != null)
+        {
+            int currentIndex = QuestDatabase.Instance.allQuests.IndexOf(completedQuestData);
+            
+            // Jika quest ini terdaftar di database dan masih ada quest selanjutnya
+            if (currentIndex >= 0 && currentIndex + 1 < QuestDatabase.Instance.allQuests.Count)
+            {
+                Debug.Log("Memulai quest selanjutnya secara otomatis...");
+                StartQuest(QuestDatabase.Instance.allQuests[currentIndex + 1]);
+            }
+            // Jika ini adalah quest terakhir di dalam database
+            else if (currentIndex == QuestDatabase.Instance.allQuests.Count - 1)
+            {
+                Debug.Log("Semua Quest di database telah selesai!");
+                onAllQuestsCompleted?.Invoke();
+            }
+        }
     }
 }

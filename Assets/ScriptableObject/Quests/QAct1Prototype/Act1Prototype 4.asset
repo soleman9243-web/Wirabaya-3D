@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3638fa539fefa1b4ca56cc4501fb6624, type: 3}
+  m_Name: Act1Prototype 4
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  nodes:
+  - speakerName: Wirabaya
+    dialogueText: Tabib! Tolong aku. Nenekku sakit parah. Aku sudah memberinya tanaman
+      obat dari Gua Beruang, tapi kondisinya sama sekali tidak membaik!
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Tabib
+    dialogueText: Tenanglah, anak muda. Coba ceritakan secara rinci gejala yang dialami
+      nenekmu.
+    hasChoices: 0
+    choices: []
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Badannya sangat panas dan napasnya sesak. Tanaman sekuat itu tidak
+      bereaksi apa-apa padanya.
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Tabib
+    dialogueText: Mendengar ceritamu, penyakit nenekmu bukanlah demam biasa. Itu
+      adalah kutukan misterius yang menggerogoti tenaganya dari dalam.
+    hasChoices: 0
+    choices: []
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Wirabaya
+    dialogueText: Kutukan?! Lalu apa obatnya, Tabib?
+    hasChoices: 0
+    choices: []
+    cameraType: 1
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  - speakerName: Tabib
+    dialogueText: Ilmuku tidak cukup untuk menanganinya. Kamu harus pergi ke Tabib
+      Kerajaan di Ibukota. Hanya mereka yang memiliki pengetahuan untuk kondisi ini.
+    hasChoices: 1
+    choices:
+    - choiceText: Akan kudatangi!
+      branchNodes:
+      - rid: 8176893335650435075
+      - rid: 8176893335650435076
+      nextNodeId: 0
+    - choiceText: Tempat itu..
+      branchNodes:
+      - rid: 8176893335650435075
+      - rid: 8176893335650435076
+      - rid: 8176893335650435077
+      nextNodeId: 0
+    cameraType: 0
+    cameraID: 
+    endDialogueAfterThis: 0
+    jumpToNode: 0
+    nextNodeId: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 8176893335650435075
+      type: {class: DialogueNode, ns: , asm: Assembly-CSharp}
+      data:
+        speakerName: Wirabaya
+        dialogueText: Kerajaan...? Tempat dimana aku difitnah dan dibuang. Sial...
+        hasChoices: 0
+        choices: []
+        cameraType: 1
+        cameraID: 
+        endDialogueAfterThis: 0
+        jumpToNode: 0
+        nextNodeId: 0
+    - rid: 8176893335650435076
+      type: {class: DialogueNode, ns: , asm: Assembly-CSharp}
+      data:
+        speakerName: Tabib
+        dialogueText: Aku tahu masa lalumu kelam, Wirabaya. Tapi saat ini, nyawa
+          nenekmu lebih penting dari pada harga dirimu.
+        hasChoices: 0
+        choices: []
+        cameraType: 0
+        cameraID: 
+        endDialogueAfterThis: 1
+        jumpToNode: 0
+        nextNodeId: 0
+    - rid: 8176893335650435077
+      type: {class: DialogueNode, ns: , asm: Assembly-CSharp}
+      data:
+        speakerName: Wirabaya
+        dialogueText: Kau benar. Aku tidak punya pilihan lain. Aku harus ke Ibukota.
+        hasChoices: 0
+        choices: []
+        cameraType: 1
+        cameraID: 
+        endDialogueAfterThis: 1
+        jumpToNode: 0
+        nextNodeId: 0

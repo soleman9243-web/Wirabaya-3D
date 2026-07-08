@@ -15,6 +15,14 @@ public class EnemyAI : MonoBehaviour
     public float currentHealth { get; private set; }
     public bool isDead = false;
 
+    [Header("Drop Settings")]
+    [Tooltip("Prefab item yang akan di-drop saat musuh mati (misal Daging Babi)")]
+    public GameObject dropPrefab;
+    [Tooltip("Jumlah item yang akan di-drop")]
+    public int dropAmount = 1;
+    [Tooltip("Titik spawn drop. Jika kosong, akan spawn sedikit di atas posisi musuh.")]
+    public Transform dropSpawnPoint;
+
     [Header("Quest Integration")]
     public string deathObjectiveId = "defeat_dummy";
 
@@ -157,6 +165,14 @@ public class EnemyAI : MonoBehaviour
         currentHealth -= amount;
         Debug.Log(gameObject.name + " took damage. Remaining HP: " + currentHealth);
 
+        // Jika diserang secara diam-diam dari belakang, musuh harus langsung sadar dan mengejar pemain
+        if (!isAlerted)
+        {
+            onPlayerDetected?.Invoke();
+        }
+        isAlerted = true;
+        currentAlertTimer = alertCooldown;
+
         // Optional: Trigger hit animation
         // if (animator != null && !isStaggered && !isBeingTakenDown) animator.SetTrigger("Hit");
 
@@ -170,6 +186,8 @@ public class EnemyAI : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
+
+        StartCoroutine(SpawnDropsRoutine());
 
         EnemyDissolveController dissolveCtrl = GetComponent<EnemyDissolveController>();
         if (dissolveCtrl != null)
@@ -204,6 +222,21 @@ public class EnemyAI : MonoBehaviour
         this.enabled = false;
         
         StartCoroutine(HideBodyAfterDelay(3f));
+    }
+
+    private IEnumerator SpawnDropsRoutine()
+    {
+        if (dropPrefab == null) yield break;
+
+        // Gunakan titik spawn custom, atau secara default 1 meter di atas tanah agar tidak nyangkut
+        Vector3 spawnPos = dropSpawnPoint != null ? dropSpawnPoint.position : transform.position + Vector3.up * 1f;
+
+        for (int i = 0; i < dropAmount; i++)
+        {
+            Instantiate(dropPrefab, spawnPos, transform.rotation);
+            // Beri jeda sedikit agar efek tumpukan rapi jika item > 1
+            yield return new WaitForSeconds(0.15f); 
+        }
     }
 
     private IEnumerator HideBodyAfterDelay(float delay)

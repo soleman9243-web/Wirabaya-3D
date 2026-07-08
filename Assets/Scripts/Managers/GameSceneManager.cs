@@ -40,16 +40,32 @@ public class GameSceneManager : MonoBehaviour
             return;
         }
 
-        if (sceneFader != null)
+        if (ScreenFader.Instance != null)
         {
-            // Pindah dengan transisi halus
+            // Menggunakan ScreenFader baru untuk transisi
+            StartCoroutine(ChangeSceneWithFade(sceneName));
+        }
+        else if (sceneFader != null)
+        {
+            // Fallback jika masih menggunakan SceneFader lama
             sceneFader.LoadScene(sceneName);
         }
         else
         {
-            // Jika lupa pasang SceneFader, tetap pindah scene secara instan sebagai backup
+            // Jika tidak ada fader sama sekali
             SceneManager.LoadScene(sceneName);
         }
+    }
+
+    private System.Collections.IEnumerator ChangeSceneWithFade(string sceneName)
+    {
+        // Tunggu animasi FadeOut selesai
+        yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        
+        // Sedikit jeda saat layar hitam penuh
+        yield return new WaitForSeconds(0.2f);
+
+        SceneManager.LoadScene(sceneName);
     }
 
     /// <summary>
