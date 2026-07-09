@@ -14766,6 +14766,10 @@ PrefabInstance:
       propertyPath: m_Lens.m_SensorSize.y
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2103871143734154984, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2591981319285660700, guid: 2a217d2e230e6994ba3100c762d8d145, type: 3}
       propertyPath: m_LocalRotation.w
       value: -0.2927668

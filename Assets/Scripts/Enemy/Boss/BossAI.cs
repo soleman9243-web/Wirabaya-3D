@@ -69,9 +69,14 @@ public class BossAI : MonoBehaviour
 
     private Coroutine combatCoroutine;
     private PlayerParry playerParry;
+    
+    private Rigidbody rb;
+    private Collider bossCollider;
 
     private void Start()
     {
+        rb = GetComponent<Rigidbody>();
+        bossCollider = GetComponent<Collider>();
         if (bossData != null)
         {
             CurrentHealth = bossData.maxHealth;
@@ -124,7 +129,6 @@ public class BossAI : MonoBehaviour
                 {
                     float currentSpeed = isAggressive ? runSpeed : walkSpeed;
                     
-                    Rigidbody rb = GetComponent<Rigidbody>();
                     if (rb != null && !rb.isKinematic)
                     {
                         // Set velocity untuk maju perlahan/lari
@@ -142,7 +146,6 @@ public class BossAI : MonoBehaviour
                 {
                     if (animator != null) animator.SetFloat("Speed", 0f); // Set animasi diam
                     
-                    Rigidbody rb = GetComponent<Rigidbody>();
                     if (rb != null && !rb.isKinematic)
                     {
                         rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0); // Stop
@@ -293,8 +296,6 @@ public class BossAI : MonoBehaviour
 
         bool hasHitPlayer = false;
 
-        Rigidbody rb = GetComponent<Rigidbody>();
-        Collider bossCollider = GetComponent<Collider>();
         Collider playerCollider = player != null ? player.GetComponent<Collider>() : null;
 
         if (attack.isDashAttack)
@@ -389,7 +390,6 @@ public class BossAI : MonoBehaviour
 
     private void ResetPlayerCollision()
     {
-        Collider bossCollider = GetComponent<Collider>();
         Collider playerCollider = player != null ? player.GetComponent<Collider>() : null;
         if (bossCollider != null && playerCollider != null)
         {
@@ -431,7 +431,6 @@ public class BossAI : MonoBehaviour
         Collider[] cols = GetComponents<Collider>();
         foreach(var col in cols) col.enabled = false;
         
-        Rigidbody rb = GetComponent<Rigidbody>();
         if(rb != null) rb.isKinematic = true;
 
         this.enabled = false;

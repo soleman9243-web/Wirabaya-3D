@@ -50,6 +50,11 @@ public class PlayerStatus : MonoBehaviour
 
     private bool isDead = false;
 
+    private StarterAssets.ThirdPersonController tpc;
+    private PlayerParry playerParry;
+    private MonoBehaviour starterController;
+    private CharacterController charController;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -66,6 +71,16 @@ public class PlayerStatus : MonoBehaviour
 
         if (playerAnimator == null)
             playerAnimator = GetComponent<Animator>();
+
+        tpc = GetComponent<StarterAssets.ThirdPersonController>();
+        playerParry = GetComponent<PlayerParry>();
+        charController = GetComponent<CharacterController>();
+        
+        starterController = GetComponent("FirstPersonController") as MonoBehaviour;
+        if (starterController == null)
+        {
+            starterController = GetComponent("ThirdPersonController") as MonoBehaviour;
+        }
     }
 
     private void Update()
@@ -219,7 +234,6 @@ public class PlayerStatus : MonoBehaviour
         if (isDead) return;
 
         // Kebal (invincible) saat sedang melakukan eksekusi (Takedown/Finisher)
-        StarterAssets.ThirdPersonController tpc = GetComponent<StarterAssets.ThirdPersonController>();
         if (tpc != null && tpc.IsInFinisher) return;
 
         if (hitVfx != null)
@@ -233,10 +247,9 @@ public class PlayerStatus : MonoBehaviour
         timeSinceLastHit = 0f;
 
         // Batalin kesempatan parry kalau sudah terlanjur kena pukul
-        PlayerParry parry = GetComponent<PlayerParry>();
-        if (parry != null)
+        if (playerParry != null)
         {
-            parry.DisableSpiderSense();
+            playerParry.DisableSpiderSense();
         }
 
         Debug.Log("Player kena damage: " + damage + " | Sisa HP: " + health);
@@ -261,18 +274,12 @@ public class PlayerStatus : MonoBehaviour
 
         gameObject.tag = "Untagged";
 
-        MonoBehaviour starterController = GetComponent("FirstPersonController") as MonoBehaviour;
-        if (starterController == null)
-        {
-            starterController = GetComponent("ThirdPersonController") as MonoBehaviour;
-        }
-
         if (starterController != null)
         {
             starterController.enabled = false;
         }
 
-        if (TryGetComponent<CharacterController>(out var charController))
+        if (charController != null)
         {
             charController.enabled = false;
         }

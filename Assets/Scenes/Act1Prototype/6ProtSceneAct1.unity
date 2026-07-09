@@ -39879,21 +39879,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &3474891018185585793
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3488191835328028234}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4444967900861342089}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3475636874947934059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -39917,23 +39902,6 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
---- !u!1 &3488191835328028234
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3474891018185585793}
-  - component: {fileID: 8842987079666901030}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!137 &3502795395393092836
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0
@@ -42690,7 +42658,6 @@ Transform:
   - {fileID: 2704744383159880288}
   - {fileID: 892633605272558992}
   - {fileID: 2146720086505003056}
-  - {fileID: 3474891018185585793}
   - {fileID: 959272543}
   m_Father: {fileID: 2996078575898560092}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -60347,7 +60314,7 @@ PlayableDirector:
     value: {fileID: 4072855003478927008}
   - key: {fileID: -3164616136416503973, guid: 5d60032c9ad25eb4ba6e0fb53d420b72, type: 2}
     value: {fileID: 6308351816462169273}
-  - key: {fileID: 3900747682100615894, guid: 5d60032c9ad25eb4ba6e0fb53d420b72, type: 2}
+  - key: {fileID: -8814780446575575189, guid: 5d60032c9ad25eb4ba6e0fb53d420b72, type: 2}
     value: {fileID: 8142668779884838856}
   m_ExposedReferences:
     m_References:
@@ -61580,7 +61547,7 @@ MonoBehaviour:
     m_Events:
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 8842987079666901030}
+        - m_Target: {fileID: 959272542}
           m_TargetAssemblyTypeName: GameSceneManager, Assembly-CSharp
           m_MethodName: ChangeScene
           m_Mode: 5
@@ -63078,19 +63045,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &8842987079666901030
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3488191835328028234}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c95c52e8c33453a4f9416f9b57e405f3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameSceneManager
-  sceneFader: {fileID: 0}
 --- !u!137 &8843370587393827335
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0

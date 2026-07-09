@@ -21,6 +21,9 @@ public class CutsceneSkipper : MonoBehaviour
     [Tooltip("Berapa detik tombol harus ditahan sampai cutscene di-skip")]
     public float holdDuration = 1.5f; 
 
+    [Tooltip("Berapa detik tombol harus ditahan SEBELUM progress dan UI mulai muncul")]
+    public float delayBeforeProgress = 0.5f;
+
     [Header("UI References")]
     [Tooltip("Komponen Image dengan tipe Filled -> Radial 360")]
     public Image progressCircle; 
@@ -78,19 +81,22 @@ public class CutsceneSkipper : MonoBehaviour
         {
             currentHoldTime += Time.deltaTime; // Tambah waktu hold
 
-            // Aktifkan GameObject (Icon) HANYA untuk tombol yang sedang dikunci
-            foreach (var input in skipInputs)
+            if (currentHoldTime >= delayBeforeProgress)
             {
-                if (input.buttonIconObject != null)
+                // Aktifkan GameObject (Icon) HANYA untuk tombol yang sedang dikunci
+                foreach (var input in skipInputs)
                 {
-                    input.buttonIconObject.SetActive(input.skipKey == currentLockedKey);
+                    if (input.buttonIconObject != null)
+                    {
+                        input.buttonIconObject.SetActive(input.skipKey == currentLockedKey);
+                    }
                 }
-            }
 
-            // Memunculkan UI secara perlahan (jika memakai CanvasGroup)
-            if (skipUI != null)
-            {
-                skipUI.alpha = Mathf.MoveTowards(skipUI.alpha, 1f, Time.deltaTime * 5f);
+                // Memunculkan UI secara perlahan (jika memakai CanvasGroup)
+                if (skipUI != null)
+                {
+                    skipUI.alpha = Mathf.MoveTowards(skipUI.alpha, 1f, Time.deltaTime * 5f);
+                }
             }
         }
         else
@@ -99,8 +105,8 @@ public class CutsceneSkipper : MonoBehaviour
             currentHoldTime -= Time.deltaTime * 2f;
             if (currentHoldTime < 0) currentHoldTime = 0;
 
-            // Menghilangkan UI jika progress sudah 0 (opsional)
-            if (currentHoldTime <= 0) 
+            // Menghilangkan UI jika progress berada di bawah delay
+            if (currentHoldTime <= delayBeforeProgress) 
             {
                 if (skipUI != null)
                 {
@@ -121,11 +127,12 @@ public class CutsceneSkipper : MonoBehaviour
         // Update visual lingkaran (Fill Amount dari 0.0 ke 1.0)
         if (progressCircle != null)
         {
-            progressCircle.fillAmount = currentHoldTime / holdDuration;
+            float fillProgress = (currentHoldTime - delayBeforeProgress) / holdDuration;
+            progressCircle.fillAmount = Mathf.Clamp01(fillProgress);
         }
 
         // Jika waktu tahan sudah mencapai batas waktu yang ditentukan -> Eksekusi Skip
-        if (currentHoldTime >= holdDuration)
+        if (currentHoldTime >= delayBeforeProgress + holdDuration)
         {
             ExecuteSkip();
         }
@@ -142,15 +149,20 @@ public class CutsceneSkipper : MonoBehaviour
         // Jika nama scene diisi di Inspector, langsung lakukan pemindahan scene
         if (!string.IsNullOrEmpty(nextSceneName))
         {
-            SceneFader fader = FindFirstObjectByType<SceneFader>();
-            if (fader != null)
+            if (ScreenFader.Instance != null)
             {
-                fader.LoadScene(nextSceneName);
+                StartCoroutine(FadeAndLoad(nextSceneName));
             }
             else
             {
                 SceneManager.LoadScene(nextSceneName);
             }
         }
+    }
+
+    private System.Collections.IEnumerator FadeAndLoad(string sceneName)
+    {
+        yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        SceneManager.LoadScene(sceneName);
     }
 }

@@ -135,6 +135,12 @@ namespace Unity.FantasyKingdom
         
         void Start()
         {
+            _inputProvider = GetComponent<IInputProvider>();
+            
+            // Jika script ini tidak di-setup (VirtualCamera/Settings/InputProvider kosong), hentikan proses agar tidak error
+            if (_inputProvider == null || VirtualCamera == null || Settings == null || Settings.Length == 0) 
+                return;
+
             currentSettings = Settings[0];
             _virtualCameraGameObject = VirtualCamera.gameObject;
             _framingTransposer = VirtualCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
@@ -145,7 +151,7 @@ namespace Unity.FantasyKingdom
             _originalCameraRotate = _targetCameraRotate;
             _targetCameraTilt = _virtualCameraGameObject.transform.localRotation.eulerAngles.x;
             _currentCameraTilt = _targetCameraTilt;
-            _inputProvider = GetComponent<IInputProvider>();
+            
             var settingsZoomLevelData = Settings[(int)CameraType.GameplayCamera].ZoomLevelData[_zoomLevelIndex];
             var settingsFreeCamera = Settings[(int)CameraType.FreeCamera];
             OnCameraSettingsChanged?.Invoke(this, new OnCameraSettingsChangedEventArgs
@@ -160,12 +166,12 @@ namespace Unity.FantasyKingdom
                 farClip = Settings[(int)CameraType.GameplayCamera].ZoomLevelData[_zoomLevelIndex].CameraFarPlane,
                 shadowDistance = settingsZoomLevelData.MaxShadowDistance
             });
-
-            Debug.Assert(_inputProvider != null, "No Input Provider found! Please ensure there's one attached to this gameObject", gameObject);
         }
 
         void Update()
         {
+            if (_inputProvider == null || currentSettings == null || _virtualCameraGameObject == null) return;
+
             _currentMousePosition = _inputProvider.MousePosition;
 
             if (Application.isMobilePlatform)
