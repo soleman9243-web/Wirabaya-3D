@@ -10,9 +10,7 @@ public class GameSceneManager : MonoBehaviour
     // Singleton agar script lain bisa mengakses fungsi ini dengan mudah (Contoh: GameSceneManager.Instance.ChangeScene(...))
     public static GameSceneManager Instance { get; private set; }
 
-    [Header("Dependencies")]
-    [Tooltip("Referensi ke SceneFader UI. Jika dipasang, pindah scene akan disertai efek layar gelap (fade out) yang halus.")]
-    public SceneFader sceneFader;
+    // Kita tidak butuh variabel SceneFader lagi, karena sudah pakai ScreenFader.Instance yang serba otomatis!
 
     private void Awake()
     {
@@ -44,11 +42,6 @@ public class GameSceneManager : MonoBehaviour
         {
             // Menggunakan ScreenFader baru untuk transisi
             StartCoroutine(ChangeSceneWithFade(sceneName));
-        }
-        else if (sceneFader != null)
-        {
-            // Fallback jika masih menggunakan SceneFader lama
-            sceneFader.LoadScene(sceneName);
         }
         else
         {

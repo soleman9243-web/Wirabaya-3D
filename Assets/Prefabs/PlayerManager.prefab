@@ -5299,7 +5299,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &5729005870774549826
 Transform:
   m_ObjectHideFlags: 0
@@ -21434,15 +21434,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4164866210155969191, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.10203899
+      value: 0.102039
       objectReference: {fileID: 0}
     - target: {fileID: 4164866210155969191, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.21006809
+      value: -0.21006814
       objectReference: {fileID: 0}
     - target: {fileID: 4164866210155969191, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.022050401
+      value: 0.022050409
       objectReference: {fileID: 0}
     - target: {fileID: 6098076095785562579, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_Controller
@@ -21486,11 +21486,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7640276261362308694, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.21006812
+      value: 0.21006814
       objectReference: {fileID: 0}
     - target: {fileID: 7640276261362308694, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.022050403
+      value: 0.022050414
       objectReference: {fileID: 0}
     - target: {fileID: 7640276261362308694, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.y
@@ -21498,7 +21498,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7640276261362308694, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.102038994
+      value: -0.10203901
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

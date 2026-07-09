@@ -42,41 +42,58 @@ public class ScreenFader : MonoBehaviour
 
     public IEnumerator FadeOut()
     {
+        if (fadeImage != null) fadeImage.gameObject.SetActive(true);
         float timer = 0f;
 
         while (timer < fadeDuration)
         {
-            timer += Time.deltaTime;
+            // Batasi lag spike maksimal 0.05 detik per frame
+            timer += Mathf.Min(Time.unscaledDeltaTime, 0.05f);
 
-            Color color = fadeImage.color;
-            color.a = Mathf.Lerp(0f, 1f, timer / fadeDuration);
-            fadeImage.color = color;
+            if (fadeImage != null)
+            {
+                Color color = fadeImage.color;
+                color.a = Mathf.Lerp(0f, 1f, timer / fadeDuration);
+                fadeImage.color = color;
+            }
 
             yield return null;
         }
 
-        Color finalColor = fadeImage.color;
-        finalColor.a = 1f;
-        fadeImage.color = finalColor;
+        if (fadeImage != null)
+        {
+            Color finalColor = fadeImage.color;
+            finalColor.a = 1f;
+            fadeImage.color = finalColor;
+        }
     }
 
     public IEnumerator FadeIn()
     {
+        if (fadeImage != null) fadeImage.gameObject.SetActive(true);
+
         float timer = 0f;
 
         while (timer < fadeDuration)
         {
-            timer += Time.deltaTime;
+            // Batasi lag spike maksimal 0.05 detik per frame agar animasi tidak ter-skip!
+            timer += Mathf.Min(Time.unscaledDeltaTime, 0.05f);
 
-            Color color = fadeImage.color;
-            color.a = Mathf.Lerp(1f, 0f, timer / fadeDuration);
-            fadeImage.color = color;
+            if (fadeImage != null)
+            {
+                Color color = fadeImage.color;
+                color.a = Mathf.Lerp(1f, 0f, timer / fadeDuration);
+                fadeImage.color = color;
+            }
 
             yield return null;
         }
 
-        Color finalColor = fadeImage.color;
-        finalColor.a = 0f;
-        fadeImage.color = finalColor;
+        if (fadeImage != null)
+        {
+            Color finalColor = fadeImage.color;
+            finalColor.a = 0f;
+            fadeImage.color = finalColor;
+        }
     }
 }
