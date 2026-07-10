@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM 
 
@@ -217,6 +217,7 @@ namespace StarterAssets
         private StarterAssetsInputs _input;
 
         private GameObject _mainCamera;
+        private PlayerControl _playerControl;
 
 
 
@@ -292,6 +293,8 @@ namespace StarterAssets
             _controller = GetComponent<CharacterController>();
 
             _input = GetComponent<StarterAssetsInputs>();
+            
+            _playerControl = GetComponent<PlayerControl>();
 
 #if ENABLE_INPUT_SYSTEM 
 
@@ -473,15 +476,19 @@ namespace StarterAssets
             }
 
             // --- LOGIKA PENGURANGAN STAMINA LARI ---
-            bool canSprint = PlayerStatus.Instance.stamina > 0;
             bool isMoving = _input.move != Vector2.zero;
+            bool isHoldingSword = _playerControl != null && _playerControl.hasSwordEquipped && !_playerControl.isSwordSheathed;
+            bool canSprint = !isHoldingSword || PlayerStatus.Instance.stamina > 0;
 
             if (_input.sprint && canSprint && isMoving)
             {
-                // Kurangi stamina secara konstan per detik
-                PlayerStatus.Instance.UseStamina(SprintStaminaCost * Time.deltaTime);
+                if (isHoldingSword)
+                {
+                    // Kurangi stamina secara konstan per detik
+                    PlayerStatus.Instance.UseStamina(SprintStaminaCost * Time.deltaTime);
+                }
             }
-            else if (PlayerStatus.Instance.stamina <= 0)
+            else if (isHoldingSword && PlayerStatus.Instance.stamina <= 0)
             {
                 _input.sprint = false; // Paksa berhenti lari jika stamina menyentuh 0
             }
