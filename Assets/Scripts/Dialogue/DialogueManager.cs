@@ -89,7 +89,7 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    public void StartDialogue(DialogueData data, Action onComplete, CinemachineVirtualCameraBase npcCam, CinemachineVirtualCameraBase playerCam, CinemachineVirtualCameraBase choiceCam, Animator npcAnim, Transform npcTransform = null, List<int> savedPath = null, Action<List<int>> onStateChanged = null)
+    public void StartDialogue(DialogueData data, Action onComplete, CinemachineVirtualCameraBase npcCam, CinemachineVirtualCameraBase playerCam, CinemachineVirtualCameraBase choiceCam, Animator npcAnim, Transform npcTransform = null, List<int> savedPath = null, Action<List<int>> onStateChanged = null, bool rotateNPC = true)
     {
         currentDialogue = data;
         onDialogueComplete = onComplete;
@@ -164,10 +164,13 @@ public class DialogueManager : MonoBehaviour
         // Bikin Saling Hadap
         if (npcTransform != null && playerController != null)
         {
-            Vector3 directionToPlayer = (playerController.transform.position - npcTransform.position).normalized;
-            directionToPlayer.y = 0;
-            if (directionToPlayer != Vector3.zero)
-                npcTransform.rotation = Quaternion.LookRotation(directionToPlayer);
+            if (rotateNPC)
+            {
+                Vector3 directionToPlayer = (playerController.transform.position - npcTransform.position).normalized;
+                directionToPlayer.y = 0;
+                if (directionToPlayer != Vector3.zero)
+                    npcTransform.rotation = Quaternion.LookRotation(directionToPlayer);
+            }
 
             Vector3 directionToNPC = (npcTransform.position - playerController.transform.position).normalized;
             directionToNPC.y = 0;

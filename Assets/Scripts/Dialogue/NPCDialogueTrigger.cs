@@ -19,6 +19,10 @@ public class NPCDialogueTrigger : MonoBehaviour
     [Tooltip("Masukkan Animator milik NPC ini. (Animator Player otomatis terdeteksi)")]
     public Animator npcAnimator;
 
+    [Header("Behavior")]
+    [Tooltip("Matikan ini jika NPC sedang tidur atau tidak boleh menghadap ke player saat diajak bicara.")]
+    public bool facePlayer = true;
+
     [Header("Events")]
     [Tooltip("Event dipanggil setelah dialog selesai. Bisa disambungkan ke CompleteQuestProgress di ObjectInteract.")]
     public UnityEvent onDialogueEnd;
@@ -46,7 +50,7 @@ public class NPCDialogueTrigger : MonoBehaviour
             return;
         }
 
-        DialogueManager.Instance.StartDialogue(dialogue, OnDialogueComplete, npcCamera, playerCamera, choiceCamera, npcAnimator, transform, savedPath, OnDialogueStateChanged);
+        DialogueManager.Instance.StartDialogue(dialogue, OnDialogueComplete, npcCamera, playerCamera, choiceCamera, npcAnimator, transform, savedPath, OnDialogueStateChanged, facePlayer);
     }
 
     private void OnDialogueStateChanged(System.Collections.Generic.List<int> newPath)
