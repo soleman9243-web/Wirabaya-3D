@@ -189,7 +189,7 @@ public class EnemyAI : MonoBehaviour
 
         StartCoroutine(SpawnDropsRoutine());
 
-        EnemyDissolveController dissolveCtrl = GetComponent<EnemyDissolveController>();
+        ObjectDissolveController dissolveCtrl = GetComponent<ObjectDissolveController>();
         if (dissolveCtrl != null)
         {
             dissolveCtrl.TriggerDissolveAndDestroy();

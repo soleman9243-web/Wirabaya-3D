@@ -184,55 +184,28 @@ public class CuttableTree : MonoBehaviour
         }
         fallingTrunk.rotation = endRot;
 
-        // --- 2. Animasi Dissolve (Meniru EnemyDissolveController) ---
+        // --- 2. Animasi Menghilang (Scale Down + Fade) ---
+        // Pendekatan aman: Tidak mengganti material sama sekali.
+        // Mengecilkan objek secara gradual sambil mencoba fade alpha jika material mendukungnya.
+        
         Renderer[] renderers = fallingTrunk.GetComponentsInChildren<Renderer>();
-        System.Collections.Generic.List<Material> activeDissolveMaterials = new System.Collections.Generic.List<Material>();
-
+        
+        // Simpan material instances agar tidak mengubah aset asli
+        System.Collections.Generic.List<Material> materialInstances = new System.Collections.Generic.List<Material>();
         foreach (Renderer r in renderers)
         {
             if (r != null)
             {
-                Material[] originalMats = r.sharedMaterials;
-                Material[] newMats = new Material[originalMats.Length];
-
-                for (int i = 0; i < originalMats.Length; i++)
+                // Buat instance material (r.materials otomatis membuat copy)
+                Material[] mats = r.materials;
+                foreach (Material mat in mats)
                 {
-                    if (dissolveMaterial != null)
-                    {
-                        // Buat instance material dissolve baru untuk setiap slot material
-                        Material newDissolveMat = new Material(dissolveMaterial);
-                        activeDissolveMaterials.Add(newDissolveMat);
-
-                        if (originalMats[i] != null)
-                        {
-                            // Salin tekstur JIKA ADA
-                            if (originalMats[i].HasProperty("_BaseMap") && originalMats[i].GetTexture("_BaseMap") != null)
-                                newDissolveMat.SetTexture("_BaseMap", originalMats[i].GetTexture("_BaseMap"));
-                            else if (originalMats[i].HasProperty("_MainTex") && originalMats[i].GetTexture("_MainTex") != null)
-                                newDissolveMat.SetTexture("_BaseMap", originalMats[i].GetTexture("_MainTex"));
-
-                            // Salin WARNA (Base Color) agar jika tidak punya tekstur, warnanya tetap sama!
-                            if (originalMats[i].HasProperty("_BaseColor"))
-                                newDissolveMat.SetColor("_BaseColor", originalMats[i].GetColor("_BaseColor"));
-                            else if (originalMats[i].HasProperty("_Color"))
-                                newDissolveMat.SetColor("_BaseColor", originalMats[i].GetColor("_Color"));
-                        }
-
-                        newMats[i] = newDissolveMat;
-                    }
-                    else
-                    {
-                        // Fallback jika belum diisi di Inspector, gunakan material bawaan
-                        newMats[i] = originalMats[i];
-                        activeDissolveMaterials.Add(originalMats[i]);
-                    }
+                    materialInstances.Add(mat);
                 }
-
-                r.sharedMaterials = newMats;
             }
         }
 
-        int dissolveAmountProp = Shader.PropertyToID("_DissolveAmount");
+        Vector3 originalScale = fallingTrunk.localScale;
         elapsed = 0f;
 
         while (elapsed < dissolveDuration)
@@ -240,17 +213,38 @@ public class CuttableTree : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / dissolveDuration);
             
-            foreach (Material mat in activeDissolveMaterials)
+            // Scale down: dari ukuran asli ke 0
+            fallingTrunk.localScale = Vector3.Lerp(originalScale, Vector3.zero, t);
+            
+            // Coba fade alpha pada material yang mendukung
+            foreach (Material mat in materialInstances)
             {
                 if (mat != null)
                 {
-                    mat.SetFloat("_DissolveAmount", t);
+                    // Coba set dissolve jika shader mendukung
+                    if (mat.HasProperty("_DissolveAmount"))
+                        mat.SetFloat("_DissolveAmount", t);
+                    
+                    // Coba fade warna alpha jika shader mendukung
+                    if (mat.HasProperty("_BaseColor"))
+                    {
+                        Color c = mat.GetColor("_BaseColor");
+                        c.a = 1f - t;
+                        mat.SetColor("_BaseColor", c);
+                    }
+                    else if (mat.HasProperty("_Color"))
+                    {
+                        Color c = mat.GetColor("_Color");
+                        c.a = 1f - t;
+                        mat.SetColor("_Color", c);
+                    }
                 }
             }
+            
             yield return null;
         }
 
-        // Hancurkan objek batang yang jatuh setelah dissolve selesai
+        // Hancurkan objek batang yang jatuh setelah selesai
         Destroy(fallingTrunk.gameObject);
     }
 }

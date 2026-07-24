@@ -74,7 +74,7 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
 
-        // 2. Jika tidak ada yang dibidik, cek apakah Player sedang berdiri di dalam Trigger fisik (OnTriggerEnter)
+        // 21. Jika tidak ada yang dibidik, cek apakah Player sedang berdiri di dalam Trigger fisik (OnTriggerEnter)
         if (foundInteractable == null && triggerInteractable != null)
         {
             foundInteractable = triggerInteractable;
