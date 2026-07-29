@@ -251,14 +251,17 @@ public class DroppedItem : MonoBehaviour
 
     private void HandleSuckAnimation()
     {
-        // Gerak menuju pemain
-        transform.position = Vector3.Lerp(transform.position, playerTarget.position + Vector3.up * 1f, 10f * Time.deltaTime);
+        Vector3 targetPos = playerTarget.position + Vector3.up * 1f;
+
+        // BUG FIX: Gunakan Lerp untuk kelancaran, tapi tambahkan MoveTowards agar pasti sampai walau player sedang berlari
+        transform.position = Vector3.Lerp(transform.position, targetPos, 15f * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, targetPos, 15f * Time.deltaTime);
 
         // Mengecil perlahan
-        transform.localScale = Vector3.Lerp(transform.localScale, Vector3.zero, 10f * Time.deltaTime);
+        transform.localScale = Vector3.Lerp(transform.localScale, Vector3.zero, 15f * Time.deltaTime);
 
-        // Jika sudah sangat dekat dengan pemain, ambil itemnya
-        if (!hasBeenPickedUp && Vector3.Distance(transform.position, playerTarget.position + Vector3.up * 1f) < 0.2f)
+        // Jika sudah sangat dekat dengan pemain, ambil itemnya (jarak diperbesar agar lebih mudah diambil saat lari)
+        if (!hasBeenPickedUp && Vector3.Distance(transform.position, targetPos) < 0.6f)
         {
             hasBeenPickedUp = true;
             onPickup?.Invoke();

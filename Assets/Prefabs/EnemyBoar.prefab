@@ -1123,6 +1123,7 @@ GameObject:
   - component: {fileID: 7755056341340576272}
   - component: {fileID: 8651000217069771896}
   - component: {fileID: 6539061531049547468}
+  - component: {fileID: 8132139495753766480}
   m_Layer: 9
   m_Name: EnemyBoar
   m_TagString: Untagged
@@ -1374,6 +1375,22 @@ CapsuleCollider:
   m_Height: 1.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.91405624, z: 0}
+--- !u!114 &8132139495753766480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2728403691209935314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 739b079a0bb8f32418f32c3c2c307d9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectDissolveController
+  dissolveMaterial: {fileID: -876546973899608171, guid: da69f22ff7b010148b112fb386ab0d44, type: 3}
+  dissolveDuration: 2
+  objectRenderers: []
+  forceCustomDissolve: 1
 --- !u!1 &2810287586206016141
 GameObject:
   m_ObjectHideFlags: 0

@@ -85,7 +85,27 @@ public class DialogueManager : MonoBehaviour
         Graphic[] graphics = targetObj.GetComponentsInChildren<Graphic>(true);
         foreach (var g in graphics)
         {
-            g.material = alwaysOnTopMat;
+            TextMeshProUGUI tmp = g as TextMeshProUGUI;
+            if (tmp != null)
+            {
+                // TMP menggunakan material khusus, jadi buat duplikat dari material fontnya
+                if (tmp.fontSharedMaterial != null)
+                {
+                    Material fontMat = new Material(tmp.fontSharedMaterial);
+                    fontMat.SetInt("unity_GUIZTestMode", (int)UnityEngine.Rendering.CompareFunction.Always);
+                    // Beberapa shader TMP menggunakan _ZTestMode
+                    if (fontMat.HasProperty("_ZTestMode"))
+                    {
+                        fontMat.SetInt("_ZTestMode", (int)UnityEngine.Rendering.CompareFunction.Always);
+                    }
+                    tmp.fontSharedMaterial = fontMat;
+                }
+            }
+            else
+            {
+                // Untuk background/image biasa, gunakan material UI anti-tembok
+                g.material = alwaysOnTopMat;
+            }
         }
     }
 

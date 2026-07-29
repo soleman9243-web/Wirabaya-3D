@@ -6,6 +6,8 @@ Shader "Custom/URP_SimpleDissolve"
         _BaseColor ("Color", Color) = (1,1,1,1)
         _DissolveAmount ("Dissolve Amount", Range(0,1)) = 0.0
         _DissolveScale ("Dissolve Scale", Float) = 20.0
+        [HDR] _EdgeColor ("Edge/Burn Color", Color) = (1, 0.3, 0, 1)
+        _EdgeWidth ("Edge Width", Range(0.0, 0.3)) = 0.05
     }
     SubShader
     {
@@ -39,14 +41,18 @@ Shader "Custom/URP_SimpleDissolve"
             SAMPLER(sampler_BaseMap);
             
             CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
                 float4 _BaseColor;
                 float _DissolveAmount;
                 float _DissolveScale;
+                float4 _EdgeColor;
+                float _EdgeWidth;
             CBUFFER_END
 
             // Simple 3D Noise function for dissolve
             float random(float2 uv)
             {
+                uv += float2(123.456, 789.012); // Hindari nol mati
                 return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453123);
             }
 
@@ -76,10 +82,25 @@ Shader "Custom/URP_SimpleDissolve"
                 half4 col = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor;
                 
                 // Noise based on UV and World Position for better variation
-                float n = noise(i.uv * _DissolveScale + i.positionWS.xy);
+                // Kalikan juga posisi dunia dengan _DissolveScale agar bercak apinya lebih rapat di objek tanpa UV
+                float2 worldPosOffset = (i.positionWS.xy + i.positionWS.z) * (_DissolveScale * 0.1);
+                float n = noise(i.uv * _DissolveScale + worldPosOffset);
                 
                 // Alpha clip: discard pixels if noise is less than dissolve amount
-                clip(n - _DissolveAmount);
+                // Safety check: jangan potong jika dissolve amount masih 0 (awal animasi)
+                if (_DissolveAmount > 0.001) 
+                {
+                    clip(n - _DissolveAmount);
+                }
+                
+                // Kalkulasi tepian (Edge/Burn effect)
+                // Jika noise berada di dekat garis batas dissolve, kita beri warna menyala
+                float isEdge = step(n - _DissolveAmount, _EdgeWidth);
+                // Matikan edge jika dissolve belum mulai
+                if (_DissolveAmount > 0.001)
+                {
+                    col.rgb += _EdgeColor.rgb * isEdge;
+                }
                 
                 return col;
             }

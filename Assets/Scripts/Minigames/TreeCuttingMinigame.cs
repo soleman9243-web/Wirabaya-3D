@@ -132,6 +132,39 @@ public class TreeCuttingMinigame : MonoBehaviour
             return;
         }
 
+        // BUG FIX: Cek apakah player sedang di udara (isGrounded) agar tidak bisa terbang saat menebang
+        if (playerTransform != null)
+        {
+            MonoBehaviour movement = playerTransform.GetComponent("ThirdPersonController") as MonoBehaviour;
+            if (movement == null) movement = playerTransform.GetComponent("StarterAssets.ThirdPersonController") as MonoBehaviour;
+            
+            if (movement != null)
+            {
+                System.Reflection.FieldInfo groundedField = movement.GetType().GetField("Grounded");
+                if (groundedField != null)
+                {
+                    bool isGrounded = (bool)groundedField.GetValue(movement);
+                    if (!isGrounded)
+                    {
+                        Debug.LogWarning("Tunggu sampai mendarat sebelum menebang!");
+                        currentTree = null; // Reset
+                        return; // Batal mulai minigame jika sedang di udara
+                    }
+                }
+            }
+            else
+            {
+                // Fallback jika menggunakan CharacterController biasa
+                CharacterController cc = playerTransform.GetComponent<CharacterController>();
+                if (cc != null && !cc.isGrounded)
+                {
+                    Debug.LogWarning("Tunggu sampai mendarat sebelum menebang!");
+                    currentTree = null;
+                    return;
+                }
+            }
+        }
+
         // SYARAT: Cek apakah pedang/kapak sudah di-equip (ditarik dari sarung)
         if (playerTransform != null)
         {

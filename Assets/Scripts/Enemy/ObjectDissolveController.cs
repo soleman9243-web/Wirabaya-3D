@@ -12,6 +12,9 @@ public class ObjectDissolveController : MonoBehaviour
     [Tooltip("Mesh renderer dari objek ini (bisa SkinnedMeshRenderer atau MeshRenderer)")]
     public Renderer[] objectRenderers;
 
+    [Tooltip("Paksa gunakan Dissolve Material di atas meskipun objek menggunakan CelShader")]
+    public bool forceCustomDissolve = true;
+
     private void Start()
     {
         // Jika renderers belum di-assign di Inspector, coba cari secara otomatis
@@ -47,7 +50,7 @@ public class ObjectDissolveController : MonoBehaviour
                     if (originalMats[i] != null)
                     {
                         // CEK JIKA MATERIAL MENGGUNAKAN CEL SHADER (Punya property _dissolve_edge)
-                        if (originalMats[i].HasProperty("_dissolve_edge"))
+                        if (!forceCustomDissolve && originalMats[i].HasProperty("_dissolve_edge"))
                         {
                             // Gunakan material instance agar tidak merubah aset asli
                             Material celMat = new Material(originalMats[i]);

@@ -56,6 +56,12 @@ public class CuttableTree : MonoBehaviour
                 treeStages[i].SetActive(i == currentHits);
             }
         }
+        
+        // BUG FIX: Matikan sisa tunggul di awal agar tidak terlihat sebelum ditebang
+        if (cutStump != null)
+        {
+            cutStump.SetActive(false);
+        }
     }
 
     /// <summary>
@@ -184,59 +190,69 @@ public class CuttableTree : MonoBehaviour
         }
         fallingTrunk.rotation = endRot;
 
-        // --- 2. Animasi Menghilang (Scale Down + Fade) ---
-        // Pendekatan aman: Tidak mengganti material sama sekali.
-        // Mengecilkan objek secara gradual sambil mencoba fade alpha jika material mendukungnya.
-        
+        // --- 2. Animasi Menghilang (Dissolve Shader) ---
+        float dissolveElapsed = 0f;
         Renderer[] renderers = fallingTrunk.GetComponentsInChildren<Renderer>();
         
-        // Simpan material instances agar tidak mengubah aset asli
-        System.Collections.Generic.List<Material> materialInstances = new System.Collections.Generic.List<Material>();
-        foreach (Renderer r in renderers)
+        // Ganti material ke material dissolve (jika dislot di Inspector)
+        if (dissolveMaterial != null)
         {
-            if (r != null)
+            foreach (Renderer r in renderers)
             {
-                // Buat instance material (r.materials otomatis membuat copy)
-                Material[] mats = r.materials;
-                foreach (Material mat in mats)
+                if (r != null)
                 {
-                    materialInstances.Add(mat);
+                    Material[] oldMats = r.materials;
+                    Material[] newMats = new Material[oldMats.Length];
+                    for (int i = 0; i < newMats.Length; i++)
+                    {
+                        newMats[i] = new Material(dissolveMaterial); // Buat instance baru
+                        
+                        // Coba copy tekstur lama agar tidak polos
+                        Texture tex = null;
+                        if (oldMats[i].HasProperty("_BaseMap")) tex = oldMats[i].GetTexture("_BaseMap");
+                        else if (oldMats[i].HasProperty("_MainTex")) tex = oldMats[i].GetTexture("_MainTex");
+                        
+                        if (tex != null && newMats[i].HasProperty("_BaseMap"))
+                        {
+                            newMats[i].SetTexture("_BaseMap", tex);
+                        }
+                    }
+                    r.materials = newMats;
                 }
             }
         }
-
-        Vector3 originalScale = fallingTrunk.localScale;
-        elapsed = 0f;
-
-        while (elapsed < dissolveDuration)
+        else
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / dissolveDuration);
-            
-            // Scale down: dari ukuran asli ke 0
-            fallingTrunk.localScale = Vector3.Lerp(originalScale, Vector3.zero, t);
-            
-            // Coba fade alpha pada material yang mendukung
-            foreach (Material mat in materialInstances)
+            // Jika tidak ada material dissolve pengganti, cukup buat salinan (instance) material saat ini
+            foreach (Renderer r in renderers)
             {
-                if (mat != null)
+                if (r != null) r.materials = r.materials; 
+            }
+        }
+
+        int dissolveAmountID = Shader.PropertyToID("_DissolveAmount");
+
+        while (dissolveElapsed < dissolveDuration)
+        {
+            dissolveElapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(dissolveElapsed / dissolveDuration);
+            
+            foreach (Renderer r in renderers)
+            {
+                if (r != null)
                 {
-                    // Coba set dissolve jika shader mendukung
-                    if (mat.HasProperty("_DissolveAmount"))
-                        mat.SetFloat("_DissolveAmount", t);
-                    
-                    // Coba fade warna alpha jika shader mendukung
-                    if (mat.HasProperty("_BaseColor"))
+                    foreach (Material mat in r.materials)
                     {
-                        Color c = mat.GetColor("_BaseColor");
-                        c.a = 1f - t;
-                        mat.SetColor("_BaseColor", c);
-                    }
-                    else if (mat.HasProperty("_Color"))
-                    {
-                        Color c = mat.GetColor("_Color");
-                        c.a = 1f - t;
-                        mat.SetColor("_Color", c);
+                        // Animasikan properti DissolveAmount di Shader Graph kita
+                        mat.SetFloat(dissolveAmountID, t);
+
+                        // (Opsional) Tetap panggil alpha fade untuk berjaga-jaga jika ada material non-dissolve
+                        if (mat.HasProperty("_BaseColor"))
+                        {
+                            Color c = mat.GetColor("_BaseColor");
+                            c.a = Mathf.Lerp(1f, 0f, t);
+                            mat.SetColor("_BaseColor", c);
+                        }
                     }
                 }
             }
@@ -244,7 +260,6 @@ public class CuttableTree : MonoBehaviour
             yield return null;
         }
 
-        // Hancurkan objek batang yang jatuh setelah selesai
         Destroy(fallingTrunk.gameObject);
     }
 }

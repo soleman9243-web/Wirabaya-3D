@@ -427,43 +427,56 @@ namespace StarterAssets
 
 
         private void CameraRotation()
-
         {
+            // --- Cek apakah sedang Hard-Locked ke musuh ---
+            bool isLocked = TargetDetectionControl.instance != null && TargetDetectionControl.instance.isHardLocked && _playerControl != null && _playerControl.target != null;
 
-            // if there is an input and camera position is not fixed
-
-            if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
-
+            if (isLocked)
             {
+                // Hitung arah dari kamera ke target
+                // Offset agar menatap dada/kepala musuh
+                Vector3 targetPos = _playerControl.target.position;
+                targetPos.y += 1.2f; 
+                
+                // Gunakan posisi target kamera di leher player sebagai acuan, bukan kaki (transform.position)
+                // dan bukan kamera (_mainCamera) agar tidak feedback loop.
+                Vector3 dirToTarget = targetPos - CinemachineCameraTarget.transform.position;
+                
+                if (dirToTarget != Vector3.zero)
+                {
+                    Quaternion lookRot = Quaternion.LookRotation(dirToTarget);
+                    
+                    // Lerp Yaw dan Pitch agar pergerakan kamera mulus
+                    _cinemachineTargetYaw = Mathf.LerpAngle(_cinemachineTargetYaw, lookRot.eulerAngles.y, Time.deltaTime * 10f);
+                    
+                    // Normalisasi sudut pitch agar tidak terbalik saat di atas 180 derajat
+                    float rawPitch = lookRot.eulerAngles.x;
+                    if (rawPitch > 180f) rawPitch -= 360f;
+                    
+                    // Batasi Pitch agar tidak terlalu nunduk/ndangak ekstrim
+                    float targetPitch = ClampAngle(rawPitch, BottomClamp, TopClamp);
+                    _cinemachineTargetPitch = Mathf.LerpAngle(_cinemachineTargetPitch, targetPitch, Time.deltaTime * 10f);
+                }
+            }
+            else
+            {
+                // if there is an input and camera position is not fixed
+                if (_input.look.sqrMagnitude >= _threshold && !LockCameraPosition)
+                {
+                    //Don't multiply mouse input by Time.deltaTime;
+                    float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
 
-                //Don't multiply mouse input by Time.deltaTime;
-
-                float deltaTimeMultiplier = IsCurrentDeviceMouse ? 1.0f : Time.deltaTime;
-
-
-
-                _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier;
-
-                _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier;
-
+                    _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier;
+                    _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier;
+                }
             }
 
-
-
             // clamp our rotations so our values are limited 360 degrees
-
             _cinemachineTargetYaw = ClampAngle(_cinemachineTargetYaw, float.MinValue, float.MaxValue);
-
             _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
 
-
-
             // Cinemachine will follow this target
-
-            CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
-
-                _cinemachineTargetYaw, 0.0f);
-
+            CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride, _cinemachineTargetYaw, 0.0f);
         }
 
 

@@ -18,6 +18,9 @@ public class TargetDetectionControl : MonoBehaviour
 
     [Header("Debug")]
     public bool debug;
+    
+    [Header("Camera Hard-Lock")]
+    public bool isHardLocked = false;
 
     private void Awake()
     {
@@ -27,7 +30,29 @@ public class TargetDetectionControl : MonoBehaviour
     // Ubah: Deteksi dipanggil setiap frame secara otomatis
     private void Update()
     {
+        HandleHardLockInput();
         DetectTargetByMouse();
+    }
+
+    private void HandleHardLockInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (isHardLocked)
+            {
+                isHardLocked = false;
+                if (debug) Debug.Log("Hard-Lock Disabled");
+            }
+            else
+            {
+                // Hanya bisa mengunci jika sedang ada target valid
+                if (playerControl.target != null)
+                {
+                    isHardLocked = true;
+                    if (debug) Debug.Log("Hard-Lock Enabled on " + playerControl.target.name);
+                }
+            }
+        }
     }
 
     public void DetectTargetByMouse()
@@ -44,6 +69,29 @@ public class TargetDetectionControl : MonoBehaviour
         if (!canChangeTarget)
         {
             return;
+        }
+
+        // Jika kamera sedang Hard-Locked, jangan ubah target berdasarkan kursor mouse
+        if (isHardLocked)
+        {
+            // Cek apakah target yang di-lock sudah mati atau tidak ada
+            if (playerControl.target == null)
+            {
+                isHardLocked = false;
+            }
+            else
+            {
+                EnemyAI enemy = playerControl.target.GetComponent<EnemyAI>();
+                BossAI boss = playerControl.target.GetComponent<BossAI>();
+                
+                if ((enemy != null && enemy.isDead) || (boss != null && boss.CurrentHealth <= 0))
+                {
+                    isHardLocked = false;
+                    playerControl.NoTarget();
+                }
+            }
+            
+            return; // Jangan lakukan raycast mouse jika sedang hard lock
         }
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);

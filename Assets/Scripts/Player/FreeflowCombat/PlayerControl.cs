@@ -59,6 +59,16 @@ public class PlayerControl : MonoBehaviour
     [Tooltip("Script GhostTrail untuk efek bayangan karakter")]
     [SerializeField] private GhostTrail ghostTrail;
 
+    [Header("Anime Awakening (Skill)")]
+    public bool canUseSkills = true;
+    public bool isAwakened = false;
+    public float awakeningDuration = 15f;
+    public float awakeningManaCost = 100f; // Max mana required
+    public Material normalTrailMat;
+    public Material animeTrailMat;
+    private Coroutine awakeningRoutine;
+    private float originalTrailTime;
+
     [Header("Item System")]
     public bool isHoldingItem = false;
 
@@ -221,6 +231,79 @@ public class PlayerControl : MonoBehaviour
         {
             ToggleSwordSheath();
         }
+        
+        HandleAwakeningInput();
+    }
+
+    private void HandleAwakeningInput()
+    {
+        if (Input.GetKeyDown(KeyCode.V) && !isAwakened)
+        {
+            if (canUseSkills)
+            {
+                if (currentTarget != null || currentBossTarget != null) 
+                {
+                    if (PlayerStatus.Instance != null && PlayerStatus.Instance.mana >= awakeningManaCost)
+                    {
+                        PlayerStatus.Instance.UseMana(awakeningManaCost);
+                        ActivateAwakening();
+                    }
+                    else
+                    {
+                        Debug.Log("Mana tidak cukup untuk Awakening!");
+                    }
+                }
+                else
+                {
+                    Debug.Log("Awakening harus memiliki target!");
+                }
+            }
+            else
+            {
+                Debug.Log("Skill dinonaktifkan pada scene ini.");
+            }
+        }
+    }
+
+    public void ActivateAwakening()
+    {
+        isAwakened = true;
+        
+        // Ganti material pedang ke Anime Shader
+        if (attackTrail != null && animeTrailMat != null)
+        {
+            normalTrailMat = attackTrail.material; // Simpan material asli
+            originalTrailTime = attackTrail.time;  // Simpan durasi asli
+
+            attackTrail.material = animeTrailMat;
+            
+            // Lebarkan trail secukupnya (2.5x). Jangan terlalu besar agar tidak overlap & muter-muter.
+            attackTrail.widthMultiplier *= 2.5f; 
+            
+            // Perlama durasi hilangnya trail agar efek ombaknya terlihat mengular
+            attackTrail.time = originalTrailTime * 3f; 
+        }
+        
+        Debug.Log("AWAKENING MODE AKTIF!");
+        
+        if (awakeningRoutine != null) StopCoroutine(awakeningRoutine);
+        awakeningRoutine = StartCoroutine(AwakeningTimerRoutine());
+    }
+
+    private IEnumerator AwakeningTimerRoutine()
+    {
+        yield return new WaitForSeconds(awakeningDuration);
+        
+        isAwakened = false;
+        
+        if (attackTrail != null && normalTrailMat != null)
+        {
+            attackTrail.material = normalTrailMat;
+            attackTrail.widthMultiplier /= 2.5f;
+            attackTrail.time = originalTrailTime; // Kembalikan ke durasi awal
+        }
+        
+        Debug.Log("Awakening Mode Selesai.");
     }
 
     public void ToggleSwordSheath()
@@ -437,6 +520,7 @@ public class PlayerControl : MonoBehaviour
                     
                     // Hitung damage
                     float damageAmount = (currentAttackState == 0) ? PlayerStatus.Instance.damage1 : PlayerStatus.Instance.damage2;
+                    if (isAwakened) damageAmount *= 2f;
                     enemyBase.TakeDamage(damageAmount);
                 }
                 else if (bossBase != null)
@@ -445,6 +529,7 @@ public class PlayerControl : MonoBehaviour
 
                     // Hitung damage bos
                     float damageAmount = (currentAttackState == 0) ? PlayerStatus.Instance.damage1 : PlayerStatus.Instance.damage2;
+                    if (isAwakened) damageAmount *= 2f;
                     bossBase.TakeDamage(damageAmount);
                 }
             }
@@ -453,11 +538,13 @@ public class PlayerControl : MonoBehaviour
         if (hasHitTarget)
         {
             float duration = (currentAttackState == 0) ? quickAttackHitstopDuration : heavyAttackHitstopDuration;
+            if (isAwakened) duration *= 1.5f; // Hitstop lebih lama saat awakening
             TriggerHitstop(duration);
 
             if (impulseSource != null)
             {
                 float force = (currentAttackState == 0) ? quickShakeForce : heavyShakeForce;
+                if (isAwakened) force *= 2f; // Camera shake lebih heboh
                 impulseSource.GenerateImpulseWithForce(force);
             }
         }
