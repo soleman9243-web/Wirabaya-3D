@@ -485,6 +485,9 @@ namespace StarterAssets
         {
             if (DisableMovement)
             {
+                // Saat combat: tetap terapkan gravitasi vertikal agar player tidak melayang
+                // setelah traversal selesai. Hanya gerakan horizontal yang dimatikan.
+                _controller.Move(new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
                 return;
             }
 
@@ -889,6 +892,17 @@ namespace StarterAssets
         }
 
 
+
+        // ===== FUNGSI UNTUK RESET VERTICAL VELOCITY (COMBAT) =====
+        /// <summary>
+        /// Dipanggil oleh PlayerControl setelah traversal combat selesai.
+        /// Mereset kecepatan vertikal agar gravitasi langsung aktif kembali
+        /// dan player tidak melayang/ngambang setelah menyerang di udara.
+        /// </summary>
+        public void ResetVerticalVelocity()
+        {
+            _verticalVelocity = -2f;
+        }
 
         // ===== FUNGSI UNTUK MENGATUR KONTROL SAAT PARKOUR =====
 

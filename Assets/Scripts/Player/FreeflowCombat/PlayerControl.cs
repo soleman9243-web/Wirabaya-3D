@@ -25,6 +25,10 @@ public class PlayerControl : MonoBehaviour
     [SerializeField] private float attackRange = 1f;
     [SerializeField] private float reachTime = 0.3f;
 
+    [Header("Traversal Easing")]
+    [Tooltip("Kurva easing untuk gerakan traversal. Default: Linear (sama seperti Lerp biasa). Bisa diubah di Inspector.")]
+    [SerializeField] private AnimationCurve traversalCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
     [SerializeField] private LayerMask enemyLayer;
 
     [Header("Attack Input Settings")]
@@ -68,6 +72,9 @@ public class PlayerControl : MonoBehaviour
     public Material animeTrailMat;
     private Coroutine awakeningRoutine;
     private float originalTrailTime;
+    private float originalTrailWidth;
+    private float originalMinVertexDist;
+    private LineTextureMode originalTextureMode;
 
     [Header("Item System")]
     public bool isHoldingItem = false;
@@ -269,19 +276,22 @@ public class PlayerControl : MonoBehaviour
     {
         isAwakened = true;
         
-        // Ganti material pedang ke Anime Shader
+        // Ganti material dan atur semua parameter Trail Renderer secara otomatis
         if (attackTrail != null && animeTrailMat != null)
         {
-            normalTrailMat = attackTrail.material; // Simpan material asli
-            originalTrailTime = attackTrail.time;  // Simpan durasi asli
+            // Simpan semua pengaturan asli
+            normalTrailMat = attackTrail.material;
+            originalTrailTime = attackTrail.time;
+            originalTrailWidth = attackTrail.widthMultiplier;
+            originalMinVertexDist = attackTrail.minVertexDistance;
+            originalTextureMode = attackTrail.textureMode;
 
+            // Terapkan pengaturan Anime Trail
             attackTrail.material = animeTrailMat;
-            
-            // Lebarkan trail secukupnya (2.5x). Jangan terlalu besar agar tidak overlap & muter-muter.
-            attackTrail.widthMultiplier *= 2.5f; 
-            
-            // Perlama durasi hilangnya trail agar efek ombaknya terlihat mengular
-            attackTrail.time = originalTrailTime * 3f; 
+            attackTrail.time = 0.8f;                              // Trail bertahan lebih lama di udara
+            attackTrail.widthMultiplier = originalTrailWidth * 2.5f; // Lebih lebar
+            attackTrail.minVertexDistance = 0.05f;                 // Halus, tidak patah-patah
+            attackTrail.textureMode = LineTextureMode.Tile;        // Tekstur diulang, tidak ditarik
         }
         
         Debug.Log("AWAKENING MODE AKTIF!");
@@ -296,11 +306,14 @@ public class PlayerControl : MonoBehaviour
         
         isAwakened = false;
         
+        // Kembalikan semua pengaturan Trail Renderer ke semula
         if (attackTrail != null && normalTrailMat != null)
         {
             attackTrail.material = normalTrailMat;
-            attackTrail.widthMultiplier /= 2.5f;
-            attackTrail.time = originalTrailTime; // Kembalikan ke durasi awal
+            attackTrail.widthMultiplier = originalTrailWidth;
+            attackTrail.time = originalTrailTime;
+            attackTrail.minVertexDistance = originalMinVertexDist;
+            attackTrail.textureMode = originalTextureMode;
         }
         
         Debug.Log("Awakening Mode Selesai.");
@@ -605,7 +618,8 @@ public class PlayerControl : MonoBehaviour
         FaceThis(targetPos);
 
         Vector3 finalPos = TargetOffset(targetPos, deltaDistance);
-        // Membiarkan finalPos menggunakan Y dari target agar bisa menyerang miring (ke atas/bawah)
+        // Paksa Y tetap di posisi player agar tidak naik ke atas musuh
+        finalPos.y = transform.position.y;
 
         if (moveRoutine != null) StopCoroutine(moveRoutine);
 
@@ -620,7 +634,8 @@ public class PlayerControl : MonoBehaviour
         FaceThis(t);
 
         Vector3 finalPos = TargetOffset(t, 1.4f);
-        // Membiarkan Y
+        // Paksa Y tetap di posisi player
+        finalPos.y = transform.position.y;
 
         if (moveRoutine != null) StopCoroutine(moveRoutine);
         moveRoutine = StartCoroutine(MoveTo(finalPos, 0.2f));
@@ -636,17 +651,16 @@ public class PlayerControl : MonoBehaviour
         {
             time += Time.deltaTime;
             
-            // Lerp 3D penuh (X, Y, Z)
-            Vector3 nextPos = Vector3.Lerp(startPos, targetPos, time / duration);
+            // Gunakan AnimationCurve untuk easing (default: ease-out — cepat di awal, melambat di akhir)
+            float linearT = Mathf.Clamp01(time / duration);
+            float easedT = traversalCurve.Evaluate(linearT);
+            
+            Vector3 nextPos = Vector3.LerpUnclamped(startPos, targetPos, easedT);
             
             Vector3 moveDelta = nextPos - transform.position;
             
             if (cc != null && cc.enabled)
             {
-                // JANGAN kurangi moveDelta.y dengan gravitasi selama dash berlangsung!
-                // Supaya player bisa benar-benar melesat lurus secara diagonal ke arah target (atas maupun bawah)
-                // tanpa ditarik turun oleh gravitasi palsu yang membuatnya stuck/ngambang salah tempat.
-                
                 cc.Move(moveDelta);
             }
             else
@@ -655,6 +669,14 @@ public class PlayerControl : MonoBehaviour
             }
 
             yield return null;
+        }
+
+        // === FIX BUG NGAMBANG ===
+        // Setelah traversal selesai, reset vertical velocity di ThirdPersonController
+        // agar gravitasi langsung aktif kembali dan player tidak melayang.
+        if (thirdPersonController != null)
+        {
+            thirdPersonController.ResetVerticalVelocity();
         }
     }
 

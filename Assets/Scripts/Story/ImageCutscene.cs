@@ -168,12 +168,31 @@ public class ImageCutscene : MonoBehaviour
             }
             else
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(nextSceneName);
+                // Fallback: tetap async agar tidak freeze
+                StartCoroutine(LoadSceneAsyncFallback(nextSceneName));
             }
         }
         else
         {
             Debug.Log("Cutscene selesai, tapi tidak ada Scene tujuan yang diset.");
         }
+    }
+
+    private System.Collections.IEnumerator LoadSceneAsyncFallback(string sceneName)
+    {
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        }
+
+        AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
     }
 }

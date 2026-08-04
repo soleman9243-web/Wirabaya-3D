@@ -155,7 +155,8 @@ public class CutsceneSkipper : MonoBehaviour
             }
             else
             {
-                SceneManager.LoadScene(nextSceneName);
+                // Tanpa fader, tetap async agar tidak freeze
+                StartCoroutine(LoadSceneAsyncDirect(nextSceneName));
             }
         }
     }
@@ -163,6 +164,26 @@ public class CutsceneSkipper : MonoBehaviour
     private System.Collections.IEnumerator FadeAndLoad(string sceneName)
     {
         yield return StartCoroutine(ScreenFader.Instance.FadeOut());
-        SceneManager.LoadScene(sceneName);
+
+        // Async load saat layar sudah gelap — player nggak sadar loading!
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
+    }
+
+    private System.Collections.IEnumerator LoadSceneAsyncDirect(string sceneName)
+    {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
     }
 }

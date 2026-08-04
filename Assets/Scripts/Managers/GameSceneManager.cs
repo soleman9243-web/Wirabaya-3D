@@ -12,6 +12,9 @@ public class GameSceneManager : MonoBehaviour
 
     // Kita tidak butuh variabel SceneFader lagi, karena sudah pakai ScreenFader.Instance yang serba otomatis!
 
+    // Flag untuk mencegah double-loading saat transisi sedang berjalan
+    private bool isTransitioning = false;
+
     private void Awake()
     {
         // Inisialisasi Singleton
@@ -38,6 +41,12 @@ public class GameSceneManager : MonoBehaviour
             return;
         }
 
+        if (isTransitioning)
+        {
+            Debug.LogWarning("GameSceneManager: Transisi scene sedang berjalan, abaikan request baru.");
+            return;
+        }
+
         if (ScreenFader.Instance != null)
         {
             // Menggunakan ScreenFader baru untuk transisi
@@ -45,20 +54,44 @@ public class GameSceneManager : MonoBehaviour
         }
         else
         {
-            // Jika tidak ada fader sama sekali
-            SceneManager.LoadScene(sceneName);
+            // Jika tidak ada fader, langsung async load
+            StartCoroutine(LoadSceneAsyncDirect(sceneName));
         }
     }
 
     private System.Collections.IEnumerator ChangeSceneWithFade(string sceneName)
     {
-        // Tunggu animasi FadeOut selesai
-        yield return StartCoroutine(ScreenFader.Instance.FadeOut());
-        
-        // Sedikit jeda saat layar hitam penuh
-        yield return new WaitForSeconds(0.2f);
+        isTransitioning = true;
 
-        SceneManager.LoadScene(sceneName);
+        // 1. Tunggu animasi FadeOut selesai (layar jadi GELAP)
+        yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+
+        // 2. Mulai async loading SAAT LAYAR SUDAH GELAP — player nggak sadar loading!
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        // 3. Tunggu sampai loading hampir selesai (progress 0.9 = siap diaktifkan)
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        // 4. Aktifkan scene baru
+        asyncLoad.allowSceneActivation = true;
+
+        // isTransitioning akan di-reset karena GameObject ini akan di-destroy saat scene baru dimuat
+    }
+
+    private System.Collections.IEnumerator LoadSceneAsyncDirect(string sceneName)
+    {
+        isTransitioning = true;
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
     }
 
     /// <summary>
@@ -69,7 +102,8 @@ public class GameSceneManager : MonoBehaviour
     {
         if (!string.IsNullOrEmpty(sceneName))
         {
-            SceneManager.LoadScene(sceneName);
+            // Tetap async agar tidak freeze, tapi tanpa fade
+            StartCoroutine(LoadSceneAsyncDirect(sceneName));
         }
     }
 

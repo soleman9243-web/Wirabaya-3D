@@ -299,6 +299,20 @@ public class PlayerStatus : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        SceneManager.LoadScene("LoseScene");
+        // Async load agar tidak freeze
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        }
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("LoseScene");
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
     }
 }

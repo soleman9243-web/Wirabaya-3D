@@ -39,8 +39,16 @@ public class SceneFader : MonoBehaviour
         // Fade dari terang ke gelap
         yield return StartCoroutine(FadeRoutine(0f, 1f));
         
-        // Setelah gelap, load scene baru
-        SceneManager.LoadScene(sceneName);
+        // Async load saat layar sudah gelap — player nggak sadar loading!
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
     }
 
     private IEnumerator FadeRoutine(float startAlpha, float targetAlpha)

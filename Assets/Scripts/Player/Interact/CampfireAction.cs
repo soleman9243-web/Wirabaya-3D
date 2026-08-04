@@ -41,7 +41,8 @@ public class CampfireAction : MonoBehaviour
                     }
                     else
                     {
-                        SceneManager.LoadScene(nextSceneName);
+                        // Fallback: tetap async agar tidak freeze
+                        StartCoroutine(LoadSceneAsyncFallback(nextSceneName));
                     }
                 }
                 else
@@ -59,5 +60,23 @@ public class CampfireAction : MonoBehaviour
         {
             Debug.LogError("PlayerItemController tidak ditemukan di scene!");
         }
+    }
+
+    private System.Collections.IEnumerator LoadSceneAsyncFallback(string sceneName)
+    {
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        }
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
     }
 }

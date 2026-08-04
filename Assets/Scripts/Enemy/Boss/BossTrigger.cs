@@ -64,8 +64,24 @@ public class BossTrigger : MonoBehaviour
             yield return new WaitForSeconds(cutsceneDuration);
         }
 
-        // 3. Load Scene Boss (disarankan pakai Loading Screen UI di sini jika punya)
+        // 3. Load Scene Boss dengan async agar tidak freeze
         Debug.Log("Loading Boss Scene: " + bossSceneName);
-        SceneManager.LoadScene(bossSceneName);
+
+        // Fade out dulu jika ada ScreenFader
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        }
+
+        // Async load saat layar sudah gelap
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(bossSceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
     }
 }

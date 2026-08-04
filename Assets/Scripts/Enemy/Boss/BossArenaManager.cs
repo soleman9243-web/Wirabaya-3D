@@ -70,7 +70,23 @@ public class BossArenaManager : MonoBehaviour
 
         // Load scene berikutnya
         Debug.Log("Loading Next Scene: " + nextSceneName);
-        SceneManager.LoadScene(nextSceneName);
+
+        // Fade out dulu
+        if (ScreenFader.Instance != null)
+        {
+            yield return StartCoroutine(ScreenFader.Instance.FadeOut());
+        }
+
+        // Async load saat layar sudah gelap
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextSceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        while (asyncLoad.progress < 0.9f)
+        {
+            yield return null;
+        }
+
+        asyncLoad.allowSceneActivation = true;
     }
 
     private void OnDestroy()
