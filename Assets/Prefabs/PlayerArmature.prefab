@@ -60,6 +60,7 @@ GameObject:
   - component: {fileID: 6003733730669476137}
   - component: {fileID: 4011645227644549833}
   - component: {fileID: 3011335528351908180}
+  - component: {fileID: 3072189899622143867}
   m_Layer: 0
   m_Name: PlayerArmature
   m_TagString: Player
@@ -472,6 +473,7 @@ MonoBehaviour:
   canChangeTarget: 1
   detectionRange: 10
   debug: 0
+  isHardLocked: 0
 --- !u!114 &1894884106962765972
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -496,9 +498,34 @@ MonoBehaviour:
   airknockbackForce: 0
   attackRange: 1
   reachTime: 0.3
+  traversalCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   enemyLayer:
     serializedVersion: 2
     m_Bits: 1536
+  heavyAttackHoldDuration: 0.4
   quickAttackHitstopDuration: 0.1
   heavyAttackHitstopDuration: 0.15
   impulseSource: {fileID: 2857168891362218608}
@@ -511,6 +538,12 @@ MonoBehaviour:
   attackTrail: {fileID: 0}
   trailHideDelay: 0.3
   ghostTrail: {fileID: 0}
+  canUseSkills: 1
+  isAwakened: 0
+  awakeningDuration: 15
+  awakeningManaCost: 100
+  normalTrailMat: {fileID: 0}
+  animeTrailMat: {fileID: 0}
   isHoldingItem: 0
   debug: 0
 --- !u!114 &5914696884341250975
@@ -592,6 +625,8 @@ MonoBehaviour:
   rightHandItemContainer: {fileID: 7315369397444519679}
   dropKey: 113
   dropSpawnPoint: {fileID: 969969856193659752}
+  startingItem: {fileID: 0}
+  startingAmount: 1
   playerAnimator: {fileID: 6098076095785562579}
 --- !u!114 &4011645227644549833
 MonoBehaviour:
@@ -631,6 +666,25 @@ MonoBehaviour:
   spawnRate: 0.05
   destroyTime: 0.5
   fadeOut: 1
+--- !u!114 &3072189899622143867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22648217249824622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8603e1d325ac8c14aa65f37fc0292429, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SnapTrapSkill
+  skillKey: 101
+  manaCost: 45
+  cooldownTime: 10
+  trapPrefab: {fileID: 4439414716429694184, guid: 88ca6a37e16be2f4a981dadd2301b6b5, type: 3}
+  animator: {fileID: 6098076095785562579}
+  playerControl: {fileID: 1894884106962765972}
+  impulseSource: {fileID: 2857168891362218608}
 --- !u!1 &111486527310685636
 GameObject:
   m_ObjectHideFlags: 0
