@@ -178,12 +178,20 @@ public class EnemyPatrol : MonoBehaviour
             {
                 if (agent.isStopped) agent.isStopped = false;
                 agent.speed = chaseSpeed;
-                agent.stoppingDistance = meleeAttackDistance - 0.2f; // Berhenti sedikit lebih dekat dari jarak serang
+
+                // KeepDistance enemy menyerang dari jarak jauh, tidak perlu nempel player
+                float effectiveAttackDist = (movementStyle == CombatMovementStyle.KeepDistance) 
+                    ? keepDistanceRadius - 1f 
+                    : meleeAttackDistance;
+                float effectiveStopDist = (movementStyle == CombatMovementStyle.KeepDistance)
+                    ? keepDistanceRadius - 1.5f
+                    : meleeAttackDistance - 0.2f;
+
+                agent.stoppingDistance = effectiveStopDist;
 
                 float distanceToPlayer = Vector3.Distance(transform.position, enemyAI.player.position);
 
-                // Menggunakan meleeAttackDistance alih-alih attackRange lama
-                if (distanceToPlayer <= meleeAttackDistance)
+                if (distanceToPlayer <= effectiveAttackDist)
                 {
                     if (!agent.isStopped) agent.isStopped = true;
                     FaceTarget(enemyAI.player.position);
@@ -216,20 +224,23 @@ public class EnemyPatrol : MonoBehaviour
                     case CombatMovementStyle.KeepDistance:
                         // Untuk hewan / musuh yang menjaga jarak
                         float dist = Vector3.Distance(transform.position, enemyAI.player.position);
-                        agent.speed = patrolSpeed;
                         
-                        if (dist < keepDistanceRadius - 1f)
+                        if (dist < keepDistanceRadius - 0.5f)
                         {
-                            // Player terlalu dekat, mundur 
+                            // Player terlalu dekat, mundur CEPAT ke titik aman
                             if (agent.isStopped) agent.isStopped = false;
+                            agent.speed = chaseSpeed; // Mundur cepat agar tidak nempel
                             Vector3 dirAway = (transform.position - enemyAI.player.position).normalized;
-                            agent.SetDestination(transform.position + dirAway * 2f);
-                            agent.stoppingDistance = 0f;
+                            if (dirAway.sqrMagnitude < 0.01f) dirAway = -transform.forward;
+                            Vector3 retreatTarget = enemyAI.player.position + dirAway * (keepDistanceRadius + 1f);
+                            agent.SetDestination(retreatTarget);
+                            agent.stoppingDistance = 0.5f;
                         }
-                        else if (dist > keepDistanceRadius + 1f)
+                        else if (dist > keepDistanceRadius + 1.5f)
                         {
                             // Terlalu jauh, maju mendekati radius
                             if (agent.isStopped) agent.isStopped = false;
+                            agent.speed = patrolSpeed;
                             agent.SetDestination(enemyAI.player.position);
                             agent.stoppingDistance = keepDistanceRadius;
                         }
@@ -332,6 +343,9 @@ public class EnemyPatrol : MonoBehaviour
         enemyAI.EnemyAnimator.SetTrigger("Attack");
         
         // --- Arkham Lunge (Meluncur ke arah player saat memukul) ---
+        // KeepDistance enemy TIDAK lunge agar tidak nempel player dan bikin ngambang
+        bool shouldLunge = (movementStyle != CombatMovementStyle.KeepDistance);
+        
         float lungeDuration = 0.5f; // Waktu wind-up sebelum pedang memukul (0.5 detik)
         float timer = 0f;
         
@@ -342,7 +356,7 @@ public class EnemyPatrol : MonoBehaviour
             // Batalkan lunge jika mati/stagger di tengah jalan
             if (IsDeadOrStaggered()) yield break;
 
-            if (agent.isActiveAndEnabled && enemyAI.player != null)
+            if (shouldLunge && agent.isActiveAndEnabled && enemyAI.player != null)
             {
                 // Target posisi lunge: 1 meter di depan player agar pedang pas kena dan tidak nembus badan
                 Vector3 directionToPlayer = (enemyAI.player.position - transform.position).normalized;
@@ -351,9 +365,9 @@ public class EnemyPatrol : MonoBehaviour
                 
                 // Slide mulus mendekati player
                 agent.Move((targetLungePos - transform.position) * (Time.deltaTime * 6f));
-                FaceTarget(enemyAI.player.position);
             }
             
+            FaceTarget(enemyAI.player.position);
             yield return null;
         }
         

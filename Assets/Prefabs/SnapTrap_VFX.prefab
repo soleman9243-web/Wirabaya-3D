@@ -501,7 +501,7 @@ MonoBehaviour:
   trapRadius: 2.5
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   leftJaw: {fileID: 8421202326857952974}
   rightJaw: {fileID: 8172616962752448677}
 --- !u!1 &5883816181692213674

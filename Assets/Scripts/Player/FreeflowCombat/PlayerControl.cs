@@ -238,39 +238,9 @@ public class PlayerControl : MonoBehaviour
         {
             ToggleSwordSheath();
         }
-        
-        HandleAwakeningInput();
     }
 
-    private void HandleAwakeningInput()
-    {
-        if (Input.GetKeyDown(KeyCode.V) && !isAwakened)
-        {
-            if (canUseSkills)
-            {
-                if (currentTarget != null || currentBossTarget != null) 
-                {
-                    if (PlayerStatus.Instance != null && PlayerStatus.Instance.mana >= awakeningManaCost)
-                    {
-                        PlayerStatus.Instance.UseMana(awakeningManaCost);
-                        ActivateAwakening();
-                    }
-                    else
-                    {
-                        Debug.Log("Mana tidak cukup untuk Awakening!");
-                    }
-                }
-                else
-                {
-                    Debug.Log("Awakening harus memiliki target!");
-                }
-            }
-            else
-            {
-                Debug.Log("Skill dinonaktifkan pada scene ini.");
-            }
-        }
-    }
+
 
     public void ActivateAwakening()
     {

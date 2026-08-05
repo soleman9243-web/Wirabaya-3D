@@ -186,6 +186,8 @@ public class EnemyAI : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
+        
+        ActiveTarget(false); // Matikan indikator lock-on (jika sedang di-lock player) saat mati
 
         StartCoroutine(SpawnDropsRoutine());
 
