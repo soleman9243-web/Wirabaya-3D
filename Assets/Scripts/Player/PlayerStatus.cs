@@ -43,6 +43,7 @@ public class PlayerStatus : MonoBehaviour
     [Header("Death & Cameras")]
     [SerializeField] private Animator playerAnimator;
     [SerializeField] private CinemachineFreeLook deathCamera;
+    [SerializeField] private string sceneToLoadOnDeath = "LoseScene";
 
     [Header("VFX")]
     [Tooltip("Prefab efek darah atau benturan saat player terkena serangan")]
@@ -260,6 +261,19 @@ public class PlayerStatus : MonoBehaviour
         }
     }
 
+    [ContextMenu("Debug: Kill Player")]
+    public void TestDie()
+    {
+        if (Application.isPlaying)
+        {
+            Die();
+        }
+        else
+        {
+            Debug.LogWarning("TestDie hanya bisa dijalankan saat Play Mode!");
+        }
+    }
+
     private void Die()
     {
         if (isDead) return;
@@ -284,28 +298,31 @@ public class PlayerStatus : MonoBehaviour
             charController.enabled = false;
         }
 
+        // Animasi death player
         if (playerAnimator != null)
         {
             playerAnimator.SetTrigger("Dead");
         }
 
+        // Nyalakan Death Camera biasa jika ada
         if (deathCamera != null)
         {
             deathCamera.gameObject.SetActive(true);
+            deathCamera.Priority = 999;
         }
 
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2.5f);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // Async load agar tidak freeze
+        // Fade out biasa menggunakan ScreenFader
         if (ScreenFader.Instance != null)
         {
             yield return StartCoroutine(ScreenFader.Instance.FadeOut());
         }
 
-        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("LoseScene");
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneToLoadOnDeath);
         asyncLoad.allowSceneActivation = false;
 
         while (asyncLoad.progress < 0.9f)

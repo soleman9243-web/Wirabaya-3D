@@ -23,6 +23,10 @@ public class EnemyRanged : MonoBehaviour
     [Tooltip("Waktu (detik) jeda sebelum musuh bisa membidik lagi (Cooldown)")]
     public float reloadDuration = 2f;
 
+    [Header("Visual Effects (UX)")]
+    [Tooltip("Masukkan objek panah palsu (tanpa script/collider) yang di-parent ke tangan musuh")]
+    public GameObject dummyArrowInHand;
+
     [Header("Movement Settings")]
     public float walkSpeed = 2.5f;
     public float retreatSpeed = 4f;
@@ -60,6 +64,7 @@ public class EnemyRanged : MonoBehaviour
         // Jika musuh mati atau kena stagger
         if (enemyAI.isDead || enemyAI.isBeingTakenDown)
         {
+            if (dummyArrowInHand != null && dummyArrowInHand.activeSelf) dummyArrowInHand.SetActive(false); // AUTO OFF
             if (!agent.isStopped && agent.isActiveAndEnabled) agent.isStopped = true;
             return;
         }
@@ -71,7 +76,9 @@ public class EnemyRanged : MonoBehaviour
         }
         else
         {
-            // Musuh tidak sadar / rileks (Kembali ke Idle)
+            // Musuh tidak sadar / rileks
+            if (dummyArrowInHand != null && dummyArrowInHand.activeSelf) dummyArrowInHand.SetActive(false); // AUTO OFF
+            
             if (!agent.isStopped && agent.isActiveAndEnabled) agent.isStopped = true;
             enemyAI.EnemyAnimator.SetFloat("InputY", 0f, 0.1f, Time.deltaTime);
             enemyAI.EnemyAnimator.SetBool("isAiming", false);
@@ -142,9 +149,15 @@ public class EnemyRanged : MonoBehaviour
             enemyAI.EnemyAnimator.SetTrigger("Shoot");
             FireArrow();
         }
+        else
+        {
+            // Jika batal menembak (karena mati/stagger), matikan panah
+            if (dummyArrowInHand != null) dummyArrowInHand.SetActive(false);
+        }
 
         // 4. Selesai nembak, matikan Aim (Kembali ke EmptyState)
         enemyAI.EnemyAnimator.SetBool("isAiming", false);
+        if (dummyArrowInHand != null) dummyArrowInHand.SetActive(false); // SAFETY AUTO OFF
 
         // 5. Cooldown (Jeda sebelum musuh mengevaluasi jarak atau menembak lagi)
         yield return new WaitForSeconds(reloadDuration);
@@ -154,6 +167,12 @@ public class EnemyRanged : MonoBehaviour
 
     private void FireArrow()
     {
+        // Sembunyikan panah palsu di tangan tepat saat menembak
+        if (dummyArrowInHand != null)
+        {
+            dummyArrowInHand.SetActive(false);
+        }
+
         if (arrowPrefab == null || firePoint == null) return;
 
         GameObject arrow = Instantiate(arrowPrefab, firePoint.position, firePoint.rotation);
@@ -164,6 +183,15 @@ public class EnemyRanged : MonoBehaviour
             // Arahkan proyektil sedikit ke atas agar membentuk lengkungan (parabola) jika jauh
             Vector3 shootDirection = (enemyAI.player.position + Vector3.up * 1f) - firePoint.position;
             rb.linearVelocity = shootDirection.normalized * arrowSpeed;
+        }
+    }
+
+    // Fungsi ini akan dipanggil oleh Animation Event dari dalam klip animasi DrawArrow!
+    public void GrabArrowEvent()
+    {
+        if (dummyArrowInHand != null)
+        {
+            dummyArrowInHand.SetActive(true);
         }
     }
 
