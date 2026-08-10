@@ -225568,6 +225568,13 @@ AnimationClip:
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
+  - time: 0.4625
+    functionName: PlaySoundByName
+    data: playerswordslash
+    objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
   - time: 0.9125
     functionName: ResetAttack
     data: 
