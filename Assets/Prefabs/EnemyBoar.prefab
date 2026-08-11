@@ -1274,9 +1274,8 @@ MonoBehaviour:
   useFreeflowCombat: 1
   movementStyle: 1
   circleRadius: 4
-  keepDistanceRadius: 5
+  keepDistanceRadius: 3.75
   meleeAttackDistance: 1.5
-  attackRecoveryTime: 0.5
   enablePatrol: 1
   patrolPoints: []
   patrolSpeed: 2
