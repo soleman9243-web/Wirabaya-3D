@@ -42,7 +42,7 @@ public class PlayerStatus : MonoBehaviour
 
     [Header("Death & Cameras")]
     [SerializeField] private Animator playerAnimator;
-    [SerializeField] private CinemachineFreeLook deathCamera;
+    [SerializeField] private CinemachineVirtualCamera deathCamera;
     [SerializeField] private string sceneToLoadOnDeath = "LoseScene";
 
     [Header("VFX")]
