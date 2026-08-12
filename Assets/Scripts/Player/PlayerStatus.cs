@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Cinemachine;
+using System;
 
 public class PlayerStatus : MonoBehaviour
 {
@@ -35,6 +36,22 @@ public class PlayerStatus : MonoBehaviour
     public float manaRegenRate = 5f;
     [field: SerializeField] public float mana { get; private set; }
 
+    [Header("Bar Auto-Hide")]
+    [Tooltip("Aktifkan auto-hide untuk stamina bar (butuh CanvasGroup di-assign)")]
+    [SerializeField] private bool autoHideStaminaBar = true;
+    [Tooltip("Aktifkan auto-hide untuk mana bar (butuh CanvasGroup di-assign)")]
+    [SerializeField] private bool autoHideManaBar = true;
+    [Tooltip("Berapa detik bar tetap terlihat setelah perubahan terakhir")]
+    [SerializeField] private float barVisibleDuration = 2f;
+    [Tooltip("Kecepatan fade in (makin besar makin cepat muncul)")]
+    [SerializeField] private float barFadeInSpeed = 8f;
+    [Tooltip("Kecepatan fade out (makin besar makin cepat hilang)")]
+    [SerializeField] private float barFadeOutSpeed = 3f;
+    [Tooltip("CanvasGroup parent UI stamina bar. Kosongkan jika tidak mau auto-hide.")]
+    [SerializeField] private CanvasGroup staminaBarGroup;
+    [Tooltip("CanvasGroup parent UI mana bar. Kosongkan jika tidak mau auto-hide.")]
+    [SerializeField] private CanvasGroup manaBarGroup;
+
     [Header("Damage Instances")]
     public float damage1 = 10f;
     public float damage2 = 15f;
@@ -50,6 +67,12 @@ public class PlayerStatus : MonoBehaviour
     [SerializeField] private GameObject hitVfx;
 
     private bool isDead = false;
+
+    // Bar auto-hide tracking
+    private float staminaLastChangedTime;
+    private float manaLastChangedTime;
+    private float lastStaminaValue;
+    private float lastManaValue;
 
     private StarterAssets.ThirdPersonController tpc;
     private PlayerParry playerParry;
@@ -112,6 +135,19 @@ public class PlayerStatus : MonoBehaviour
             c.a = 0f;
             bloodOverlay.color = c;
         }
+
+        // Inisialisasi tracking auto-hide
+        lastStaminaValue = stamina;
+        lastManaValue = mana;
+        staminaLastChangedTime = -barVisibleDuration; // Agar langsung hidden saat start
+        manaLastChangedTime = -barVisibleDuration;
+
+        // Set alpha awal: hidden jika auto-hide aktif dan CanvasGroup ada
+        if (staminaBarGroup != null && autoHideStaminaBar)
+            staminaBarGroup.alpha = 0f;
+
+        if (manaBarGroup != null && autoHideManaBar)
+            manaBarGroup.alpha = 0f;
     }
 
     private void HandleHealthRegenAndUI()
@@ -161,6 +197,15 @@ public class PlayerStatus : MonoBehaviour
                 easeStaminaImage.rectTransform.localScale = new Vector3(newScale, 1f, 1f);
             }
         }
+
+        // Deteksi perubahan nilai stamina untuk auto-hide
+        if (!Mathf.Approximately(stamina, lastStaminaValue))
+        {
+            staminaLastChangedTime = Time.time;
+            lastStaminaValue = stamina;
+        }
+
+        UpdateBarVisibility(staminaBarGroup, autoHideStaminaBar, staminaLastChangedTime);
     }
 
     public void UseStamina(float amount)
@@ -172,6 +217,10 @@ public class PlayerStatus : MonoBehaviour
 
         // Reset timer setiap kali stamina digunakan (nyerang/lari)
         timeSinceLastStaminaUse = 0f;
+
+        // Langsung trigger show bar saat dipake
+        staminaLastChangedTime = Time.time;
+        lastStaminaValue = stamina;
     }
 
     private void HandleMana()
@@ -203,6 +252,15 @@ public class PlayerStatus : MonoBehaviour
         {
             mana -= 20;
         }
+
+        // Deteksi perubahan nilai mana untuk auto-hide
+        if (!Mathf.Approximately(mana, lastManaValue))
+        {
+            manaLastChangedTime = Time.time;
+            lastManaValue = mana;
+        }
+
+        UpdateBarVisibility(manaBarGroup, autoHideManaBar, manaLastChangedTime);
     }
 
 
@@ -212,6 +270,10 @@ public class PlayerStatus : MonoBehaviour
 
         mana -= amount;
         mana = Mathf.Clamp(mana, 0, maxMana);
+
+        // Langsung trigger show bar saat dipake
+        manaLastChangedTime = Time.time;
+        lastManaValue = mana;
     }
 
     public void RestoreMana(float amount)
@@ -220,6 +282,10 @@ public class PlayerStatus : MonoBehaviour
 
         mana += amount;
         mana = Mathf.Clamp(mana, 0, maxMana);
+
+        // Langsung trigger show bar saat di-restore
+        manaLastChangedTime = Time.time;
+        lastManaValue = mana;
     }
 
     public void Heal(float amount)
@@ -228,6 +294,40 @@ public class PlayerStatus : MonoBehaviour
 
         health += amount;
         health = Mathf.Clamp(health, 0, maxHealth);
+    }
+
+    /// <summary>
+    /// Handle fade in/out bar berdasarkan waktu terakhir nilai berubah.
+    /// Jika CanvasGroup null atau autoHide false, tidak melakukan apa-apa (bar tetap visible).
+    /// </summary>
+    private void UpdateBarVisibility(CanvasGroup group, bool autoHide, float lastChangedTime)
+    {
+        // Tanpa CanvasGroup atau auto-hide mati → skip, bar tetap visible seperti biasa
+        if (group == null || !autoHide) return;
+
+        float timeSinceChange = Time.time - lastChangedTime;
+        float targetAlpha;
+
+        if (timeSinceChange < barVisibleDuration)
+        {
+            // Masih dalam durasi visible → fade in
+            targetAlpha = 1f;
+        }
+        else
+        {
+            // Sudah lewat durasi → fade out
+            targetAlpha = 0f;
+        }
+
+        // Pilih speed berdasarkan arah fade
+        float speed = targetAlpha > group.alpha ? barFadeInSpeed : barFadeOutSpeed;
+        group.alpha = Mathf.Lerp(group.alpha, targetAlpha, speed * Time.deltaTime);
+
+        // Snap ke target jika sudah sangat dekat (hindari floating point terus-terusan)
+        if (Mathf.Abs(group.alpha - targetAlpha) < 0.01f)
+        {
+            group.alpha = targetAlpha;
+        }
     }
 
     public void TakeDamage(float damage)

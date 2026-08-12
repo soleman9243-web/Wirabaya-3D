@@ -1158,9 +1158,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+--- !u!225 &2059397531683973293 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 5354218936132444461, guid: 6f25e1344ac42f847bb3677065c91590, type: 3}
+  m_PrefabInstance: {fileID: 6258440964328573312}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2721655298544338129 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8295403975705185617, guid: 6f25e1344ac42f847bb3677065c91590, type: 3}
+  m_PrefabInstance: {fileID: 6258440964328573312}
+  m_PrefabAsset: {fileID: 0}
+--- !u!225 &3267081472472759170 stripped
+CanvasGroup:
+  m_CorrespondingSourceObject: {fileID: 8902899237670449666, guid: 6f25e1344ac42f847bb3677065c91590, type: 3}
   m_PrefabInstance: {fileID: 6258440964328573312}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &4002881490568917968 stripped
@@ -1408,6 +1418,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 190720746525914433}
     - target: {fileID: 3782649021619342649, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
+      propertyPath: manaBarGroup
+      value: 
+      objectReference: {fileID: 3267081472472759170}
+    - target: {fileID: 3782649021619342649, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: staminaImage
       value: 
       objectReference: {fileID: 7160487112629139702}
@@ -1416,9 +1430,21 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4557423405272167455}
     - target: {fileID: 3782649021619342649, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
+      propertyPath: autoHideManaBar
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3782649021619342649, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
+      propertyPath: staminaBarGroup
+      value: 
+      objectReference: {fileID: 2059397531683973293}
+    - target: {fileID: 3782649021619342649, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: easeStaminaImage
       value: 
       objectReference: {fileID: 5595472944235204766}
+    - target: {fileID: 3782649021619342649, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
+      propertyPath: autoHideStaminaBar
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4085776678335301750, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 5.6
@@ -1461,15 +1487,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6450744695939185257, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.29276174
+      value: -0.2927618
       objectReference: {fileID: 0}
     - target: {fileID: 6450744695939185257, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.03468679
+      value: -0.03468678
       objectReference: {fileID: 0}
     - target: {fileID: 6450744695939185257, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.11242911
+      value: -0.11242912
       objectReference: {fileID: 0}
     - target: {fileID: 7370299580342448357, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1477,7 +1503,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7370299580342448357, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.00058909506
+      value: -0.00058909744
       objectReference: {fileID: 0}
     - target: {fileID: 7370299580342448357, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.y
@@ -1485,7 +1511,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7370299580342448357, guid: 15a500db6099cf9419fb4ef51e1aa62e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.0055253864
+      value: 0.005525409
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

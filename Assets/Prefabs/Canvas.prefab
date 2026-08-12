@@ -159,6 +159,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 552162444275730276}
+  - component: {fileID: 8902899237670449666}
   m_Layer: 5
   m_Name: Mana
   m_TagString: Untagged
@@ -188,6 +189,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -465}
   m_SizeDelta: {x: 600, y: 15}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &8902899237670449666
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 637493593538336845}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1222296870048462202
 GameObject:
   m_ObjectHideFlags: 0
@@ -1870,6 +1883,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4537040994189788898}
+  - component: {fileID: 5354218936132444461}
   m_Layer: 5
   m_Name: Stamina
   m_TagString: Untagged
@@ -1899,6 +1913,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -450}
   m_SizeDelta: {x: 1200, y: 15}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &5354218936132444461
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8396730469147068173}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &8701132304494446322
 GameObject:
   m_ObjectHideFlags: 0
