@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.deltation.toon-shader": {
+      "version": "https://github.com/Delt06/urp-toon-shader.git?path=Packages/com.deltation.toon-shader",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.render-pipelines.universal": "12.1.6"
+      },
+      "hash": "6981f7dc931b53a0bd797725f4dac30b824041d7"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
@@ -86,6 +95,17 @@
       "depth": 0,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.film-internal-utilities": {
+      "version": "0.20.0-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.timeline": "1.2.18",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
       "version": "3.0.40",
@@ -296,6 +316,16 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.toonshader": {
+      "version": "https://github.com/Unity-Technologies/com.unity.toonshader.git?path=/com.unity.toonshader#0.14.1-preview",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.film-internal-utilities": "0.20.0-preview",
+        "com.unity.render-pipelines.core": "17.0.3"
+      },
+      "hash": "7f7e770f05fbf32461c3c356d636c666a86e8d28"
+    },
     "com.unity.ugui": {
       "version": "2.0.0",
       "depth": 0,
@@ -323,6 +353,20 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.yoship1639.unitoon": {
+      "version": "https://github.com/yoship1639/UniToon.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "b4b1cb1036ab7ab906c5962472ff74acf26c3b6f"
+    },
+    "jp.lilxyzw.liltoon": {
+      "version": "https://github.com/lilxyzw/lilToon.git?path=Assets/lilToon#master",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "72fc09625b24c9a750591c286e9192512a5177a1"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.deltation.toon-shader": "https://github.com/Delt06/urp-toon-shader.git?path=Packages/com.deltation.toon-shader",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.12",
     "com.unity.animation.rigging": "1.4.1",
@@ -32,9 +33,12 @@
     "com.unity.test-framework": "1.6.0",
     "com.unity.test-framework.performance": "3.5.0",
     "com.unity.timeline": "1.8.12",
+    "com.unity.toonshader": "https://github.com/Unity-Technologies/com.unity.toonshader.git?path=/com.unity.toonshader#0.14.1-preview",
     "com.unity.ugui": "2.0.0",
     "com.unity.visualeffectgraph": "17.3.0",
     "com.unity.visualscripting": "1.9.11",
+    "com.yoship1639.unitoon": "https://github.com/yoship1639/UniToon.git",
+    "jp.lilxyzw.liltoon": "https://github.com/lilxyzw/lilToon.git?path=Assets/lilToon#master",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
