@@ -1,15 +1,8 @@
 fileFormatVersion: 2
-guid: bc5099d363bfd004486c7d770693507d
+guid: 110c31da2bec40b419aded56ac401bcf
 NativeFormatImporter:
   externalObjects: {}
-  mainObjectFileID: 2800000
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 274414
-  packageName: Procedural Grass GPU Shader & Terrain Tessellation Tools
-  packageVersion: 1.0
-  assetPath: Assets/TerrainTessellationTools/Demos/_ExampleTerrain/TerrainTiles/ExampleTerrain/ExampleTerrain0_7_Texture.asset
-  uploadId: 639955

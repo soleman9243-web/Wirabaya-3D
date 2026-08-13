@@ -1,14 +1,7 @@
 fileFormatVersion: 2
-guid: 23d8661265deed742959416ea58475f7
+guid: 461d2ed2d6ce5ea4eba5db819a8c02ad
 DefaultImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 298128
-  packageName: Fantasy Kingdom in Unity 6 | URP
-  packageVersion: 1.0
-  assetPath: Assets/Scenes/Demo.unity
-  uploadId: 703470

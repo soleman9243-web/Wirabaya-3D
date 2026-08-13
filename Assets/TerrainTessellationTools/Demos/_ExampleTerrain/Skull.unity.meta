@@ -1,14 +1,7 @@
 fileFormatVersion: 2
-guid: 71a02ee96b343c34d8fb2904022516c5
+guid: 36e9b7e03f270a34b9d107a180f6233a
 DefaultImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 274414
-  packageName: Procedural Grass GPU Shader & Terrain Tessellation Tools
-  packageVersion: 1.0
-  assetPath: Assets/TerrainTessellationTools/Demos/_ExampleTerrain/Skull.unity
-  uploadId: 639955

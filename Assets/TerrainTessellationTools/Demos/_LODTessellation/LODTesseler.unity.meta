@@ -1,14 +1,7 @@
 fileFormatVersion: 2
-guid: e38d86dcf7772694b97bed265ece7da2
+guid: c53099a62979e9044a6f0e3cc4645051
 DefaultImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 274414
-  packageName: Procedural Grass GPU Shader & Terrain Tessellation Tools
-  packageVersion: 1.0
-  assetPath: Assets/TerrainTessellationTools/Demos/_LODTessellation/LODTesseler.unity
-  uploadId: 639955

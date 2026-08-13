@@ -1,15 +1,8 @@
 fileFormatVersion: 2
-guid: 2e4124a7b09ff65468002a2fb8b90e08
+guid: cc63fb6e5d5e9574ca94ec9988c26369
 NativeFormatImporter:
   externalObjects: {}
-  mainObjectFileID: 4300000
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 274414
-  packageName: Procedural Grass GPU Shader & Terrain Tessellation Tools
-  packageVersion: 1.0
-  assetPath: Assets/TerrainTessellationTools/Demos/_TerrainTilesSlicer/GeneratedMeshLowPoly.asset
-  uploadId: 639955

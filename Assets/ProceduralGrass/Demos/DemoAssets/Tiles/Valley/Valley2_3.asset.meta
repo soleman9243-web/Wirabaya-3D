@@ -1,15 +1,8 @@
 fileFormatVersion: 2
-guid: 5e9c6db8725e01c4786635b13787b078
+guid: 3776d57f4460b594baee9fed15c3c42b
 NativeFormatImporter:
   externalObjects: {}
-  mainObjectFileID: 4300000
+  mainObjectFileID: 0
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 274414
-  packageName: Procedural Grass GPU Shader & Terrain Tessellation Tools
-  packageVersion: 1.0
-  assetPath: Assets/ProceduralGrass/Demos/DemoAssets/Tiles/Valley/Valley2_3.asset
-  uploadId: 639955
