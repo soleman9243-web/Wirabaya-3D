@@ -296,6 +296,33 @@ public class PlayerStatus : MonoBehaviour
         health = Mathf.Clamp(health, 0, maxHealth);
     }
 
+    // === Save System Setters ===
+    // Digunakan oleh PlayerSaveProvider untuk restore state dari save data.
+
+    /// <summary>
+    /// Set health secara langsung (untuk Save System).
+    /// </summary>
+    public void SetHealth(float value)
+    {
+        health = Mathf.Clamp(value, 0, maxHealth);
+    }
+
+    /// <summary>
+    /// Set stamina secara langsung (untuk Save System).
+    /// </summary>
+    public void SetStamina(float value)
+    {
+        stamina = Mathf.Clamp(value, 0, maxStamina);
+    }
+
+    /// <summary>
+    /// Set mana secara langsung (untuk Save System).
+    /// </summary>
+    public void SetMana(float value)
+    {
+        mana = Mathf.Clamp(value, 0, maxMana);
+    }
+
     /// <summary>
     /// Handle fade in/out bar berdasarkan waktu terakhir nilai berubah.
     /// Jika CanvasGroup null atau autoHide false, tidak melakukan apa-apa (bar tetap visible).
