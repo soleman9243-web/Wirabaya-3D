@@ -39,14 +39,16 @@ namespace TerrainTesselationTools
 
         public void CalculateBirdViewUVs()
         {
-            materialPropertyBlock = new MaterialPropertyBlock();
-            meshRenderer = GetComponent<MeshRenderer>();
-            meshRenderer.GetPropertyBlock(materialPropertyBlock);
             meshFilter = GetComponent<MeshFilter>();
-            if (heightmap == null || meshRenderer == null || meshFilter == null || meshFilter.sharedMesh == null)
+            if (meshFilter == null || meshFilter.sharedMesh == null)
             {
-                enabled = false;
                 return;
+            }
+            meshRenderer = GetComponent<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                materialPropertyBlock = new MaterialPropertyBlock();
+                meshRenderer.GetPropertyBlock(materialPropertyBlock);
             }
             Mesh mesh = meshFilter.sharedMesh;
             Vector3[] vertices = mesh.vertices;
@@ -152,6 +154,7 @@ namespace TerrainTesselationTools
         }
         public Texture2D GetTexture()
         {
+            if (heightmap == null) return Texture2D.blackTexture;
             return heightmap;
         }
         public void SetTerrainHeightForce(float terrainHeightForce)

@@ -21,6 +21,11 @@ public class ParkourAction : ScriptableObject
     [SerializeField] float matchTargetTime;
     [SerializeField] Vector3 matchPositionWeight = new Vector3(0, 1, 0); // Default ke Y (Tinggi)
 
+    [Header("Audio SFX Setup")]
+    [Tooltip("Slot file audio SFX saat aksi parkour ini dieksekusi (Vault, Climb, Jump, dll).")]
+    [SerializeField] AudioClip actionAudioClip;
+    [SerializeField, Range(0f, 1f)] float audioVolume = 1f;
+
     // Properties (Getters)
     public string AnimName => animName;
     public string ObstacleTag => obstacleTag;
@@ -31,6 +36,8 @@ public class ParkourAction : ScriptableObject
     public float MatchStartTime => matchStartTime;
     public float MatchTargetTime => matchTargetTime;
     public Vector3 MatchPositionWeight => matchPositionWeight;
+    public AudioClip ActionAudioClip => actionAudioClip;
+    public float AudioVolume => audioVolume;
 
     public bool CheckIfPossible(ObstacleHitData hitData, Transform player)
     {

@@ -8,6 +8,18 @@ public class PlayerTakedown : MonoBehaviour
     [Header("Quest")]
     public string takedownObjectiveId = "perform_takedown";
 
+    [Header("Movement Audio SFX")]
+    [Tooltip("Slot AudioSource untuk memutar suara aksi takedown.")]
+    public AudioSource audioSource;
+
+    [Tooltip("Suara SFX saat gerakan takedown dimulai (misal: gerak cepat/dash/whoosh).")]
+    public AudioClip takedownStartAudioClip;
+
+    [Tooltip("Suara SFX saat sergapan takedown kena musuh.")]
+    public AudioClip takedownImpactAudioClip;
+
+    [Range(0f, 1f)] public float audioVolume = 1f;
+
     private EnemyAI currentTarget;
 
     private ThirdPersonController controller;
@@ -18,6 +30,10 @@ public class PlayerTakedown : MonoBehaviour
         controller = GetComponent<ThirdPersonController>();
         characterController = GetComponent<CharacterController>();
         playerAnimator = GetComponent<Animator>();
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
     }
 
     private void Update()
@@ -67,6 +83,11 @@ public class PlayerTakedown : MonoBehaviour
         currentTarget.TakedownCamera.gameObject.SetActive(true);
 
         playerAnimator.SetTrigger("Takedown");
+
+        if (audioSource != null && takedownStartAudioClip != null)
+        {
+            audioSource.PlayOneShot(takedownStartAudioClip, audioVolume);
+        }
 
         currentTarget.OnTakedownStart();
     }

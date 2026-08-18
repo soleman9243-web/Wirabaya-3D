@@ -18,6 +18,10 @@ public class ParkourController : MonoBehaviour
     [Tooltip("ID Objektif yang akan selesai secara otomatis SATU KALI saat berhasil melakukan parkour.")]
     public string parkourObjectiveId = "obj_SelesaikanParkour";
 
+    [Header("Audio Setup")]
+    [Tooltip("Slot AudioSource untuk memutar efek suara gerakan parkour.")]
+    public AudioSource audioSource;
+
     private GameObject lastObstacle;
     public bool InAction => inAction;
     private bool inAction;
@@ -29,6 +33,10 @@ public class ParkourController : MonoBehaviour
         thirdPersonController = GetComponent<ThirdPersonController>();
         _input = GetComponent<StarterAssetsInputs>();
         characterController = GetComponent<CharacterController>();
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
     }
 
     private void Start()
@@ -62,6 +70,12 @@ public class ParkourController : MonoBehaviour
         inAction = true;
         _input.jump = false;
         thirdPersonController.SetControl(false);
+
+        // Putar audio SFX parkour jika ada
+        if (audioSource != null && action.ActionAudioClip != null)
+        {
+            audioSource.PlayOneShot(action.ActionAudioClip, action.AudioVolume);
+        }
 
         animator.SetBool("Grounded", true);
         animator.SetFloat("Speed", 0f);

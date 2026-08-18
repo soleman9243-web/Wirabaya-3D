@@ -60,6 +60,8 @@ namespace StarterAssets
 
         public AudioClip LandingAudioClip;
 
+        public AudioClip JumpAudioClip;
+
         public AudioClip[] FootstepAudioClips;
 
         [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
@@ -170,6 +172,8 @@ namespace StarterAssets
 
         private float _rotationVelocity;
 
+        private float _currentTurnValue;
+
         private float _verticalVelocity;
 
         private float _terminalVelocity = 53.0f;
@@ -195,6 +199,8 @@ namespace StarterAssets
         private int _animIDFreeFall;
 
         private int _animIDMotionSpeed;
+
+        private int _animIDTurn;
 
 
 
@@ -227,7 +233,9 @@ namespace StarterAssets
 
         private bool _hasAnimator;
 
-
+        // ===== NO JUMP ZONE =====
+        private bool _isOnNoJumpZone = false;
+        private int _noJumpLayerIndex;
 
         // ===== VARIABEL UNTUK PARKOUR SYSTEM =====
 
@@ -310,7 +318,7 @@ namespace StarterAssets
 
             AssignAnimationIDs();
 
-
+            _noJumpLayerIndex = LayerMask.NameToLayer("NoJump");
 
             // reset our timeouts on start
 
@@ -391,6 +399,8 @@ namespace StarterAssets
             _animIDFreeFall = Animator.StringToHash("FreeFall");
 
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+
+            _animIDTurn = Animator.StringToHash("Turn");
 
         }
 
@@ -605,8 +615,6 @@ namespace StarterAssets
 
 
 
-
-
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
 
@@ -628,6 +636,13 @@ namespace StarterAssets
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
 
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+
+                // Perbaikan Bug: Animasi Turn (Left/Right) HANYA aktif saat berdiri diam (_input.move == Vector2.zero & _speed < 0.1f).
+                // Saat berjalan/lari dengan WASD, Turn dipaksa ke 0 agar animasi Walk_N / Run_N berjalan mulus tanpa looping turn!
+                float targetTurn = (_input.move == Vector2.zero && _speed < 0.1f) ? Mathf.Clamp(_rotationVelocity / 180f, -1f, 1f) : 0f;
+                _currentTurnValue = Mathf.Lerp(_currentTurnValue, targetTurn, Time.deltaTime * 10f);
+
+                _animator.SetFloat(_animIDTurn, _currentTurnValue);
 
             }
 
@@ -675,9 +690,9 @@ namespace StarterAssets
 
 
 
-                // Jump
+                // Jump (diblokir jika sedang di zona NoJump)
 
-                if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                if (_input.jump && _jumpTimeoutDelta <= 0.0f && !_isOnNoJumpZone)
 
                 {
 
@@ -694,6 +709,14 @@ namespace StarterAssets
                     {
 
                         _animator.SetBool(_animIDJump, true);
+
+                    }
+
+                    if (JumpAudioClip != null)
+
+                    {
+
+                        AudioSource.PlayClipAtPoint(JumpAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
 
                     }
 
@@ -770,6 +793,8 @@ namespace StarterAssets
             }
 
         }
+
+
 
 
 
@@ -856,6 +881,9 @@ namespace StarterAssets
         private void OnControllerColliderHit(ControllerColliderHit hit)
 
         {
+
+            // ===== NO JUMP ZONE DETECTION =====
+            _isOnNoJumpZone = (hit.gameObject.layer == _noJumpLayerIndex);
 
             Rigidbody rb = hit.collider.attachedRigidbody;
 
@@ -948,6 +976,16 @@ namespace StarterAssets
 
             }
 
+        }
+
+        private void OnAnimatorMove()
+        {
+            if (_hasAnimator && _input != null && _input.move == Vector2.zero && _speed < 0.1f)
+            {
+                // Terapkan rotasi murni dari animasi (Root Motion) saat diam/Idle Turn
+                // Ini menjamin rotasi karakter 100% bergerak pas & bersamaan dengan langkah kaki animasi Mixamo!
+                transform.rotation *= _animator.deltaRotation;
+            }
         }
 
     }

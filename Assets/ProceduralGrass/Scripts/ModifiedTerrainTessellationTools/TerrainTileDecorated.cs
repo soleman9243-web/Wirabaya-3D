@@ -72,10 +72,14 @@ namespace TerrainTesselationTools
         {
             foreach(TerrainTileDecoration tileDecoration in tileDecorations)
             {
-                if (tileDecoration.GetTerrainDecorationRenderer() == proceduralRenderer)
+                if (tileDecoration != null && tileDecoration.GetTerrainDecorationRenderer() == proceduralRenderer)
                 {
                     return tileDecoration.GetTerrainDecorationSO();
                 }
+            }
+            if (tileDecorations != null && tileDecorations.Count > 0 && tileDecorations[0] != null)
+            {
+                return tileDecorations[0].GetTerrainDecorationSO();
             }
             return null;
         }
