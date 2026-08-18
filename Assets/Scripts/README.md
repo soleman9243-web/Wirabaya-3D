@@ -91,10 +91,16 @@ Sistem save diatur secara terpusat untuk menyimpan progress antar scene.
 
 ## 6. Transisi Scene (Game Scene Manager)
 
+*   **ScreenFader (Efek Fade In/Out):**
+    *   Buat UI Canvas baru (atau gunakan yang ada) dan buat objek UI Image kotak hitam pekat yang menutupi seluruh layar (Stretch).
+    *   Pasang script `ScreenFader` pada objek UI Image tersebut. 
+    *   Assign komponen Image hitam tadi ke kolom `Fade Image` di script.
+    *   Centang `Fade In On Start` jika Anda ingin layar perlahan terang (Fade-In) secara mulus saat scene baru dimuat.
+    *   Atur kecepatan durasi memudar di kolom `Fade Duration`.
 *   **GameSceneManager:**
     *   Pusat kontrol pemindahan area/level. Taruh komponen ini di sebuah objek manajer di Scene.
     *   Untuk memindahkan scene secara aman, baik lewat klik UI Button di menu utama maupun setelah karakter menyentuh Trigger transisi area di ujung map, panggil fungsi script `GameSceneManager.Instance.ChangeScene("NamaScene")`.
-    *   Sistem ini secara otomatis akan mendeteksi komponen `ScreenFader` yang ada di dalam Canvas (Bila terpasang). Bila ditemukan, layar akan perlahan memudar menjadi gelap (fade-out), scene baru akan dimuat di latar belakang, dan setelah selesai akan memudar kembali menjadi terang (fade-in). Tidak akan terjadi freeze loading mendadak di layar pemain.
+    *   Sistem ini secara otomatis akan memicu `ScreenFader` yang Anda pasang sebelumnya agar layar memudar menjadi gelap (fade-out), memuat scene baru di latar belakang, dan mencegah freeze mendadak di layar pemain.
 
 ## 7. Audio System
 
@@ -104,6 +110,44 @@ Sistem save diatur secara terpusat untuk menyimpan progress antar scene.
     *   Letakkan komponen script ini secara berdampingan dengan Animator (Karakter atau Musuh).
     *   Buka jendela panel Animation Unity (Saat mengedit klip animasi seperti Berjalan atau Menyerang), lalu buat Animation Event keyframe pada frame tertentu yang diinginkan.
     *   Pada panel Event, pilih dan panggil fungsi `PlayRandomFromGroup` (Ketik parameter string nama grupnya di bawah kotak fungsi, misal "Step" untuk suara langkah acak), atau panggil fungsi `PlaySoundByName` (Ketik parameter string nama audio satuan spesifiknya). Suara akan langsung dieksekusi tepat pada frame tersebut, cocok untuk timing suara langkah dan pukulan senjata.
+
+## 8. Cutscene System
+
+Sistem untuk menjalankan dan melewati (skip) cutscene, baik yang berbasis gambar bercerita maupun cutscene dari Timeline.
+
+*   **ImageCutscene (Cutscene Gambar Teks):**
+    *   Taruh script ini di GameObject CutsceneManager (atau langsung di Canvas Cutscene).
+    *   Assign referensi UI `Text Component` (berbasis TextMeshPro) dan `Image Component`.
+    *   Pada array `Frames`, isi urutan adegan cerita. Setiap frame berisi teks narasi dan gambar latar/karakter yang sesuai. Script ini akan merender frame satu per satu secara berurutan sesuai dialog cerita.
+*   **TimelineSceneLoader:**
+    *   Digunakan khusus jika Anda membuat cutscene menggunakan Unity Timeline (Playable Director) dan ingin otomatis memicu perpindahan scene begitu Timeline selesai diputar.
+    *   **Cara Pasang Signal:**
+        1.  Tambahkan komponen `TimelineSceneLoader` ke GameObject Playable Director (tempat Timeline Anda berada).
+        2.  Buka panel Timeline, klik tombol ikon Peniti/Gembok (Add Marker/Signal Track).
+        3.  Klik kanan pada track Signal tersebut di detik terakhir cutscene Anda, lalu pilih *Add Signal Emitter*.
+        4.  Buat/Pilih *Signal Asset* baru.
+        5.  Pada Signal Receiver yang muncul di Inspector, tambahkan event baru (+).
+        6.  Drag GameObject yang memiliki `TimelineSceneLoader` ke kotak objek yang tersedia.
+        7.  Pilih fungsi `TimelineSceneLoader -> LoadScene (string)`.
+        8.  Ketik nama Scene tujuan Anda ke kotak string parameter yang muncul.
+*   **CutsceneSkipper:**
+    *   Digunakan agar pemain memiliki opsi menekan (hold) tombol untuk memotong (skip) cutscene panjang.
+    *   Taruh script ini di objek manajer cutscene.
+    *   Pada array `Skip Inputs`, tambahkan tombol input (misal: tombol `Space` atau `Escape`) beserta GameObject UI Icon lingkaran loading skip-nya.
+    *   Atur `Hold Duration` untuk menentukan durasi berapa detik pemain harus menahan tombol tersebut secara konstan hingga cutscene benar-benar dihentikan/di-skip.
+
+## 9. Sistem Interaksi (Pintu & Benda)
+
+*   **InteractObject (Sistem Interaksi Benda/NPC):**
+    *   Taruh script ini pada model 3D benda statis (peti, tuas) atau NPC yang bisa diajak berinteraksi.
+    *   Centang opsi `Use Area Trigger` jika interaksi terjadi saat pemain memasuki zona dekat benda tersebut (tanpa perlu repot mengarahkan kamera). Jika tidak dicentang, pemain harus menatap persis ke arah benda tersebut menggunakan sistem Raycast (kamera kursor bidik).
+    *   Manfaatkan `On Interact` (UnityEvent) untuk memanggil fungsi mekanik secara fleksibel saat pemain menekan tombol aksi. Contoh penggunaannya: memanggil script pembuka pintu, memicu masuk scene dialog NPC, atau memicu transisi scene level baru.
+    *   Jika benda/interaksi ini dibatasi (dikunci) oleh quest, isikan `Require Completed Objective Id` dengan ID quest terkait, sehingga benda ini baru bisa diinteraksi hanya setelah pemain menuntaskan quest tersebut.
+*   **InteractDoor (Sistem Pintu):**
+    *   Script mekanik khusus pintu ayun. Letakkan di induk model pintu.
+    *   Isi referensi `Door Pivot` dengan objek engsel pintu (tempat titik poros putaran pintu).
+    *   Atur besaran bukaan di `Open Angle` (umumnya 90 derajat) dan kecepatan engsel di `Open Speed`.
+    *   Panggil fungsi `ToggleOpenClose()` melalui UnityEvent (misalnya dari klik UI Button, atau dari trigger `InteractObject` di atas) untuk membuka atau menutup pintu tersebut secara dinamis.
 
 ---
 Catatan: Semua script bawaan utilitas atau demo dari asset luar (contohnya Fantasy Kingdom) telah dipindahkan dan dirapikan letaknya ke dalam folder khusus `Assets/Scripts/_ThirdParty_FantasyKingdom` demi menjaga susunan script internal yang rapi.
