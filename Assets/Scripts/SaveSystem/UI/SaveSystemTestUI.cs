@@ -90,7 +90,7 @@ public class SaveSystemTestUI : MonoBehaviour
         scrollPosition = GUILayout.BeginScrollView(scrollPosition);
 
         // === HEADER ===
-        GUILayout.Box("═══ SAVE SYSTEM TEST ═══", GUILayout.ExpandWidth(true));
+        GUILayout.Box("Save System Test", GUILayout.ExpandWidth(true));
         GUILayout.Space(5);
 
         // Status Message
@@ -109,7 +109,7 @@ public class SaveSystemTestUI : MonoBehaviour
             // Toggle Save System On/Off
             bool isEnabled = SaveManager.Instance.saveSystemEnabled;
             GUI.color = isEnabled ? Color.green : Color.red;
-            string toggleLabel = isEnabled ? "✅ Save System: ON" : "❌ Save System: OFF (Testing Mode)";
+            string toggleLabel = isEnabled ? "Save System: ON" : "Save System: OFF (Testing Mode)";
             if (GUILayout.Button(toggleLabel, GUILayout.Height(30)))
             {
                 SaveManager.Instance.saveSystemEnabled = !isEnabled;
@@ -129,7 +129,7 @@ public class SaveSystemTestUI : MonoBehaviour
         GUILayout.Space(10);
 
         // === PLAYER STATUS ===
-        GUILayout.Box("── Player Status ──", GUILayout.ExpandWidth(true));
+        GUILayout.Box("Player Status", GUILayout.ExpandWidth(true));
         if (PlayerStatus.Instance != null)
         {
             PlayerStatus ps = PlayerStatus.Instance;
@@ -163,7 +163,7 @@ public class SaveSystemTestUI : MonoBehaviour
         GUILayout.Space(10);
 
         // === QUEST STATUS ===
-        GUILayout.Box("── Quest Status ──", GUILayout.ExpandWidth(true));
+        GUILayout.Box("Quest Status", GUILayout.ExpandWidth(true));
         if (QuestManager.Instance != null)
         {
             QuestManager qm = QuestManager.Instance;
@@ -172,7 +172,7 @@ public class SaveSystemTestUI : MonoBehaviour
                 GUILayout.Label($"Quest: {qm.currentQuest.data.title} ({qm.currentQuest.data.questId})");
                 foreach (var obj in qm.currentQuest.objectives)
                 {
-                    string check = obj.isCompleted ? "✓" : "○";
+                    string check = obj.isCompleted ? "[X]" : "[ ]";
                     GUILayout.Label($"  {check} {obj.description} [{obj.currentAmount}/{obj.targetAmount}]");
                 }
             }
@@ -189,10 +189,10 @@ public class SaveSystemTestUI : MonoBehaviour
         GUILayout.Space(10);
 
         // === SAVE ACTIONS ===
-        GUILayout.Box("── Save Actions ──", GUILayout.ExpandWidth(true));
+        GUILayout.Box("Save Actions", GUILayout.ExpandWidth(true));
 
         // Auto Save
-        if (GUILayout.Button("🔄 AUTO SAVE (Chapter)", GUILayout.Height(35)))
+        if (GUILayout.Button("Auto Save (Chapter)", GUILayout.Height(35)))
         {
             if (SaveManager.Instance != null && testChapter != null)
             {
@@ -216,7 +216,7 @@ public class SaveSystemTestUI : MonoBehaviour
             int slotIndex = i; // lambda capture
             GUILayout.BeginHorizontal();
             
-            if (GUILayout.Button($"💾 Save Slot {i}", GUILayout.Height(28)))
+            if (GUILayout.Button($"Save Slot {i}", GUILayout.Height(28)))
             {
                 if (SaveManager.Instance != null)
                 {
@@ -247,9 +247,9 @@ public class SaveSystemTestUI : MonoBehaviour
         GUILayout.Space(10);
 
         // === LOAD SECTION ===
-        GUILayout.Box("── All Save Files ──", GUILayout.ExpandWidth(true));
+        GUILayout.Box("All Save Files", GUILayout.ExpandWidth(true));
 
-        if (GUILayout.Button("🔃 Refresh Save List"))
+        if (GUILayout.Button("Refresh Save List"))
         {
             RefreshSlots();
         }
@@ -274,11 +274,11 @@ public class SaveSystemTestUI : MonoBehaviour
                 GUILayout.Label($"  HP:{slot.data.playerHealth:F0} Pos:{slot.data.playerPosition.ToVector3():F1}", 
                     GUILayout.ExpandWidth(true));
 
-                if (GUILayout.Button("📂 Load", GUILayout.Width(70), GUILayout.Height(25)))
+                if (GUILayout.Button("Load", GUILayout.Width(70), GUILayout.Height(25)))
                 {
                     SaveManager.Instance.LoadGame(slot.fileName);
                 }
-                if (GUILayout.Button("🗑", GUILayout.Width(30), GUILayout.Height(25)))
+                if (GUILayout.Button("Delete", GUILayout.Width(60), GUILayout.Height(25)))
                 {
                     SaveManager.Instance.DeleteSave(slot.fileName);
                     ShowStatus($"Deleted: {slot.fileName}");
@@ -291,12 +291,12 @@ public class SaveSystemTestUI : MonoBehaviour
         GUILayout.Space(10);
 
         // === SCENE NAVIGATION (Test) ===
-        GUILayout.Box("── Scene Navigation (Test) ──", GUILayout.ExpandWidth(true));
+        GUILayout.Box("Scene Navigation (Test)", GUILayout.ExpandWidth(true));
         if (testChapter != null)
         {
             foreach (var scene in testChapter.scenes)
             {
-                string label = scene.isCutscene ? $"🎬 {scene.sceneName}" : $"🎮 {scene.sceneName}";
+                string label = scene.isCutscene ? $"[Cutscene] {scene.sceneName}" : $"[Gameplay] {scene.sceneName}";
                 if (GUILayout.Button(label, GUILayout.Height(25)))
                 {
                     SceneManager.LoadScene(scene.sceneName);
