@@ -309,69 +309,37 @@ Shader "ProceduralGrass/Grass"
 
             float4 frag(v2f i, float facing : VFACE) : SV_Target
             {
-                #ifdef _Unlit
-                    return i.color * tex2D(_BaseMap, i.uv);
-                #endif
-                InputData inputData;
+                half4 texCol = tex2D(_BaseMap, i.uv);
+                clip(texCol.a - 0.35);
 
+                InputData inputData;
                 inputData.positionWS = i.worldPos;
                 inputData.positionCS = i.pos;
-                inputData.normalWS = i.normal;
+                inputData.normalWS = (facing == 0) ? -i.normal : i.normal;
                 inputData.viewDirectionWS = normalize(_WSpaceCameraPos - i.worldPos);
                 inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
                 inputData.fogCoord = 0.0;
                 inputData.vertexLighting = half3(0, 0, 0);
-                inputData.bakedGI = half3(0, 0, 0);
+                inputData.bakedGI = half3(0.25, 0.35, 0.18);
                 inputData.normalizedScreenSpaceUV = float2(0, 0);
-                inputData.shadowMask = half4(0, 0, 0, 0);
+                inputData.shadowMask = half4(1, 1, 1, 1);
                 inputData.tangentToWorld = half3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
                 SurfaceData surfaceData;
-
-                surfaceData.albedo =  lerp(float4(1, 1, 1, 1), i.color, _ColorAlbedoStrength) * tex2D(_BaseMap, i.uv);
-                surfaceData.specular = float4(1,1,1,1);
+                surfaceData.albedo = i.color.rgb * texCol.rgb * 1.35;
+                surfaceData.specular = float4(1, 1, 1, 1);
                 surfaceData.metallic = _Metallic;
                 surfaceData.smoothness = _Smoothness;
                 surfaceData.normalTS = half3(0, 0, 1);
                 surfaceData.emission = half3(0, 0, 0);
-                surfaceData.occlusion = 0.0;
+                surfaceData.occlusion = 1.0;
                 surfaceData.alpha = 1.0;
                 surfaceData.clearCoatMask = 0.0;
                 surfaceData.clearCoatSmoothness = 0.0;
 
-                if(facing == 0){
-                    inputData.normalWS = -inputData.normalWS;
-                }
-                float4 ambientColor = float4(0,0,0,1);
-                #ifdef _WhiteAmbient
-                    ambientColor.rgb = max(unity_SHAr.w, max(unity_SHAg.w,unity_SHAb.w));
-                #else
-                    ambientColor = half4(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w,1);
-                #endif
-                ambientColor = ambientColor * i.color * tex2D(_BaseMap, i.uv) * _AmbientStrength;
-                #ifdef _ExtraSpecular
-                    float gloss = tex2D(_ExtraSpecMap, i.uv);
-                    AmbientOcclusionFactor aoFactor = CreateAmbientOcclusionFactor(inputData, surfaceData);
-                    Light mainLight = GetMainLight(inputData, inputData.shadowMask, aoFactor);
-                    float3 l = normalize(mainLight.direction);
-                    float3 r = normalize(reflect(-l,i.normal));
-                    float3 r2 = normalize(reflect(-l,-i.normal));
-                    float3 v = normalize(_WSpaceCameraPos - i.worldPos);
-                    float shininess = lerp(0, 1, gloss);
-                    float spec = saturate(dot(r,v)) * shininess * _ExtraSpecStrength;
-                    float4 specColor = float4(0,0,0,1);
-                    #ifdef _ExtraSpecularMonoColor
-                        specColor = (spec * _ExtraSpecColor * tex2D(_BaseMap, i.uv));
-                    #else
-                        specColor = (spec * i.color * tex2D(_BaseMap, i.uv));
-                    #endif
-                    half4 finalColor =  max(UniversalFragmentPBR(inputData, surfaceData),ambientColor);
-                    if (any(finalColor.rgb != ambientColor.rgb)) {
-                        finalColor += finalColor * specColor;
-                    }
-                    return finalColor;
-                #endif
-                return max(UniversalFragmentPBR(inputData, surfaceData),ambientColor);
+                half4 ambientColor = half4(0.2, 0.3, 0.15, 1.0) * i.color * _AmbientStrength;
+                half4 pbrCol = UniversalFragmentPBR(inputData, surfaceData);
+                return max(pbrCol, ambientColor);
             }
             ENDHLSL
         }
