@@ -317,14 +317,14 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.toonshader": {
-      "version": "https://github.com/Unity-Technologies/com.unity.toonshader.git?path=/com.unity.toonshader#0.14.1-preview",
+      "version": "0.15.0-preview",
       "depth": 0,
-      "source": "git",
+      "source": "registry",
       "dependencies": {
-        "com.unity.film-internal-utilities": "0.20.0-preview",
-        "com.unity.render-pipelines.core": "17.0.3"
+        "com.unity.render-pipelines.core": "17.0.3",
+        "com.unity.film-internal-utilities": "0.20.0-preview"
       },
-      "hash": "7f7e770f05fbf32461c3c356d636c666a86e8d28"
+      "url": "https://packages.unity.com"
     },
     "com.unity.ugui": {
       "version": "2.0.0",
@@ -353,13 +353,6 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
-    },
-    "com.yoship1639.unitoon": {
-      "version": "https://github.com/yoship1639/UniToon.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "b4b1cb1036ab7ab906c5962472ff74acf26c3b6f"
     },
     "jp.lilxyzw.liltoon": {
       "version": "https://github.com/lilxyzw/lilToon.git?path=Assets/lilToon#master",
