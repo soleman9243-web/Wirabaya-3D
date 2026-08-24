@@ -2,138 +2,279 @@ using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 
 namespace Unity.FantasyKingdom
 {
     /// <summary>
-    /// TerrainGrassSpawner: Generator Padang Rumput Lebat AAA.
-    /// - Fitur Anti-Nembus Collider: Rumput tidak akan pernah menggantung di udara atau menembus bagian bawah tebing.
-    /// - Filter Kemiringan Tebing (Slope Filter): Rumput hanya tumbuh di tanah datar dan bukit landai, tidak di tebing terjal.
-    /// - Pola Padang Rumput Menyatu Rapi tanpa Tumpukan.
+    /// TerrainGrassSpawner: Sistem Padang Rumput Ultra Padat Tanpa Jarak (Ultra-Dense Carpet).
+    /// - Jarak Super Rapat (Grid Step 11cm & Min Spacing 2cm).
+    /// - Rumpun Saling Bertumpuk Padat (2.200 - 4.000 Rumpun).
+    /// - Rumput Tinggi Ramping Berdiri Tegak.
+    /// - Kuas Scene View Super Lebat.
     /// </summary>
     [ExecuteAlways]
     public class TerrainGrassSpawner : MonoBehaviour
     {
-        [Header("Grass Prefab & Layer Restriction")]
-        [Tooltip("Prefab model rumput 3D yang akan dipasang di Terrain.")]
-        public GameObject grassPrefab;
+        [Header("Clean Low-Poly Grass Prefabs (PT_Grass)")]
+        public GameObject[] grassPrefabs;
 
-        [Tooltip("Layer tanah tempat rumput boleh ditanam (Default: Ground & Terrain).")]
-        public LayerMask groundLayer;
+        [Header("Meadow Density & Area (Ultra Padat)")]
+        [Range(5f, 35f)]
+        [Tooltip("Jari-jari area padang rumput di sekitar karakter.")]
+        public float meadowRadius = 14f;
 
-        [Header("Surface & Anti-Clipping Protection (Anti-Nembus)")]
-        [Tooltip("Kemiringan maksimal tanah tempat rumput boleh tumbuh (mencegah rumput nempel di dinding tebing).")]
-        [Range(15f, 45f)]
-        public float maxSlopeAngle = 35f;
+        [Range(300, 4500)]
+        [Tooltip("Target jumlah rumpun (2.200+ = karpet hijau tebal saling menempel erat).")]
+        public int targetClumpCount = 2200;
 
-        [Tooltip("Jarak cek penyangga tanah di sekeliling rumpun agar rumput tidak menggantung di tepi jurang.")]
-        [Range(0.2f, 0.8f)]
-        public float edgeFootprintCheck = 0.35f;
+        [Range(0.01f, 0.25f)]
+        [Tooltip("Jarak minimal antar rumpun (0.02m = rumput saling menempel erat tanpa celah tanah).")]
+        public float minSpacing = 0.02f;
 
-        [Header("Tsushima Meadow Settings (Kepadatan Karpet Rumput)")]
-        [Tooltip("Pusat area padang rumput (kosongkan untuk auto-detect player).")]
-        public Transform centerTransform;
-        [Tooltip("Jari-jari area padang rumput (dalam meter).")]
-        [Range(10f, 60f)]
-        public float spawnRadius = 25f;
-        [Tooltip("Jumlah rumpun untuk membentuk padang rumput lebat.")]
-        [Range(50, 600)]
-        public int targetGrassCount = 280;
+        [Header("Grass Dimensions (Tinggi & Lebar)")]
+        [Range(0.5f, 2.5f)]
+        [Tooltip("Pengali tinggi rumput.")]
+        public float heightMultiplier = 1.55f;
 
-        [Header("Natural Spacing & Blending")]
-        [Tooltip("Jarak antar rumpun rumput agar menyatu tanpa tumpukan ganda.")]
-        [Range(0.4f, 1.5f)]
-        public float naturalSpacing = 0.6f;
+        [Range(0.4f, 2.0f)]
+        public float minScale = 1.0f;
 
-        [Tooltip("Variasi skala agar rumpun rumput rimbun dan menyatu.")]
-        public Vector2 scaleVariation = new Vector2(1.2f, 1.6f);
-        public bool alignToTerrainSlope = true;
+        [Range(0.4f, 2.5f)]
+        public float maxScale = 1.5f;
 
-        [Header("Tsushima Brush Painting")]
+        [Range(0.0f, 1.0f)]
+        [Tooltip("Tingkat kemiringan terhadap tanah (0 = Tegak Lurus, 1 = Miring Lereng).")]
+        public float alignWithGroundNormal = 0.25f;
+
+        [Range(0.0f, 0.2f)]
+        [Tooltip("Kedalaman akar menancap ke tanah.")]
+        public float rootSinkDepth = 0.04f;
+
+        [Header("Scene View Brush Painter (Super Lebat)")]
         public bool enableBrushMode = true;
-        [Range(1.5f, 12f)]
-        public float brushRadius = 4.5f;
-        [Range(1, 6)]
-        public int brushDensity = 4;
+        [Range(1.0f, 10f)]
+        public float brushRadius = 2.5f;
+        [Range(1, 50)]
+        [Tooltip("Kepadatan sekali sapuan kuas.")]
+        public int brushDensity = 25;
 
-        [Header("Hierarchy Management")]
-        [SerializeField] private Transform grassContainer;
+        [Header("Player Trample Interaction (Reaksi Injak Kaki)")]
+        public bool enableTrample = true;
+        [Range(0.4f, 2.5f)]
+        [Tooltip("Radius sentuhan tapak kaki ke helai rumput.")]
+        public float interactionRadius = 1.1f;
 
-        public Transform Container
+        [Range(5f, 30f)]
+        [Tooltip("Sudut kemiringan saat diinjak.")]
+        public float maxBendAngle = 18f;
+
+        public Transform playerTransform;
+
+        [Header("Surface Protection")]
+        [Range(15f, 55f)]
+        public float maxSlopeAngle = 42f;
+        public LayerMask groundLayer = ~0;
+
+        private struct GrassClumpData
         {
-            get
+            public Transform transform;
+            public Quaternion baseRotation;
+        }
+        private List<GrassClumpData> activeClumps = new List<GrassClumpData>();
+
+        private void Awake()
+        {
+            RemoveOldLegacyMeshComponents();
+            ForceLoadPTGrassPrefabs();
+            DeleteAllDemoTilesInScene();
+            CacheClumpData();
+        }
+
+        private void OnEnable()
+        {
+            RemoveOldLegacyMeshComponents();
+            ForceLoadPTGrassPrefabs();
+            DeleteAllDemoTilesInScene();
+            CacheClumpData();
+        }
+
+        private void Start()
+        {
+            RemoveOldLegacyMeshComponents();
+            ForceLoadPTGrassPrefabs();
+            FindPlayer();
+            DeleteAllDemoTilesInScene();
+            CacheClumpData();
+        }
+
+        public void RemoveOldLegacyMeshComponents()
+        {
+            #if UNITY_EDITOR
+            var mf = GetComponent<MeshFilter>();
+            if (mf != null)
             {
-                if (grassContainer == null)
+                mf.sharedMesh = null;
+                Undo.DestroyObjectImmediate(mf);
+            }
+
+            var mr = GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                Undo.DestroyObjectImmediate(mr);
+            }
+            #else
+            var mf = GetComponent<MeshFilter>();
+            if (mf != null)
+            {
+                mf.sharedMesh = null;
+                DestroyImmediate(mf);
+            }
+            var mr = GetComponent<MeshRenderer>();
+            if (mr != null)
+            {
+                DestroyImmediate(mr);
+            }
+            #endif
+        }
+
+        public static void DeleteAllDemoTilesInScene()
+        {
+            #if UNITY_EDITOR
+            var allObjects = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            int deletedCount = 0;
+            foreach (var go in allObjects)
+            {
+                if (go != null && (go.name.Contains("ExampleDemoTile") || go.name.Contains("GrassRendererGreen") || go.name == "DemoTile"))
                 {
-                    grassContainer = transform;
+                    Undo.DestroyObjectImmediate(go);
+                    deletedCount++;
                 }
-                return grassContainer;
             }
+            if (deletedCount > 0)
+            {
+                EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            }
+            #endif
         }
 
-        private List<Vector3> placedPositions = new List<Vector3>();
-
-        private void Reset()
+        public void CacheClumpData()
         {
-            SetupDefaultGroundLayer();
-
-            if (grassPrefab == null)
-            {
-                #if UNITY_EDITOR
-                string[] guids = AssetDatabase.FindAssets("PT_Grass_02_v1 t:Prefab");
-                if (guids.Length > 0)
-                {
-                    string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                    grassPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                }
-                #endif
-            }
-        }
-
-        private void OnValidate()
-        {
-            if (naturalSpacing < 0.4f) naturalSpacing = 0.55f;
-            if (groundLayer.value == 0 || groundLayer.value == ~0)
-            {
-                SetupDefaultGroundLayer();
-            }
-        }
-
-        private void SetupDefaultGroundLayer()
-        {
-            int groundIndex = LayerMask.NameToLayer("Ground");
-            if (groundIndex >= 0)
-            {
-                groundLayer = (1 << groundIndex) | (1 << 0);
-            }
-            else
-            {
-                groundLayer = 1 << 0;
-            }
-        }
-
-        public void RebuildPositionsList()
-        {
-            placedPositions.Clear();
+            activeClumps.Clear();
             for (int i = 0; i < transform.childCount; i++)
             {
-                placedPositions.Add(transform.GetChild(i).position);
+                Transform child = transform.GetChild(i);
+                activeClumps.Add(new GrassClumpData
+                {
+                    transform = child,
+                    baseRotation = child.rotation
+                });
             }
         }
 
-        public bool IsSpotOccupied(Vector3 worldPos, float minDistance)
+        public void ForceLoadPTGrassPrefabs()
         {
-            if (placedPositions.Count != transform.childCount)
+            #if UNITY_EDITOR
+            string[] guids = new string[]
             {
-                RebuildPositionsList();
+                "53083e9d6ba91ba4cad309a95b8c8f20", // PT_Grass_02_v1
+                "3ade7fcf53c8246418eb3c493d6d2178", // PT_Grass_02_v2
+                "aa8ea3d66a87ed449832e8709ec90517"  // PT_High_Grass_02_v1
+            };
+
+            List<GameObject> loaded = new List<GameObject>();
+            foreach (var g in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(g);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (prefab != null) loaded.Add(prefab);
+                }
             }
 
-            float minDistanceSqr = minDistance * minDistance;
-            for (int i = 0; i < placedPositions.Count; i++)
+            if (loaded.Count > 0)
             {
-                Vector3 diff = placedPositions[i] - worldPos;
-                if ((diff.x * diff.x + diff.z * diff.z) < minDistanceSqr)
+                grassPrefabs = loaded.ToArray();
+            }
+            #endif
+
+            int groundIndex = LayerMask.NameToLayer("Ground");
+            if (groundIndex >= 0) groundLayer = (1 << groundIndex) | (1 << 0);
+            else groundLayer = 1 << 0;
+        }
+
+        private void FindPlayer()
+        {
+            if (playerTransform == null)
+            {
+                var player = GameObject.Find("PlayerArmature") ?? GameObject.FindGameObjectWithTag("Player");
+                if (player != null) playerTransform = player.transform;
+            }
+        }
+
+        public bool IsValidGround(RaycastHit hit)
+        {
+            if (Vector3.Angle(Vector3.up, hit.normal) > maxSlopeAngle) return false;
+
+            string objName = hit.collider.gameObject.name.ToLower();
+            if (objName.Contains("roof") || objName.Contains("house") || objName.Contains("wall") || objName.Contains("fence"))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool SampleSurfaceAt(float x, float z, float refY, out Vector3 surfacePoint, out Vector3 surfaceNormal)
+        {
+            surfacePoint = Vector3.zero;
+            surfaceNormal = Vector3.up;
+
+            Vector3 rayStart = new Vector3(x, refY + 70f, z);
+
+            if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, 140f, groundLayer))
+            {
+                if (IsValidGround(hit))
+                {
+                    surfacePoint = hit.point - new Vector3(0f, rootSinkDepth, 0f);
+                    surfaceNormal = hit.normal;
+                    return true;
+                }
+            }
+
+            if (Terrain.activeTerrain != null)
+            {
+                Terrain t = Terrain.activeTerrain;
+                Vector3 terrainPos = t.transform.position;
+                float normX = (x - terrainPos.x) / t.terrainData.size.x;
+                float normZ = (z - terrainPos.z) / t.terrainData.size.z;
+
+                if (normX >= 0f && normX <= 1f && normZ >= 0f && normZ <= 1f)
+                {
+                    float y = t.SampleHeight(new Vector3(x, 0, z)) + terrainPos.y;
+                    Vector3 norm = t.terrainData.GetInterpolatedNormal(normX, normZ);
+
+                    if (Vector3.Angle(Vector3.up, norm) <= maxSlopeAngle)
+                    {
+                        surfacePoint = new Vector3(x, y - rootSinkDepth, z);
+                        surfaceNormal = norm;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool IsPositionOccupied(Vector3 pos, float radius)
+        {
+            float radiusSqr = radius * radius;
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Vector3 diff = transform.GetChild(i).position - pos;
+                if ((diff.x * diff.x + diff.z * diff.z) < radiusSqr)
                 {
                     return true;
                 }
@@ -141,123 +282,80 @@ namespace Unity.FantasyKingdom
             return false;
         }
 
-        /// <summary>
-        /// Validasi ketat tanah: Tidak boleh tebing terjal, tidak boleh menggantung di tepi jurang, tidak boleh kena bangunan.
-        /// </summary>
-        public bool IsValidGroundPosition(RaycastHit hit, out Vector3 safePosition, out Vector3 safeNormal)
+        public void SpawnClump(Vector3 pos, Vector3 normal)
         {
-            safePosition = hit.point;
-            safeNormal = hit.normal;
-
-            // 1. Cek sudut kemiringan (Filter Tebing Terjal)
-            float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
-            if (slopeAngle > maxSlopeAngle)
+            if (grassPrefabs == null || grassPrefabs.Length == 0 || !grassPrefabs[0].name.StartsWith("PT_"))
             {
-                return false; // Terlalu miring/tebing, jangan tanam rumput di sini
+                ForceLoadPTGrassPrefabs();
             }
 
-            // 2. Cek Layer & Jenis Objek
-            bool isTerrain = (hit.collider is TerrainCollider) || (hit.collider.GetComponent<Terrain>() != null);
-            int groundLayerIndex = LayerMask.NameToLayer("Ground");
-            bool isGroundLayer = (groundLayerIndex >= 0 && hit.collider.gameObject.layer == groundLayerIndex);
-            bool isDefaultGround = (hit.collider.gameObject.layer == 0);
+            GameObject prefab = grassPrefabs[Random.Range(0, grassPrefabs.Length)];
+            if (prefab == null) return;
 
-            if (!isTerrain && !isGroundLayer && !isDefaultGround)
+            #if UNITY_EDITOR
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, transform);
+            Undo.RegisterCreatedObjectUndo(instance, "Spawn Dense Grass");
+            #else
+            GameObject instance = Instantiate(prefab, transform);
+            #endif
+
+            instance.transform.position = pos;
+
+            // Orientasi tegak lurus alami (Upright blend)
+            Vector3 blendedUp = Vector3.Lerp(Vector3.up, normal, alignWithGroundNormal).normalized;
+            Quaternion targetRot = Quaternion.FromToRotation(Vector3.up, blendedUp) * Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+            instance.transform.rotation = targetRot;
+
+            float baseScale = Random.Range(minScale, maxScale);
+            Vector3 finalScale = new Vector3(baseScale, baseScale * heightMultiplier, baseScale);
+            instance.transform.localScale = finalScale;
+
+            activeClumps.Add(new GrassClumpData
             {
-                return false;
-            }
-
-            string objName = hit.collider.gameObject.name.ToLower();
-            if (objName.Contains("roof") || objName.Contains("house") || objName.Contains("wall") || objName.Contains("fence") || objName.Contains("building"))
-            {
-                return false;
-            }
-
-            // 3. Cek Penyangga Tanah 4 Sudut (Anti-Menggantung di Tepi Jurang / Nembus Bawah Tebing)
-            Vector3 center = hit.point;
-            Vector3[] offsets = new Vector3[]
-            {
-                new Vector3(edgeFootprintCheck, 0.5f, 0),
-                new Vector3(-edgeFootprintCheck, 0.5f, 0),
-                new Vector3(0, 0.5f, edgeFootprintCheck),
-                new Vector3(0, 0.5f, -edgeFootprintCheck)
-            };
-
-            for (int i = 0; i < offsets.Length; i++)
-            {
-                Vector3 checkOrigin = center + offsets[i];
-                if (!Physics.Raycast(checkOrigin, Vector3.down, out RaycastHit cornerHit, 1.2f, groundLayer))
-                {
-                    return false; // Sudut menggantung di udara kosong
-                }
-                if (Mathf.Abs(cornerHit.point.y - center.y) > 0.45f)
-                {
-                    return false; // Ada patahan jurang curam di tepi rumpun
-                }
-            }
-
-            return true;
+                transform = instance.transform,
+                baseRotation = targetRot
+            });
         }
 
-        /// <summary>
-        /// Generate padang rumput lebat Tsushima yang tidak tembus collider dan tidak menggantung di tepi jurang.
-        /// </summary>
-        [ContextMenu("Generate Tsushima Meadow")]
-        public void GenerateTsushimaMeadow()
+        public void PaintAt(Vector3 centerPoint, float radius, int count)
         {
-            if (grassPrefab == null)
+            for (int i = 0; i < count; i++)
             {
-                Debug.LogWarning("[TerrainGrassSpawner] Pasang Grass Prefab terlebih dahulu!");
-                return;
-            }
+                Vector2 circle = Random.insideUnitCircle * radius;
+                float targetX = centerPoint.x + circle.x;
+                float targetZ = centerPoint.z + circle.y;
 
-            Vector3 origin = Vector3.zero;
-            if (centerTransform != null)
-            {
-                origin = centerTransform.position;
-            }
-            else
-            {
-                var player = GameObject.Find("PlayerArmature") ?? GameObject.FindGameObjectWithTag("Player");
-                if (player != null) origin = player.transform.position;
-                else if (Camera.main != null) origin = Camera.main.transform.position;
-                else origin = transform.position;
-            }
-
-            RebuildPositionsList();
-            int spawned = 0;
-            int maxAttempts = targetGrassCount * 8;
-            float spacing = Mathf.Max(0.45f, naturalSpacing);
-
-            for (int i = 0; i < maxAttempts && spawned < targetGrassCount; i++)
-            {
-                Vector2 circlePoint = Random.insideUnitCircle * spawnRadius;
-                Vector3 samplePos = new Vector3(origin.x + circlePoint.x, origin.y + 100f, origin.z + circlePoint.y);
-
-                if (Physics.Raycast(samplePos, Vector3.down, out RaycastHit hit, 250f, groundLayer))
+                if (SampleSurfaceAt(targetX, targetZ, centerPoint.y, out Vector3 surfPoint, out Vector3 surfNormal))
                 {
-                    if (IsValidGroundPosition(hit, out Vector3 safePos, out Vector3 safeNormal))
+                    if (!IsPositionOccupied(surfPoint, minSpacing))
                     {
-                        if (!IsSpotOccupied(safePos, spacing))
-                        {
-                            SpawnGrassClump(safePos, safeNormal);
-                            placedPositions.Add(safePos);
-                            spawned++;
-                        }
+                        SpawnClump(surfPoint, surfNormal);
                     }
                 }
             }
-
-            Debug.Log($"[TerrainGrassSpawner] Berhasil membuat {spawned} padang rumput lebat anti-nembus di sekitar {origin}!");
         }
 
-        [ContextMenu("Clear All Grass")]
-        public void ClearAllGrass()
+        public void EraseAt(Vector3 centerPoint, float radius)
         {
-            #if UNITY_EDITOR
-            Undo.RegisterFullObjectHierarchyUndo(gameObject, "Clear Grass");
-            #endif
+            float radiusSqr = radius * radius;
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                Transform child = transform.GetChild(i);
+                Vector3 diff = child.position - centerPoint;
+                if ((diff.x * diff.x + diff.z * diff.z) <= radiusSqr)
+                {
+                    #if UNITY_EDITOR
+                    Undo.DestroyObjectImmediate(child.gameObject);
+                    #else
+                    DestroyImmediate(child.gameObject);
+                    #endif
+                }
+            }
+            CacheClumpData();
+        }
 
+        public void ClearAll()
+        {
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 Transform child = transform.GetChild(i);
@@ -267,73 +365,108 @@ namespace Unity.FantasyKingdom
                 DestroyImmediate(child.gameObject);
                 #endif
             }
-
-            placedPositions.Clear();
+            activeClumps.Clear();
         }
 
-        public void SpawnGrassClump(Vector3 worldPos, Vector3 normal)
+        public void QuickFillArea()
         {
-            if (grassPrefab == null) return;
+            ClearAll();
+            ForceLoadPTGrassPrefabs();
+            FindPlayer();
 
-            GameObject grassObj = (GameObject)
-            #if UNITY_EDITOR
-                PrefabUtility.InstantiatePrefab(grassPrefab, Container);
-            #else
-                Instantiate(grassPrefab, Container);
-            #endif
+            Vector3 origin = (playerTransform != null) ? playerTransform.position : transform.position;
+            Random.InitState(77777);
 
-            if (grassObj == null) return;
+            int target = targetClumpCount;
+            float radius = meadowRadius;
 
-            // Dudukkan sedikit di atas tanah agar tidak z-fighting dengan tekstur tanah
-            grassObj.transform.position = worldPos + normal * 0.02f;
-
-            float randomRotY = Random.Range(0f, 360f);
-            if (alignToTerrainSlope && normal != Vector3.zero)
+            // Grid Jitter Super Rapat (Jarak per titik hanya 11 cm)
+            float step = 0.11f;
+            for (float x = -radius; x <= radius; x += step)
             {
-                Quaternion slopeRot = Quaternion.FromToRotation(Vector3.up, normal);
-                grassObj.transform.rotation = slopeRot * Quaternion.Euler(0f, randomRotY, 0f);
-            }
-            else
-            {
-                grassObj.transform.rotation = Quaternion.Euler(0f, randomRotY, 0f);
-            }
-
-            float s = Random.Range(scaleVariation.x, scaleVariation.y);
-            grassObj.transform.localScale = Vector3.one * s;
-
-            MeshRenderer mr = grassObj.GetComponentInChildren<MeshRenderer>();
-            if (mr != null)
-            {
-                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                mr.receiveShadows = true;
-            }
-        }
-
-        public void EraseGrassAt(Vector3 worldPos, float radius)
-        {
-            float radiusSqr = radius * radius;
-            List<GameObject> toDestroy = new List<GameObject>();
-
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Transform child = transform.GetChild(i);
-                Vector3 diff = child.position - worldPos;
-                if ((diff.x * diff.x + diff.z * diff.z) <= radiusSqr)
+                for (float z = -radius; z <= radius; z += step)
                 {
-                    toDestroy.Add(child.gameObject);
+                    if (transform.childCount >= target) break;
+
+                    if ((x * x + z * z) <= (radius * radius))
+                    {
+                        float jitterX = x + Random.Range(-0.04f, 0.04f);
+                        float jitterZ = z + Random.Range(-0.04f, 0.04f);
+
+                        float worldX = origin.x + jitterX;
+                        float worldZ = origin.z + jitterZ;
+
+                        if (SampleSurfaceAt(worldX, worldZ, origin.y, out Vector3 surfPoint, out Vector3 surfNormal))
+                        {
+                            if (!IsPositionOccupied(surfPoint, minSpacing))
+                            {
+                                SpawnClump(surfPoint, surfNormal);
+                            }
+                        }
+                    }
+                }
+                if (transform.childCount >= target) break;
+            }
+
+            // Lapisan Penutup Tambahan (Random Dense Scatter)
+            int attempts = 0;
+            while (transform.childCount < target && attempts < target * 3)
+            {
+                attempts++;
+                Vector2 circle = Random.insideUnitCircle * radius;
+                float targetX = origin.x + circle.x;
+                float targetZ = origin.z + circle.y;
+
+                if (SampleSurfaceAt(targetX, targetZ, origin.y, out Vector3 surfPoint, out Vector3 surfNormal))
+                {
+                    if (!IsPositionOccupied(surfPoint, minSpacing))
+                    {
+                        SpawnClump(surfPoint, surfNormal);
+                    }
                 }
             }
 
-            foreach (var go in toDestroy)
-            {
-                #if UNITY_EDITOR
-                Undo.DestroyObjectImmediate(go);
-                #else
-                DestroyImmediate(go);
-                #endif
-            }
+            CacheClumpData();
+            Debug.Log($"[TerrainGrassSpawner] Berhasil menggelar {transform.childCount} rumpun rumput super rapat tanpa jarak!");
+        }
 
-            RebuildPositionsList();
+        private void Update()
+        {
+            if (!enableTrample || !Application.isPlaying) return;
+
+            FindPlayer();
+            if (playerTransform == null) return;
+
+            Vector3 pPos = playerTransform.position;
+            float radiusSqr = interactionRadius * interactionRadius;
+
+            for (int i = 0; i < activeClumps.Count; i++)
+            {
+                var clump = activeClumps[i];
+                if (clump.transform == null) continue;
+
+                Vector3 diff = clump.transform.position - pPos;
+                float distSqr = diff.x * diff.x + diff.z * diff.z;
+
+                if (distSqr < radiusSqr && Mathf.Abs(diff.y) < 1.6f)
+                {
+                    float dist = Mathf.Sqrt(distSqr);
+                    float factor = 1.0f - (dist / interactionRadius);
+                    Vector3 pushDir = (dist > 0.01f) ? new Vector3(diff.x, 0f, diff.z).normalized : playerTransform.forward;
+
+                    Vector3 bendAxis = Vector3.Cross(Vector3.up, pushDir);
+                    Quaternion bendRot = Quaternion.AngleAxis(factor * maxBendAngle, bendAxis);
+
+                    clump.transform.rotation = Quaternion.Slerp(clump.transform.rotation, bendRot * clump.baseRotation, Time.deltaTime * 12f);
+                }
+                else
+                {
+                    if (clump.transform.rotation != clump.baseRotation)
+                    {
+                        clump.transform.rotation = Quaternion.Slerp(clump.transform.rotation, clump.baseRotation, Time.deltaTime * 6f);
+                    }
+                }
+            }
         }
     }
 
@@ -342,7 +475,7 @@ namespace Unity.FantasyKingdom
     public class TerrainGrassSpawnerEditor : Editor
     {
         private TerrainGrassSpawner spawner;
-        private Vector3 lastMouseWorldPos;
+        private Vector3 lastMousePos;
         private double lastPaintTime = 0;
 
         private void OnEnable()
@@ -350,40 +483,60 @@ namespace Unity.FantasyKingdom
             spawner = (TerrainGrassSpawner)target;
             if (spawner != null)
             {
-                spawner.RebuildPositionsList();
+                spawner.RemoveOldLegacyMeshComponents();
+                spawner.ForceLoadPTGrassPrefabs();
+                spawner.CacheClumpData();
+                TerrainGrassSpawner.DeleteAllDemoTilesInScene();
             }
         }
 
         public override void OnInspectorGUI()
         {
+            spawner.RemoveOldLegacyMeshComponents();
+
+            if (spawner.grassPrefabs == null || spawner.grassPrefabs.Length == 0 || !spawner.grassPrefabs[0].name.StartsWith("PT_"))
+            {
+                spawner.ForceLoadPTGrassPrefabs();
+                EditorUtility.SetDirty(spawner);
+            }
+
             DrawDefaultInspector();
 
-            EditorGUILayout.Space(12);
-            EditorGUILayout.LabelField("⚡ Padang Rumput Tsushima Actions", EditorStyles.boldLabel);
+            EditorGUILayout.Space(14);
+            EditorGUILayout.LabelField($"🌿 Total Rumpun Rumput: {spawner.transform.childCount} Rumpun", EditorStyles.boldLabel);
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("🌾 Generate Tsushima Meadow", GUILayout.Height(38)))
+            GUI.backgroundColor = new Color(0.35f, 1f, 0.45f);
+            if (GUILayout.Button($"🌾 Gelar Karpet Ultra Rapat ({spawner.targetClumpCount} Rumpun)", GUILayout.Height(42)))
             {
-                spawner.GenerateTsushimaMeadow();
+                Undo.RecordObject(spawner, "Install Ultra Dense PT Grass");
+                spawner.ForceLoadPTGrassPrefabs();
+                spawner.QuickFillArea();
+                EditorUtility.SetDirty(spawner);
             }
-            if (GUILayout.Button("🗑️ Clear All Grass", GUILayout.Height(38)))
+            GUI.backgroundColor = new Color(1f, 0.45f, 0.45f);
+            if (GUILayout.Button("🗑️ Hapus Semua Rumput", GUILayout.Height(42)))
             {
-                if (EditorUtility.DisplayDialog("Clear Grass", "Hapus semua rumput lama untuk membuat padang baru?", "Ya, Hapus", "Batal"))
+                if (EditorUtility.DisplayDialog("Hapus Rumput", "Hapus semua rumput di scene?", "Ya, Hapus", "Batal"))
                 {
-                    spawner.ClearAllGrass();
+                    Undo.RecordObject(spawner, "Clear Grass");
+                    spawner.ClearAll();
+                    EditorUtility.SetDirty(spawner);
                 }
             }
+            GUI.backgroundColor = Color.white;
             GUILayout.EndHorizontal();
 
             if (spawner.enableBrushMode)
             {
-                EditorGUILayout.HelpBox("🖌️ MODE KUAS TSUSHIMA (ANTI-NEMBUS AKTIF)!\n- Rumput tidak akan pernah tertanam di tebing curam atau menggantung di udara.\n- Tahan & Geser Klik Kiri: Melukis padang rumput lebat yang menyatu.\n- Shift + Klik Kiri: Menghapus rumput di bawah kuas.", MessageType.Info);
+                EditorGUILayout.Space(10);
+                EditorGUILayout.HelpBox("🖌️ KUAS SCENE VIEW (SUPER LEBAT)!\n- Tahan & Geser Klik Kiri: Menyemburkan 25 rumpun rumput padat tanpa celah.\n- Shift + Klik Kiri: Menghapus rumput di bawah lingkaran kuas.", MessageType.Info);
             }
         }
 
         private void OnSceneGUI()
         {
-            if (!spawner.enableBrushMode) return;
+            if (spawner == null || !spawner.enableBrushMode) return;
 
             Event e = Event.current;
 
@@ -393,72 +546,43 @@ namespace Unity.FantasyKingdom
             }
 
             Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
-            Vector3 hitPoint = Vector3.zero;
-            Vector3 hitNormal = Vector3.up;
-            bool hitFound = false;
-
-            if (Physics.Raycast(ray, out RaycastHit hit, 1000f, spawner.groundLayer))
+            if (Physics.Raycast(ray, out RaycastHit hit, 2000f, spawner.groundLayer))
             {
-                if (spawner.IsValidGroundPosition(hit, out hitPoint, out hitNormal))
+                if (spawner.IsValidGround(hit))
                 {
-                    hitFound = true;
-                }
-            }
+                    Handles.zTest = UnityEngine.Rendering.CompareFunction.Always;
+                    Handles.color = e.shift ? new Color(1f, 0.25f, 0.25f, 0.85f) : new Color(0.25f, 1f, 0.45f, 0.85f);
+                    Handles.DrawWireDisc(hit.point, hit.normal, spawner.brushRadius);
+                    Handles.DrawSolidDisc(hit.point, hit.normal, spawner.brushRadius * 0.08f);
 
-            if (hitFound)
-            {
-                Handles.color = e.shift ? new Color(1f, 0.2f, 0.2f, 0.75f) : new Color(0.2f, 1f, 0.35f, 0.75f);
-                Handles.DrawWireDisc(hitPoint, hitNormal, spawner.brushRadius);
-                Handles.DrawSolidDisc(hitPoint, hitNormal, spawner.brushRadius * 0.08f);
-
-                if (e.type == EventType.MouseMove)
-                {
-                    HandleUtility.Repaint();
-                }
-
-                if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0)
-                {
-                    if (e.shift)
+                    if (e.type == EventType.MouseMove)
                     {
-                        spawner.EraseGrassAt(hitPoint, spawner.brushRadius);
+                        HandleUtility.Repaint();
                     }
-                    else
-                    {
-                        double now = EditorApplication.timeSinceStartup;
-                        float spacing = Mathf.Max(0.45f, spawner.naturalSpacing);
 
-                        if (now - lastPaintTime > 0.04 || (hitPoint - lastMouseWorldPos).sqrMagnitude > (spacing * spacing))
+                    if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0)
+                    {
+                        if (e.shift)
                         {
-                            lastPaintTime = now;
-                            lastMouseWorldPos = hitPoint;
-
-                            Undo.SetCurrentGroupName("Paint Tsushima Meadow");
-                            int group = Undo.GetCurrentGroup();
-
-                            int density = Mathf.Clamp(spawner.brushDensity, 1, 5);
-                            for (int i = 0; i < density; i++)
-                            {
-                                Vector2 randCircle = Random.insideUnitCircle * spawner.brushRadius;
-                                Vector3 samplePos = hitPoint + new Vector3(randCircle.x, 20f, randCircle.y);
-
-                                if (Physics.Raycast(samplePos, Vector3.down, out RaycastHit groundHit, 50f, spawner.groundLayer))
-                                {
-                                    if (spawner.IsValidGroundPosition(groundHit, out Vector3 safePos, out Vector3 safeNormal))
-                                    {
-                                        if (!spawner.IsSpotOccupied(safePos, spacing))
-                                        {
-                                            spawner.SpawnGrassClump(safePos, safeNormal);
-                                            spawner.RebuildPositionsList();
-                                        }
-                                    }
-                                }
-                            }
-
-                            Undo.CollapseUndoOperations(group);
+                            Undo.RecordObject(spawner, "Erase Grass");
+                            spawner.EraseAt(hit.point, spawner.brushRadius);
+                            EditorUtility.SetDirty(spawner);
                         }
+                        else
+                        {
+                            double now = EditorApplication.timeSinceStartup;
+                            if (now - lastPaintTime > 0.08 || (hit.point - lastMousePos).sqrMagnitude > 0.10f)
+                            {
+                                lastPaintTime = now;
+                                lastMousePos = hit.point;
+                                Undo.RecordObject(spawner, "Paint Ultra Dense Grass");
+                                spawner.PaintAt(hit.point, spawner.brushRadius, spawner.brushDensity);
+                                EditorUtility.SetDirty(spawner);
+                            }
+                        }
+                        e.Use();
+                        HandleUtility.Repaint();
                     }
-                    e.Use();
-                    HandleUtility.Repaint();
                 }
             }
         }

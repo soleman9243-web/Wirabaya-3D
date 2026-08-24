@@ -29,9 +29,21 @@ namespace ProceduralGrass
 
         private void Start()
         {
-            onRefresh -= Grass_onRefresh;
+            if (grassOriginPoints.Count <= 0) enabled = false;
+            startExecuted = true;
             onRefresh += Grass_onRefresh;
-            InitializeGrass();
+            //Get The BirdViewUVs 
+            BirdViewUVCalculator birdViewUVs = transform.parent.GetComponent<BirdViewUVCalculator>();
+            uvsValues = birdViewUVs.GetBirdViewUVs();
+            heightmapTexture = birdViewUVs.GetTexture();
+            settings = (ProceduralGrassSettingsSO)terrainDecorationSO.proceduralSettings;
+            InitIndirectArgs();
+
+            InitCompute();
+
+            PopulateInitUpdateCompute();
+
+            PopulateShaderMaterial();
         }
 
         private void Grass_onRefresh(object sender, EventArgs e)
@@ -41,14 +53,21 @@ namespace ProceduralGrass
 
         private void OnEnable()
         {
-            InitializeGrass();
+            if (grassOriginPoints.Count <= 0) enabled = false;
+            if (startExecuted && enabled)
+            {
+                InitIndirectArgs();
+
+                InitCompute();
+
+                PopulateInitUpdateCompute();
+
+                PopulateShaderMaterial();
+            }
         }
         private void Update()
         {
-            if (startExecuted && enabled)
-            {
-                UpdateCompute();
-            }
+            UpdateCompute();
         }
         private void OnValidate()
         {
@@ -56,33 +75,7 @@ namespace ProceduralGrass
         }
         public override void Refresh()
         {
-            InitializeGrass();
-        }
-
-        private void InitializeGrass()
-        {
-            if (grassOriginPoints.Count <= 0)
-            {
-                enabled = false;
-                return;
-            }
-            if (transform.parent == null) return;
-            var decorated = transform.parent.GetComponent<TerrainTileDecorated>();
-            if (decorated == null) return;
-            terrainDecorationSO = decorated.GetTerrainDecorationSO(this);
-            if (terrainDecorationSO == null || terrainDecorationSO.proceduralSettings == null) return;
-
-            BirdViewUVCalculator birdViewUVs = transform.parent.GetComponent<BirdViewUVCalculator>();
-            if (birdViewUVs == null) return;
-            uvsValues = birdViewUVs.GetBirdViewUVs();
-            heightmapTexture = birdViewUVs.GetTexture();
-            settings = (ProceduralGrassSettingsSO)terrainDecorationSO.proceduralSettings;
-
-            startExecuted = true;
-            InitIndirectArgs();
-            InitCompute();
-            PopulateInitUpdateCompute();
-            PopulateShaderMaterial();
+            if (enabled) OnEnable();
         }
         protected override void PopulateIndirectArgsCompute()
         {
@@ -234,35 +227,28 @@ namespace ProceduralGrass
             spacingAtMaxDensity = terrainDecorationSO.spacingAtMaxDensity;
             float jitterAmount = terrainDecorationSO.jitterAmount; // Use the local variable for jitter
 
-            if (spacingAtMaxDensity != 0)
+            if (spacingAtMaxDensity != 0 && grayscaleTexture != null)
             {
                 for (float x = uvsValues[0]; x <= uvsValues[2]; x += spacingAtMaxDensity)
                 {
                     for (float z = uvsValues[1]; z <= uvsValues[3]; z += spacingAtMaxDensity)
                     {
-                        // Sample grayscale value from texture if available, otherwise default to full density (1.0)
-                        float densityValue = (grayscaleTexture != null)
-                            ? grayscaleTexture.GetPixelBilinear((x - uvsValues[0]) / (uvsValues[2] - uvsValues[0]), (z - uvsValues[1]) / (uvsValues[3] - uvsValues[1])).grayscale
-                            : 1.0f;
-
+                        // Sample grayscale value from texture
+                        Color density = grayscaleTexture.GetPixelBilinear((x - uvsValues[0]) / (uvsValues[2] - uvsValues[0]),
+                                                                            (z - uvsValues[1]) / (uvsValues[3] - uvsValues[1]));
                         // Set a threshold (e.g., 0.1) below which no points are placed
-                        if (densityValue > minDensityThreshold)
+                        if (density.grayscale > minDensityThreshold)
                         {
-                            float ratioValue = 0f;
-                            if (terrainDecorationsExtraData != null && terrainDecorationsExtraData.Count > 0 && terrainDecorationsExtraData[0] != null)
-                            {
-                                Color ratio = terrainDecorationsExtraData[0].GetPixelBilinear((x - uvsValues[0]) / (uvsValues[2] - uvsValues[0]),
-                                                            (z - uvsValues[1]) / (uvsValues[3] - uvsValues[1]));
-                                ratioValue = ratio.grayscale;
-                            }
+                            Color ratio = terrainDecorationsExtraData[0].GetPixelBilinear((x - uvsValues[0]) / (uvsValues[2] - uvsValues[0]),
+                                                        (z - uvsValues[1]) / (uvsValues[3] - uvsValues[1]));
                             // Implement rejection sampling
-                            float rejectionProbability = 1.0f - densityValue - guaranteedDensityThreshold;
+                            float rejectionProbability = 1.0f - density.grayscale - guaranteedDensityThreshold;
                             if (UnityEngine.Random.value > rejectionProbability)
                             {
                                 // Apply jitter
                                 float xOffset = UnityEngine.Random.Range(-spacingAtMaxDensity * 0.5f * jitterAmount, spacingAtMaxDensity * 0.5f * jitterAmount);
                                 float zOffset = UnityEngine.Random.Range(-spacingAtMaxDensity * 0.5f * jitterAmount, spacingAtMaxDensity * 0.5f * jitterAmount);
-                                AddPoint(birdViewUVCalculator, x + xOffset, z + zOffset, new float[] { 1, ratioValue });
+                                AddPoint(birdViewUVCalculator, x + xOffset, z + zOffset, new float[] { 1, ratio.grayscale });
                             }
                         }
                     }

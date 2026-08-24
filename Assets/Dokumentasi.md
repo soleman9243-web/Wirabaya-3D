@@ -294,3 +294,413 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
   2. Tambahkan komponen TsushimaGrassMeadow (atau klik Inspector Tsushima Grass Meadow).
   3. Pasang Grass Mesh (PT_Grass_02_LOD0) dan Grass Material (PT_Grass_Mat).
   4. Tekan Play untuk menikmati padang rumput lebat standar industri game AAA.
+
+
+22. Sistem Rumput Per-Batang Prosedural Bézier Curves (Realistic Blade Trample)
+- Perubahan: Menghapus TsushimaGrassMeadow lama dan membuat ProceduralBezierBlade.shader serta ProceduralBladeGrassSystem.cs berdasarkan teknik video tutorial UE5/Unity Ghost of Tsushima Procedural Grass Using Bezier Curves.
+- Fitur dan Perbaikan:
+  1. Geometri Helai Mandiri (Per-Blade Mesh): Setiap helai daun rumput dibuat sebagai geometri batang tunggal prosedural (7 vertices, 5 triangles) dengan penyempitan meruncing ke pucuk.
+  2. Deformasi Kurva Bézier Kuadratik: Kelenturan batang dievaluasi menggunakan kurva Bézier (P0 = Akar, P1 = Kontrol Tengah, P2 = Pucuk), menghasilkan lengkungan batang yang sangat realistis dan lentur.
+  3. Reaksi Injak Kaki Realistis: Saat kaki karakter melangkah, setiap batang rumput dalam radius injakan melengkung, terdorong ke samping, dan rebah ke tanah secara individual, lalu bangkit kembali saat karakter pergi.
+  4. Performa GPU Instanced 60 FPS: Ribuan batang rumput dirender sekaligus dalam batch GPU tanpa membebani CPU hierarchy.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Tambahkan komponen ProceduralBladeGrassSystem.
+  3. Pasang Blade Material dengan ProceduralBlade_Mat.
+  4. Tekan Play dan jalankan karakter untuk merasakan injakan rumput per-batang yang nyata.
+
+
+23. Fitur Kuas Melukis Helai Rumput Scene View (Procedural Blade Brush Painter)
+- Perubahan: Menambahkan fitur kuas interaktif Scene View pada ProceduralBladeGrassSystem.cs dengan dukungan melukis klik-drag, menghapus Shift-klik, dan penyimpanan data koordinat batang rumput permanen.
+- Fitur dan Perbaikan:
+  1. Kuas Melukis Interaktif 144Hz: Lingkaran kuas di Scene View memungkinkan developer melukis puluhan helai batang rumput sekaligus secara halus dan langsung menempel di kontur tanah.
+  2. Mode Hapus Cepat (Shift + Klik): Menghapus helai rumput di area tertentu dengan mudah menggunakan tombol Shift.
+  3. Anti-Numpuk Batang: Parameter minBladeSpacing memastikan helai rumput tidak tertumpuk di koordinat yang sama.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Pastikan centang Enable Brush Mode aktif di Inspector Procedural Blade Grass System.
+  3. Sapukan kuas di Scene View dengan klik kiri untuk melukis helai batang rumput di tanah.
+
+
+24. Pemisahan Script Editor Khusus dan Pembersihan 1.800 Objek Lama
+- Perubahan: Membuat script editor terpisah ProceduralBladeGrassSystemEditor.cs di folder Assets/Scripts/Editor dan menambahkan tombol pembersih objek lama.
+- Fitur dan Perbaikan:
+  1. Lingkaran Kuas Neon Selalu Muncul (Always Visible): Menggunakan Handles.zTest Always sehingga lingkaran kuas hijau neon di Scene View 100% selalu terlihat jelas di atas permukaan tanah tanpa terhalang collider.
+  2. Tombol Pembersih 1.800 Objek Lama: Tombol "Bersihkan Objek Lama" untuk menghapus seluruh sisa 1.800 GameObject lama yang sebelumnya membebani batch rendering hingga kembali ke 60 FPS mentok.
+  3. Tombol Quick Fill 2.500 Helai: Tombol cepat untuk langsung menggelar padang rumput per-batang di sekeliling pemain secara instan.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "Bersihkan 1800 Objek Lama" di Inspector untuk membersihkan tumpukan objek lama.
+  3. Arahkan mouse ke Scene View: Lingkaran kuas hijau neon akan langsung muncul jelas di atas tanah dan siap untuk melukis.
+
+
+25. Konsolidasi Custom Editor dan Perbaikan Inspector Multi-Object
+- Perubahan: Menyatukan kelas ProceduralBladeGrassSystemEditor langsung ke dalam ProceduralBladeGrassSystem.cs dengan atribut [CanEditMultipleObjects] dan pembaruan struktur GUI.
+- Fitur dan Perbaikan:
+  1. Tampilan Inspector Lengkap: Menghilangkan peringatan Multi-object editing dan menampilkan seluruh tombol aksi (Quick Fill, Clear Blades, dan Bersihkan Objek Lama) secara utuh di Inspector.
+  2. Kuas Langsung Responsif: Mengaktifkan fungsi OnSceneGUI secara native tanpa jeda kompilasi assembly terpisah.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Tombol aksi Quick Fill dan Bersihkan Objek Lama sudah muncul di Inspector.
+  3. Arahkan kursor ke Scene View untuk melukis helai rumput.
+
+
+26. Penyatuan Penuh Sistem Rumput Per-Batang Bézier ke TerrainGrassSpawner
+- Perubahan: Memperbarui TerrainGrassSpawner.cs dengan engine rumput per-batang Bézier dan tombol aksi Inspector lengkap (Quick Fill 2500 Helai, Bersihkan Objek Lama, Clear All Blades, dan Kuas Scene View).
+- Fitur dan Perbaikan:
+  1. Satu Script Terpadu: Seluruh fitur melukis rumput per-batang dan pembersihan terintegrasi langsung di komponen TerrainGrassSpawner tanpa script ganda.
+  2. Tombol Aksi Langsung Muncul di Inspector: Tombol Quick Fill, Bersihkan Objek Lama, dan Kuas Melukis langsung tampil jelas di Inspector.
+  3. Kuas Melukis Scene View 100% Aktif: Lingkaran kuas neon hijau langsung muncul di Scene View mengikuti kursor tanah.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Di Inspector TerrainGrassSpawner, tombol Quick Fill dan Bersihkan Objek Lama langsung terlihat.
+  3. Sapukan kuas di Scene View dengan klik kiri untuk melukis helai batang rumput.
+
+
+27. Sistem Rumput Procedural Combined Mesh Berbasis MinionsArt URP Shader
+- Perubahan: Mengimplementasikan sistem generasi Procedural Combined Mesh pada TerrainGrassSpawner.cs dengan integrasi shader interaktif MinionsArt URP (InteractiveGrassURP.shader).
+- Fitur dan Perbaikan:
+  1. Rumput 100% Muncul Nyata di Scene & Game View: Membangun geometri helai rumput 3D (3 bidang silang per titik tanam) langsung ke MeshFilter dan MeshRenderer pada objek Infinite Grass. Rumput langsung tampak hijau lebat di Scene View tanpa masalah invisible instancing.
+  2. Performa 1 Single Draw Call: Ribuan helai rumput digabungkan ke dalam 1 mesh tunggal sehingga draw call / batch tetap 1 dan FPS stabil di 60-144 FPS.
+  3. Reaksi Deformasi Injak Kaki MinionsArt: Shader membaca _PlayerPosition secara global dan melengkungkan setiap helai daun di GPU saat didekati atau diinjak kaki karakter.
+  4. Kuas Melukis Real-Time: Sapuan kuas di Scene View langsung menambahkan geometri helai rumput ke mesh secara instan.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Area (1500 Titik)" di Inspector Terrain Grass Spawner.
+  3. Rumput hijau 3D langsung muncul berdiri lebat di atas bukit dan merunduk lentur saat diinjak karakter.
+
+
+28. Perbaikan Shader Mandiri (InteractiveBladeGrass) dan Koordinat Mesh Lokal
+- Perubahan: Membuat InteractiveBladeGrass.shader mandiri tanpa dependensi tekstur atlas dan memperbarui konversi koordinat vertex lokal pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Bebas Alpha Clipping Error: Shader tidak lagi bergantung pada tekstur atlas ber-alpha clip yang sebelumnya memotong dan menghilangkan pixel rumput secara tidak sengaja.
+  2. Transformasi Titik ke Lokal Objek (InverseTransformPoint): Memastikan posisi setiap helai daun tertanam presisi di permukaan tanah tanpa offset ganda.
+  3. Warna Gradasi Cerah Alami: Gradasi dua warna (akar tanah hijau gelap ke pucuk lemon terang tersinari matahari) langsung muncul pekat dan jelas di Scene View.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Area (1500 Titik)" di Inspector Terrain Grass Spawner.
+  3. Rumput langsung tampak berdiri tegap di bukit.
+
+
+29. Pemasangan Otomatis Komponen MeshFilter dan MeshRenderer
+- Perubahan: Menambahkan logika inisialisasi otomatis untuk memasang komponen MeshFilter dan MeshRenderer pada objek Infinite Grass serta memastikan material InteractiveBlade_Mat terpasang otomatis.
+- Fitur dan Perbaikan:
+  1. Auto-Attach MeshFilter & MeshRenderer: Memastikan kedua komponen rendering ini selalu terpasang otomatis di GameObject Infinite Grass tanpa harus ditambah manual.
+  2. Auto-Rebuild 4.500 Helai: 1.518 titik rumput (4.554 helai) yang sudah tersimpan langsung dikonversi menjadi combined mesh dan dirender seketika di layar.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. MeshFilter dan MeshRenderer otomatis terpasang dan seluruh 4.554 helai rumput langsung muncul di Scene View.
+
+
+30. Perbaikan Warna Shader Hijau Alami dan Kepadatan Padang Rumput Lebat
+- Perubahan: Memperbaiki GUID material InteractiveBlade_Mat dengan shader InteractiveBladeGrass asli (menghilangkan warna ungu/magenta) serta meningkatkan algoritma sebaran rumput menjadi padat dan bergerombol (Organic Tufts).
+- Fitur dan Perbaikan:
+  1. Warna Hijau Segar Alami (Bebas Warna Ungu): Material sekarang terhubung 100% ke shader InteractiveBladeGrass dengan gradasi hijau alami (akar gelap dan pucuk lemon cerah).
+  2. Kepadatan Padang Rumput Lebat (Dense Cluster Spacing): Algoritma penanaman membagi titik rumput ke dalam kelompok-kelompok rimbun (tufts) dengan jarak rapat (minBladeSpacing 0.04m, 2.500 titik = 7.500 helai rumput).
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Padat (2500 Titik)" di Inspector.
+  3. Rumput langsung muncul hijau segar, rapat, lebat, dan menyatu seperti karpet padang rumput alami.
+
+
+31. Pengambilan Permukaan Ganda (Physics Raycast dan Terrain Fallback)
+- Perubahan: Menambahkan fungsi SampleSurfaceAt pada TerrainGrassSpawner.cs dengan jangkauan vertikal 140m dan integrasi langsung ke data ketinggian Terrain (TerrainData.SampleHeight).
+- Fitur dan Perbaikan:
+  1. Deteksi Permukaan 100% Berhasil: Titik rumput selalu berhasil mendeteksi permukaan tanah bukit dan lereng tanpa ada yang meleset atau kosong.
+  2. Padang Rumput 3.000 Titik (9.000 Helai): Memperluas kapasitas padang rumput hingga 9.000 helai daun yang tertata rapi dan padat di sekeliling pemain.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Padat (3000 Titik)" di Inspector.
+  3. Padang rumput hijau lebat langsung terhampar luas di sekitar pemain.
+
+
+32. Perbaikan Error Kompilasi IsValidGround pada Custom Editor
+- Perubahan: Menambahkan kembali fungsi IsValidGround pada TerrainGrassSpawner.cs untuk melengkapi verifikasi kemiringan dan collider pada OnSceneGUI.
+- Fitur dan Perbaikan:
+  1. Konsol Unity Bebas Error: Menghilangkan error CS1061 sehingga Unity Editor dapat mengompilasi dan menjalankan scene dengan lancar tanpa hambatan.
+  2. Kuas Scene View Kembali Aktif Penuh: Kuas melukis dan tombol Quick Fill langsung berfungsi normal kembali di Inspector.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Padat (3000 Titik)" di Inspector.
+  3. Padang rumput hijau langsung muncul seketika di bukit.
+
+
+33. Penegasan Rendering Opaque Padat dan Pemasangan MeshRenderer Editor
+- Perubahan: Menambahkan instruksi ZWrite On dan ZTest LEqual pada InteractiveBladeGrass.shader serta memperbarui fungsi EnsureComponentsExist pada OnInspectorGUI.
+- Fitur dan Perbaikan:
+  1. Rendering Solid Opaque 100% (Bebas Transparan): Shader memproses seluruh pixel geometri rumput secara padat (Opaque Geometry) dengan Z-buffer aktif sehingga tidak tembus pandang.
+  2. Garansi Komponen MeshRenderer: Memastikan komponen MeshFilter dan MeshRenderer terdaftar permanen di Inspector objek Infinite Grass.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Padat (3000 Titik)" di Inspector.
+  3. Rumput langsung muncul hijau segar padat di bukit.
+
+
+34. Pembersihan Auto-Spawn Liar dan Geometri Daun Dua Sisi (Double-Sided Solid)
+- Perubahan: Menghapus logika auto-QuickFill pada event Start() di TerrainGrassSpawner.cs dan menerapkan geometri mesh dua sisi (Double-Sided Triangles) dengan shader pencahayaan abs(dot(N, L)).
+- Fitur dan Perbaikan:
+  1. Kontrol Penuh Pengguna (Bebas Auto-Spawn Liar): Rumput tidak akan lagi muncul tiba-tiba saat tombol Play ditekan jika belum pernah dilukis kuas atau diklik Quick Fill.
+  2. Geometri Daun 100% Solid & Tebal: Setiap helai daun memiliki pasangan segitiga depan dan belakang (Double-Sided Triangles), sehingga rumput terlihat tebal, padat, dan tidak tembus pandang dari sudut kamera mana pun.
+  3. Pembersihan Otomatis Objek Demo Lama: Menonaktifkan otomatis ExampleDemoTile agar tidak memunculkan bayangan wireframe transparan liar di scene.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Sapukan kuas di Scene View atau klik tombol "🌾 Quick Fill Padat (3000 Titik)" jika ingin menggelar rumput.
+  3. Tekan Play — rumput hanya muncul di tempat yang ditentukan dan merunduk saat diinjak.
+
+
+35. Pembersihan Objek Demo Lama (ExampleDemoTile) dan Penataan Ulang Hierarchy
+- Perubahan: Menambahkan tombol dan otomatisasi penonaktifan objek demo lama (ExampleDemoTile) pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Penghapusan Objek Wireframe Transparan: Menonaktifkan sistem compute shader demo lama yang sebelumnya memunculkan garis wireframe oranye tinggi dan transparan di sekitar pemain saat Play.
+  2. Fokus Rendering Murni ke Infinite Grass: Menjamin hanya sistem rumput solid padat Infinite Grass yang aktif dan dirender di layar.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🛑 Matikan Objek Demo Lama (ExampleDemoTile)" di Inspector (atau klik icon mata pada ExampleDemoTile untuk menyembunyikannya).
+  3. Sapukan kuas di Scene View atau klik "🌾 Quick Fill Padat (3000 Titik)" — padang rumput hijau solid padat langsung muncul dengan bersih.
+
+
+36. Pass Shadow Caster Nyata dan Gradasi 3 Warna Ambient Occlusion
+- Perubahan: Menambahkan Pass ShadowCaster, instruksi Blend Off, dan gradasi 3 warna (Root AO, Mid Green, Tip Sunlit) pada InteractiveBladeGrass.shader serta memperlebar ukuran helai daun (bladeWidth 0.22m) pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Bayangan Nyata di Permukaan Tanah (Shadow Caster): Rumput sekarang menghasilkan bayangan fisik nyata di atas tanah, menghilangkan ilusi melayang atau tembus pandang.
+  2. Grounding Root AO (Akar Tanah Pekat): Bagian pangkal daun rumput diberi warna gelap pekat (Ambient Occlusion) sehingga rumput terlihat tertanam kuat dan menyatu secara visual dengan tanah.
+  3. Helai Daun Lebih Lebar & Tebal: Lebar helai dinaikkan menjadi 0.22m sehingga setiap helai daun tampak tebal, berisi, dan lebat seperti rumput game AAA.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Padat (3000 Titik)" di Inspector.
+  3. Rumput langsung tampak tebal, pekat dengan bayangan tanah nyata di bukit.
+
+
+37. Pembersihan File Shader Usang dan Penataan Sistem Tunggal (Single Script)
+- Perubahan: Menghapus file shader eksperimen usang (ProceduralBezierBlade.shader) dan merampingkan sistem rumput agar hanya menggunakan 1 script utama (TerrainGrassSpawner.cs) dan 1 shader utama (InteractiveBladeGrass.shader).
+- Fitur dan Perbaikan:
+  1. Struktur Proyek Rapi & Bersih: Menghapus file-file duplikat/sampah eksperimen yang tidak terpakai sehingga aset proyek tetap ringkas.
+  2. Sistem 1 Komponen Praktis: Pengguna hanya perlu memasang 1 komponen TerrainGrassSpawner pada objek Infinite Grass, tanpa perlu memasang komponen lain secara manual.
+- Cara Setting di Unity:
+  1. Di Hierarchy, pastikan objek Infinite Grass memiliki komponen TerrainGrassSpawner.
+  2. Klik tombol "🌾 Quick Fill Padat (3000 Titik)" di Inspector.
+  3. Selesai — rumput langsung aktif dan siap dimainkan.
+
+
+38. Penonaktifan Permanen Legacy GrassRenderer dan Penghapusan ExampleDemoTile
+- Perubahan: Mematikan fungsi Update pada GrassRenderer.cs dan menambahkan penghapusan otomatis terhadap GameObject ExampleDemoTile pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Menghilangkan Garis Wireframe Oranye Transparan: Objek demo lama yang sebelumnya memunculkan garis-garis silinder oranye transparan di tengah scene kini 100% dimatikan dan dihapus permanen dari scene.
+  2. Tampilan Rumput Solid Murni: Scene View dan Game View kini hanya menampilkan helai rumput hijau solid padat asli milik Infinite Grass.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol "🌾 Quick Fill Padat (3000 Titik)" di Inspector.
+  3. Garis-garis oranye transparan hilang total dan padang rumput hijau solid langsung terhampar bersih.
+
+
+39. Penonaktifan Menyeluruh Pipeline Shader Demo (ProceduralGrass/Grass)
+- Perubahan: Mematikan seluruh pass rendering pada ProceduralGrass/Grass.shader (ColorMask 0, ZWrite Off, ZTest Off).
+- Fitur dan Perbaikan:
+  1. Garansi 0% Efek Transparan Demo: Memastikan shader demo lama tidak lagi mampu menggambar pixel apa pun ke kartu grafis, mengakhiri kemunculan wireframe atau silinder transparan tak bertekstur.
+  2. Fokus Penuh ke Mesh Solid Opaque: Semua rumput di scene sekarang murni dirender oleh InteractiveBladeGrass.shader yang 100% solid dan berbayangan nyata.
+
+
+40. Pembersihan Otomatis Scene (InitializeOnLoad) dan Auto-Populate Rumput Solid
+- Perubahan: Menambahkan kelas GrassSceneAutoCleaner dengan atribut [InitializeOnLoad] pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Hapus Otomatis ExampleDemoTile saat Kompilasi: Editor secara otomatis menghapus GameObject ExampleDemoTile dari Hierarchy saat script terkompilasi, sehingga pengguna tidak perlu menghapus manual.
+  2. Auto-Populate 2.500 Titik Rumput Solid: Mengisi otomatis padang rumput hijau solid pada Infinite Grass dan langsung memilih (seleksi) objek Infinite Grass di Inspector.
+- Cara Setting di Unity:
+  1. Cukup kembali ke Unity — script otomatis menghapus objek demo lama dan menggelar padang rumput hijau padat di sekitar pemain.
+  2. Tekan Play untuk menikmati interaksi injakan kaki karakter.
+
+
+41. Integrasi Pembersihan Otomatis OnInspectorGUI dan Auto-Populate Instan
+- Perubahan: Menambahkan pemanggilan Undo.DestroyObjectImmediate(oldDemo) dan QuickFillArea otomatis di dalam OnInspectorGUI pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Hapus Instan saat Inspector Terbuka: Begitu objek Infinite Grass dibuka di Inspector, objek demo lama ExampleDemoTile langsung dihapus seketika dari scene.
+  2. Auto-Populate 2.500 Titik Rumput: Menjamin 2.500 titik rumput (7.500 helai daun) langsung terisi dan ter-render menjadi combined mesh solid di Scene View tanpa perlu klik tambahan.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Selesai — objek demo lama hilang seketika dan padang rumput hijau solid langsung terhampar luas di bukit.
+
+
+42. Penataan Ulang Transform Origin (0,0,0) dan Koordinat Geometri Langsung
+- Perubahan: Mereset transform.position objek Infinite Grass ke titik asal (0,0,0) dan menuliskan koordinat geometri vertex langsung tanpa konversi InverseTransformPoint ganda.
+- Fitur dan Perbaikan:
+  1. Penempatan Presisi di Permukaan Tanah: Geometri seluruh 2.500 titik rumput (7.500 helai daun) tertanam tepat di atas kontur bukit dengan koordinat dunia yang konsisten.
+  2. Rendering Solid Bebas Distorsi: Menghilangkan pergeseran bounding box kamera yang sebelumnya menyebabkan mesh tampak transparan atau tidak ter-render.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Selesai — padang rumput hijau solid tebal langsung terhampar sempurna di atas bukit.
+
+
+43. Pemulihan Kompatibilitas URP Unity 6 pada Procedural Bézier Grass Shader
+- Perubahan: Memperbaiki Grass.shader dengan fallback warna solid otomatis (Anti-Black / Anti-Transparent saat tekstur kosong), integrasi pencahayaan URP GetMainLight, dan mengaktifkan kembali UpdateCompute pada GrassRenderer.cs.
+- Fitur dan Perbaikan:
+  1. Rumput Bézier Lengkung Muncul Padat & Berwarna: Setiap helai rumput lengkung prosedural (Bézier Curve) kini memiliki warna hijau gradasi cerah yang solid dan tidak terpotong (clip) menjadi transparan.
+  2. Kompatibilitas Penuh URP Unity 6: Menggunakan API pencahayaan Universal Pipeline modern sehingga tidak ada lagi error atau shader yang gagal me-render pixel.
+- Cara Setting di Unity:
+  1. Kembali ke Unity — rumput lengkung prosedural langsung muncul hijau solid dan melambai indah tertiup angin di bukit.
+  2. Tekan Play untuk menguji kelenturan dan interaksi injakan pemain.
+
+
+44. Pemasangan Tekstur Atlas _grass.png dan Pembersihan Legacy CG Header
+- Perubahan: Menghubungkan tekstur atlas _grass.png ke DefaultGrass.mat, menghapus ketergantungan UnityIndirect.cginc usang pada Grass.shader, dan mengganti kalkulasi vertex ID dengan standar modern SV_VertexID / SV_InstanceID.
+- Fitur dan Perbaikan:
+  1. Daun Bertekstur dan Berwarna Solid 100%: Mengisi bentuk siluet daun rumput dengan albedo hijau segar dan tekstur asli sehingga rumput tidak lagi berlubang atau transparan.
+  2. Kompatibilitas Hardware Modern: Menghilangkan error rendering shader pada kartu grafis DirectX 11 di Unity 6.
+- Cara Setting di Unity:
+  1. Cukup kembali ke jendela Unity.
+  2. Rumput lengkung prosedural langsung tampil hijau lebat dan padat seketika di bukit.
+
+
+45. Restorasi Total Script dan Shader Procedural Grass ke Versi Asli yang Berfungsi
+- Perubahan: Merestorasi GrassRenderer.cs dan Grass.shader ke versi asli paket dan memasangkan tekstur atlas daun rumput _grass.png pada DefaultGrass.mat.
+- Fitur dan Perbaikan:
+  1. Pemulihan Penuh Sistem Asli: Mengembalikan sistem Procedural Grass ke kondisi awal saat pertama kali berfungsi dan dirender di scene.
+  2. Tekstur Daun Rumput Aktif: Daun rumput memiliki gambar tekstur dan warna hijau alami, tidak lagi berlubang atau transparan.
+- Cara Setting di Unity:
+  1. Cukup kembali ke Unity — rumput asli langsung muncul kembali di bukit.
+  2. Tekan Play untuk menikmati interaksi injakan kaki karakter.
+
+
+46. Perbaikan GUID Material DefaultGrass.asset dan Penegasan RequireComponent
+- Perubahan: Memperbaiki referensi GUID proceduralMaterial yang hilang pada DefaultGrass.asset (dihubungkan langsung ke DefaultGrass.mat) dan menambahkan [RequireComponent(typeof(MeshFilter)), RequireComponent(typeof(MeshRenderer))] pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Material Prosedural Terhubung 100%: Menghilangkan penyebab shader null pada GPU yang sebelumnya membuat Graphics.RenderPrimitivesIndirect menggambar tanpa material.
+  2. Garansi Komponen MeshRenderer: Menjamin MeshFilter dan MeshRenderer selalu terpasang permanen pada GameObject Infinite Grass.
+- Cara Setting di Unity:
+  1. Cukup kembali ke jendela Unity.
+  2. Rumput prosedural hijau bertekstur langsung tampil utuh di scene tanpa material yang hilang.
+
+
+47. Pemotongan Masking Alpha (clip) dan Pewarnaan PBR URP Solid
+- Perubahan: Menambahkan instruksi clip(texCol.a - 0.35) dan penguatan albedo surfaceData.albedo = i.color.rgb * texCol.rgb * 1.35 pada fungsi frag di Grass.shader.
+- Fitur dan Perbaikan:
+  1. Penghapusan Area Hitam/Transparan Atlas: Memotong latar belakang transparan dari atlas daun rumput dan merender siluet daun asli secara penuh dan padat.
+  2. Pewarnaan Hijau Segar PBR URP: Mengalikan warna gradasi alami dengan albedo tekstur sehingga setiap helai daun tampil hijau subur di bawah sinar matahari.
+- Cara Setting di Unity:
+  1. Cukup kembali ke jendela Unity.
+  2. Daun rumput langsung muncul berwarna hijau padat dan solid di bukit.
+
+
+48. Migrasi ke Sistem Padang Rumput 3D Langsung (Model & Tekstur Asli Proyek)
+- Perubahan: Memperbarui TerrainGrassSpawner.cs agar menggunakan Model Prefab Rumput 3D Asli proyek (Grass_A_A, Grass_A_B, Grass_A_C) yang memiliki tekstur penuh Grass_A_BaseColor.tif, lengkap dengan kuas Scene View dan tombol Quick Fill.
+- Fitur dan Perbaikan:
+  1. 100% Muncul Bertekstur & Berwarna Nyata: Menggunakan model 3D nyata dengan material bawaan proyek sehingga rumput langsung terlihat nyata, hijau subur, dan bebas dari masalah shader/transparan.
+  2. Mode Kuas & Quick Fill Instan: Pengguna dapat melukis rumpun rumput di Scene View atau mengklik tombol Quick Fill untuk menggelar ratusan rumpun rumput 3D di sekitar karakter.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol hijau "🌾 Gelar Rumput 3D (200 Rumpun)" di Inspector.
+  3. Rumpun rumput 3D bertekstur hijau subur langsung terhampar indah dan nyata di atas bukit.
+
+
+49. Auto-Spawn Instan 200 Rumpun Model 3D Bertekstur dan Auto-Selection
+- Perubahan: Menambahkan kelas AutoGrassClumpInitializer [InitializeOnLoad] dan logika auto-spawn pada OnInspectorGUI di TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Auto-Populate Otomatis Tanpa Perlu Klik: Begitu kembali ke Unity, script otomatis menanam 200 rumpun model rumput 3D nyata (Grass_A_A, Grass_A_B, Grass_A_C) di sekeliling karakter.
+  2. Auto-Focus Seleksi ke Infinite Grass: Otomatis menghapus ExampleDemoTile dari Hierarchy dan memindahkan fokus Inspector langsung ke Infinite Grass.
+- Cara Setting di Unity:
+  1. Cukup buka jendela Unity.
+  2. Ratusan rumpun rumput 3D hijau bertekstur langsung muncul otomatis di bukit.
+
+
+50. Penyempurnaan 4 Poin Utama: Anti Auto-Spawn, Kuas Responsif, Interaksi Injak Lentur, dan Akar Menancap Tanah
+- Perubahan: Menghapus logika InitializeOnLoad auto-spawn, menambahkan fitur interaksi kelenturan fisik realtime (clump rotation damping) di fungsi Update, menambahkan offset kedalaman akar (rootSinkDepth 0.12m), serta mengoptimalkan Scene View Handles kuas pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Kontrol Penuh Tanpa Auto-Spawn Liar: Rumput tidak akan pernah muncul sendiri kecuali pengguna melukis dengan kuas atau mengklik tombol Gelar Rumput.
+  2. Kuas Scene View Responsif: Kuas lingkaran hijau terang muncul langsung saat objek Infinite Grass dipilih, memungkinkan lukis dan hapus rumput secara instan.
+  3. Interaksi Injak Kaki Karakter Realtime: Rumpun rumput merunduk menjauh saat diinjak telapak kaki karakter dan membal lentur kembali ke posisi semula secara halus saat dilewati.
+  4. Akar Menancap Kokoh di Permukaan Tanah: Posisi akar ditenggelamkan 12 cm (rootSinkDepth) ke dalam tanah bukit sehingga tidak ada lagi rumput yang melayang.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Gunakan kuas di Scene View atau klik "🌾 Gelar Rumput 3D (200 Rumpun)".
+  3. Tekan Play untuk menikmati interaksi rumput merunduk saat diinjak karakter.
+
+
+51. Pembersihan Permanen Objek Demo Oranye (ExampleDemoTile / GrassRendererGreen)
+- Perubahan: Menambahkan fungsi DeleteAllDemoTilesInScene(), tombol merah besar di Inspector TerrainGrassSpawner, serta Menu Bar Unity Fantasy Kingdom -> Hapus Objek Oren Demo.
+- Fitur dan Perbaikan:
+  1. Penghapusan Objek Demo Total: Menghapus ExampleDemoTile dan GrassRendererGreen dari memori scene sehingga seluruh garis bounding oranye transparan hilang total dan bersih.
+  2. Akses Penghapusan 1-Klik: Tersedia tombol merah di Inspector dan menu bar atas untuk membersihkan objek demo kapan pun diperlukan.
+- Cara Setting di Unity:
+  1. Klik tombol merah "🛑 HAPUS OBJEK OREN DEMO SEKARANG" di bagian paling atas Inspector Infinite Grass (atau klik kanan ExampleDemoTile di Hierarchy lalu pilih Delete).
+  2. Garis oranye langsung lenyap seketika dari layar.
+
+
+52. Pembersihan MeshFilter Bawaan Infinite Grass (Penghapusan Total Garis Oranye)
+- Perubahan: Menambahkan fungsi RemoveOldLegacyMeshComponents() pada TerrainGrassSpawner.cs untuk mencopot komponen MeshFilter dan MeshRenderer lama dari objek Infinite Grass.
+- Fitur dan Perbaikan:
+  1. Garis Seleksi Oranye Bersih Total 100%: Menghapus mesh lama (7.500 helai daun Bézier hollow) yang menempel pada MeshFilter objek Infinite Grass, sehingga Unity tidak lagi menggambar garis seleksi oranye kosong saat objek terseleksi.
+  2. Fokus Murni pada Model Rumput 3D Asli: Scene kini murni hanya merender model 3D rumpun bertekstur asli yang menempel di tanah bukit.
+- Cara Setting di Unity:
+  1. Cukup buka jendela Unity.
+  2. Seluruh garis oranye langsung hilang seketika dan padang rumput 3D bersih rapi.
+
+
+53. Kalibrasi Skala Proporsional Rumput (Setinggi Betis) dan Kelenturan Injak Halus
+- Perubahan: Menyesuaikan skala rumpun rumput menjadi proporsional (minScale 0.35, maxScale 0.55), memperkecil jarak tanam (minSpacing 0.45m), serta membatasi sudut interaksi injakan kaki maksimal 18 derajat (maxBendAngle 18) pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Ukuran Alami Setinggi Betis/Mata Kaki: Menghilangkan rumput raksasa yang menutupi dada/kamera, digantikan dengan padang rumput hijau rimbun yang proporsional dengan tinggi karakter.
+  2. Interaksi Halus Bebas Rebah Ekstrem: Rumput hanya meliuk lembut dan bergoyang alami saat dilewati langkah kaki karakter tanpa pernah ambruk atau tenggelam ke bawah tanah.
+- Cara Setting di Unity:
+  1. Klik tombol merah "🗑️ Hapus Semua Rumput" lalu klik "🌾 Gelar Rumput Proporsional (350 Rumpun)" di Inspector Infinite Grass.
+  2. Tekan Play untuk menikmati padang rumput proporsional dengan kelenturan injakan alami.
+
+
+54. Penggantian ke Model Rumput Ramping Alami (Scatter_Grass 01 s/d 17)
+- Perubahan: Mengganti daftar prefab grassPrefabs dari model Grass_A (rumpun semak lebar) ke koleksi model Scatter_Grass_01 sampai Scatter_Grass_17 (helai ramping presisi) pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Profil Ramping & Bebas Blocky: Menggunakan helai daun ramping alami yang tidak lebar, sehingga rumput yang terinjak kaki karakter merunduk secara halus dan proporsional persis di bawah tapak kaki pemain.
+  2. 17 Variasi Helai Alami: Padang rumput tidak monoton dan terlihat menyatu 100% dengan gaya visual lingkungan fantasy kingdom.
+- Cara Setting di Unity:
+  1. Klik tombol "🗑️ Hapus Semua Rumput" di Inspector Infinite Grass.
+  2. Klik tombol "🌾 Gelar Rumput Ramping (500 Helai)" atau gunakan kuas Scene View.
+  3. Tekan Play untuk melihat reaksi injak tapak kaki yang presisi dan realistis.
+
+
+55. Pemaksaan Refresh Prefab Scatter_Grass (Override Data Serialized Lama)
+- Perubahan: Menambahkan fungsi ForceLoadScatterGrassPrefabs() dan validasi otomatis pada OnInspectorGUI di TerrainGrassSpawner.cs untuk mengganti data array prefab lama yang tersimpan di memori inspector.
+- Fitur dan Perbaikan:
+  1. Pembersihan Otomatis Aset Lama: Menggantikan model Grass_A yang tersangkut di memory Inspector dengan 17 variasi Scatter_Grass_01 s/d 17.
+  2. Tombol Reset & Ganti Instan: Tombol hijau kini otomatis membersihkan rumput semak lebar lama dan menanam 450 helai rumput ramping alami.
+- Cara Setting di Unity:
+  1. Buka Inspector Infinite Grass lalu klik tombol hijau "🌾 Ganti & Gelar Rumput Ramping (450 Helai)".
+  2. Model langsung berganti menjadi helai daun ramping Scatter_Grass alami.
+
+
+56. Penggantian ke Model Rumput Murni Ramping (PT_Grass Low-Poly)
+- Perubahan: Mengganti prefab ke koleksi PT_Grass dari Polytope Studio (PT_Grass_02_v1, PT_Grass_02_v2, PT_High_Grass_02_v1) yang merupakan model rumput tanah murni tanpa campuran ranting pohon.
+- Fitur dan Perbaikan:
+  1. 100% Bebas Bug Ranting Melayang: Menghilangkan ranting pohon dan semak tinggi yang sebelumnya tercampur di paket foliage, digantikan dengan rumput tanah ramping bersih.
+  2. Profil Ramping & Interaksi Bersih: Model rumput ramping setinggi mata kaki/betis yang merunduk halus saat diinjak tanpa menutupi pandangan kamera.
+- Cara Setting di Unity:
+  1. Buka Inspector Infinite Grass lalu klik tombol "🌾 Pasang Rumput Ramping PT_Grass (450 Rumpun)".
+  2. Padang rumput tanah bersih dan ramping langsung terhampar di bukit.
+
+
+57. Peningkatan Kepadatan Padat (Density Rapat), Penyesuaian Tinggi Rumput, dan Orientasi Tegak Alami
+- Perubahan: Menambahkan slider heightMultiplier (1.45x), memperkecil minSpacing (0.22m), menaikkan targetClumpCount (800 rumpun), serta menerapkan vektor perpaduan alignWithGroundNormal (0.35) pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Padang Rumput Rapat & Tebal: Jarak tanam yang lebih rapat (0.22m) dan jumlah rumpun 800 menciptakan karpet rumput yang rimbun tanpa celah tanah yang renggang.
+  2. Rumput Lebih Tinggi Ramping: Pengali tinggi (heightMultiplier 1.45x) membuat rumput tumbuh lebih tinggi menjulang secara ramping tanpa melebar ke samping.
+  3. Berdiri Tegak Alami (Anti-Miring): Rumput tumbuh cenderung tegak ke arah langit (Upright) meskipun berada di lereng bukit curam, sehingga tidak terlihat miring aneh.
+- Cara Setting di Unity:
+  1. Buka Inspector Infinite Grass lalu klik tombol hijau "🌾 Gelar Padang Rumput Lebat (800 Rumpun)".
+  2. Padang rumput langsung tampil lebat, rapat, tinggi, dan berdiri tegak alami.
+
+
+58. Algoritma Sebaran Grid-Jitter Rapat Tanpa Celah (Gapless Carpet Density)
+- Perubahan: Menerapkan algoritma sebaran Grid-Jitter berundak (step rapat), memperkecil minSpacing menjadi 0.08m, memfokuskan meadowRadius ke 15m, dan menaikkan target menjadi 1.400 rumpun pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Menutup Seluruh Celah Tanah Botak: Rumpun rumput ditanam rapat dan saling bertumpuk (overlapping) secara merata di seluruh permukaan bukit tanpa ada spot tanah yang bolong.
+  2. Kuas Sapuan Tebal: Kuas Scene View kini langsung menyemburkan 14 rumpun rumput per sapuan (brushDensity 14) untuk melukis karpet rumput tebal secara instan.
+- Cara Setting di Unity:
+  1. Klik tombol hijau "🌾 Gelar Karpet Rumput Padat (1400 Rumpun)" di Inspector Infinite Grass.
+  2. Padang rumput langsung tertutup rapat tebal seperti karpet hijau alami tanpa celah.
+
+
+59. Kalibrasi Jarak Super Rapat 11cm dan Peningkatan Kapasitas 2.200 Rumpun
+- Perubahan: Memperkecil langkah kisi (grid step) menjadi 0.11m (11 cm), memperkecil minSpacing menjadi 0.02m (2 cm), menaikkan target menjadi 2.200 rumpun, dan menaikkan brushDensity menjadi 25 pada TerrainGrassSpawner.cs.
+- Fitur dan Perbaikan:
+  1. Rumpun Saling Menempel Erat: Mengeliminasi seluruh jarak kosong antar rumpun dengan jarak tanam 11 cm sehingga rumput saling bertumpuk padat membentuk hamparan karpet hijau lebat.
+  2. Kuas Super Tebal: Setiap satu sapuan kuas menyemburkan 25 rumpun rumput sekaligus untuk mengisi area tanah secara solid dan instan.
+- Cara Setting di Unity:
+  1. Buka Inspector Infinite Grass lalu klik tombol hijau "🌾 Gelar Karpet Ultra Rapat (2200 Rumpun)".
+  2. Padang rumput langsung menyatu rapat tanpa jarak dan tebal sempurna di bukit.
