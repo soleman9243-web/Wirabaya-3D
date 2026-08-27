@@ -2,7 +2,7 @@ using UnityEngine;
 using StarterAssets;
 
 /* =============================================================================
- * ThirdPersonAnimationV2.cs
+ * WeightAnimationScript.cs
  * =============================================================================
  * Script tambahan (Add-on) untuk menjalankan sistem animasi baru.
  * Script ini dirancang agar BEKERJA BARENG dengan ThirdPersonController asli,
@@ -18,7 +18,7 @@ namespace StarterAssets.Prototype
     [RequireComponent(typeof(Animator))]
     [RequireComponent(typeof(StarterAssetsInputs))]
     [RequireComponent(typeof(CharacterController))]
-    public class ThirdPersonAnimationV2 : MonoBehaviour
+    public class WeightAnimationScript : MonoBehaviour
     {
         [Header("V2 — Better Animation Settings")]
         [Tooltip("Sudut minimum (derajat) untuk memicu animasi idle turn")]
@@ -36,7 +36,7 @@ namespace StarterAssets.Prototype
         [Tooltip("Berapa lama (detik) 'ingatan' bahwa karakter baru saja berlari")]
         public float WasRunningMemory = 0.4f;
 
-        [Header("Animation Durations (Sesuaikan dengan panjang animasi FBX!)")]
+        [Header("Animation Durations")]
         [Tooltip("Durasi animasi Left Turn / Right Turn dalam detik (sebelum rotasi dipaksa snap)")]
         public float Turn90Duration = 0.85f; // Diperpanjang agar tidak buru-buru
         
@@ -46,6 +46,22 @@ namespace StarterAssets.Prototype
         [Header("Sub-State Machine Name")]
         [Tooltip("Nama sub-state machine V2 di Animator (harus cocok persis)")]
         public string SubStateMachineName = "V2 Locomotion";
+
+        [Header("Animation State Names")]
+        [Tooltip("Nama state locomotion utama di Base Layer")]
+        public string StateIdleWalkRun = "Idle Walk Run Blend";
+        
+        [Tooltip("Nama state animasi berhenti dari lari")]
+        public string StateRunToStop = "Run To Stop";
+        
+        [Tooltip("Nama state animasi putar kiri di tempat")]
+        public string StateLeftTurn = "Left Turn";
+        
+        [Tooltip("Nama state animasi putar kanan di tempat")]
+        public string StateRightTurn = "Right Turn";
+        
+        [Tooltip("Nama state animasi putar balik saat lari")]
+        public string StateRunningTurn180 = "Running Turn 180";
 
         private Animator _animator;
         private StarterAssetsInputs _input;
@@ -82,6 +98,14 @@ namespace StarterAssets.Prototype
         private bool _isInRunToStop;
         private bool _isInV2Animation; // True saat animasi V2 yang perlu disable movement
 
+        // Post-turn blend: putar kapsul bertahap setelah Turn 180 selesai
+        private bool _isPostTurnBlend;
+        private float _postTurnBlendTimer;
+        private float _postTurnBlendDuration = 0.15f;
+        private float _postTurnBlendStartYaw;
+        private float _postTurnBlendTargetYaw;
+        private float _postTurnClockwiseDelta; // Selalu positif = selalu clockwise
+
         private void Start()
         {
             _animator = GetComponent<Animator>();
@@ -103,10 +127,10 @@ namespace StarterAssets.Prototype
             _animIDIsArmedRunning = Animator.StringToHash("IsArmedRunning");
             _animIDSpeed = Animator.StringToHash("Speed");
 
-            _hashRunToStop = Animator.StringToHash("Run To Stop");
-            _hashLeftTurn = Animator.StringToHash("Left Turn");
-            _hashRightTurn = Animator.StringToHash("Right Turn");
-            _hashRunTurn180 = Animator.StringToHash("Running Turn 180");
+            _hashRunToStop = Animator.StringToHash(StateRunToStop);
+            _hashLeftTurn = Animator.StringToHash(StateLeftTurn);
+            _hashRightTurn = Animator.StringToHash(StateRightTurn);
+            _hashRunTurn180 = Animator.StringToHash(StateRunningTurn180);
         }
 
         private void CrossFadeV2(string stateName, float duration)
@@ -127,9 +151,35 @@ namespace StarterAssets.Prototype
             _isInV2Animation = locked;
         }
 
+
+
         private void Update()
         {
             if (_animator == null) return;
+
+            // ================================================================
+            // POST-TURN BLEND: Putar kapsul bertahap setelah Turn 180 selesai.
+            // Saat CrossFade nge-blend bone rotation dari 180° ke 0°,
+            // kita putar kapsul dari 0° ke 180° → total visual tetap 180° → 0 rollback!
+            // ================================================================
+            if (_isPostTurnBlend)
+            {
+                _postTurnBlendTimer -= Time.deltaTime;
+                // Pakai LINEAR agar sinkron dengan CrossFade yang juga linear
+                float progress = 1f - Mathf.Clamp01(_postTurnBlendTimer / _postTurnBlendDuration);
+                
+                // PAKSA rotasi SELALU KE KANAN (clockwise / positive yaw)
+                // karena animasi Turn 180 selalu muter ke kanan.
+                // Mathf.LerpAngle kadang ambil jalur kiri (rollback!) — jadi tidak bisa dipakai.
+                float newYaw = _postTurnBlendStartYaw + _postTurnClockwiseDelta * progress;
+                transform.rotation = Quaternion.Euler(0f, newYaw, 0f);
+                
+                if (_postTurnBlendTimer <= 0f)
+                {
+                    transform.rotation = Quaternion.Euler(0f, _postTurnBlendTargetYaw, 0f);
+                    _isPostTurnBlend = false;
+                }
+            }
 
             // === Info terkini ===
             float currentYaw = transform.eulerAngles.y;
@@ -160,7 +210,7 @@ namespace StarterAssets.Prototype
             {
                 if (isMoving)
                 {
-                    _animator.CrossFade("Idle Walk Run Blend", 0.15f);
+                    _animator.CrossFade(StateIdleWalkRun, 0.15f);
                     SetMovementLock(false); // Unlock movement
                     _isInRunToStop = false;
                     Debug.Log("[AnimV2] RunToStop interrupted — player started moving");
@@ -220,33 +270,45 @@ namespace StarterAssets.Prototype
                 {
                     // ============================================
                     // TURN 180 (Lari Putar Balik)
-                    // Kapsul DIAM selama animasi (Bake Into Pose memutar mesh).
-                    // Deteksi selesai via normalizedTime Animator (bukan timer).
+                    // Kapsul DIAM selama animasi (Bake Into Pose memutar mesh visual).
+                    // Saat selesai, kapsul diputar BERTAHAP via post-turn blend
+                    // agar sinkron dengan CrossFade bone de-rotation → 0 rollback.
                     // ============================================
                     
                     bool isInTurn180State = stateInfo.shortNameHash == _hashRunTurn180;
                     float animProgress = isInTurn180State ? stateInfo.normalizedTime : 0f;
-                    // Animasi dianggap selesai di 90% normalizedTime
                     bool animDone = isInTurn180State && animProgress >= 0.9f;
                     
-                    // Fallback: jika Animator sudah keluar dari state Turn 180
-                    // (misal Has Exit Time masih aktif), tetap snap.
                     _turnTimer -= Time.deltaTime;
                     bool timerFallback = _turnTimer <= 0f;
                     
                     if (animDone || timerFallback)
                     {
-                        // 1. SNAP kapsul ke arah tujuan
-                        transform.rotation = Quaternion.Euler(0f, _turnTargetYaw, 0f);
+                        // JANGAN snap kapsul sekaligus! Mulai post-turn blend.
+                        _isPostTurnBlend = true;
+                        _postTurnBlendTimer = _postTurnBlendDuration;
+                        _postTurnBlendStartYaw = transform.eulerAngles.y;
+                        _postTurnBlendTargetYaw = _turnTargetYaw;
                         
-                        // 2. CrossFade pendek ke Locomotion
-                        _animator.CrossFade("Idle Walk Run Blend", 0.1f);
+                        // Hitung delta SELALU CLOCKWISE (positif)
+                        // Animasi Turn 180 selalu muter ke kanan, jadi kapsul juga harus ke kanan.
+                        float rawDelta = _turnTargetYaw - transform.eulerAngles.y;
+                        // Normalize ke 0..360 (selalu positif = clockwise)
+                        _postTurnClockwiseDelta = ((rawDelta % 360f) + 360f) % 360f;
+                        // Kalau deltanya 0 (sudah di posisi target), paksa 360 (full turn)
+                        if (_postTurnClockwiseDelta < 1f) _postTurnClockwiseDelta = 360f;
+                        
+                        // CrossFade ke Locomotion (durasi DETIK ASLI = sinkron dengan post-turn blend)
+                        // HARUS pakai CrossFadeInFixedTime, bukan CrossFade!
+                        // CrossFade(0.15) = 15% durasi animasi (bisa 0.3 detik kalau animasi 2 detik)
+                        // CrossFadeInFixedTime(0.15) = PASTI 0.15 detik = sinkron dengan blend kapsul
+                        _animator.CrossFadeInFixedTime(StateIdleWalkRun, _postTurnBlendDuration, 0);
                         
                         if (_tpc != null) _tpc.ResetRotationVelocity();
                         SetMovementLock(false);
                         _isTurnPlaying = false;
                         
-                        Debug.Log($"[AnimV2] Turn 180 done (anim={animProgress:F2}) — snapped to {_turnTargetYaw:F1}°");
+                        Debug.Log($"[AnimV2] Turn 180 done — starting post-turn blend to {_turnTargetYaw:F1}°");
                     }
                 }
             }
@@ -265,17 +327,15 @@ namespace StarterAssets.Prototype
             }
 
             // --- 1. SPRINT DETECTION ---
-            // --- 2. ARMED RUNNING DETECTION ---
-            // FREEZE selama animasi V2 jalan! Kalau tidak, speed = 0 → IsSprinting = false
-            // → Animator keluar dari Sprint → setelah animasi selesai harus transit ulang → STUTTER
-            if (!_isTurnPlaying && !_isInRunToStop)
-            {
-                bool isSprintingNormal = isSprinting && isMoving && !isHoldingSword;
-                _animator.SetBool(_animIDIsSprinting, isSprintingNormal);
+            // Lari biasa (hanya jika TIDAK memegang pedang)
+            bool isSprintingNormal = isSprinting && isMoving && !isHoldingSword;
+            _animator.SetBool(_animIDIsSprinting, isSprintingNormal);
 
-                bool isArmedRunning = isHoldingSword && isMoving && currentSpeed > 3.0f;
-                _animator.SetBool(_animIDIsArmedRunning, isArmedRunning);
-            }
+            // --- 2. ARMED RUNNING DETECTION ---
+            // Lari bawa pedang (berbeda animasinya dari lari biasa)
+            // currentSpeed > 3.0f memastikan kalau JALAN (speed ~2.0), dia TIDAK trigger state ini.
+            bool isArmedRunning = isHoldingSword && isMoving && currentSpeed > 3.0f;
+            _animator.SetBool(_animIDIsArmedRunning, isArmedRunning);
 
             // --- 3. ALL TURNS (IDLE TURN & 180 TURN) ---
             // Sistem turn terpusat. Berlaku saat dari diam maupun lari.
@@ -293,7 +353,7 @@ namespace StarterAssets.Prototype
                     // Prioritas 1: Turn 180 (Hanya dipicu saat BERLARI dan pencet tombol arah belakang)
                     if (absAngleDiff > Turn180Threshold && animSpeed >= RunSpeedThreshold)
                     {
-                        CrossFadeV2("Running Turn 180", 0.1f);
+                        CrossFadeV2(StateRunningTurn180, 0.1f);
                         _isTurnPlaying = true;
                         _turnDuration = Turn180Duration;
                         _turnTimer = _turnDuration; 
@@ -308,7 +368,7 @@ namespace StarterAssets.Prototype
                     {
                         if (angleDiff < -IdleTurnThreshold)
                         {
-                            CrossFadeV2("Left Turn", 0.1f);
+                            CrossFadeV2(StateLeftTurn, 0.1f);
                             _isTurnPlaying = true;
                             _turnDuration = Turn90Duration;
                             _turnTimer = _turnDuration;
@@ -323,7 +383,7 @@ namespace StarterAssets.Prototype
                         }
                         else if (angleDiff > IdleTurnThreshold)
                         {
-                            CrossFadeV2("Right Turn", 0.1f);
+                            CrossFadeV2(StateRightTurn, 0.1f);
                             _isTurnPlaying = true;
                             _turnDuration = Turn90Duration;
                             _turnTimer = _turnDuration;
@@ -347,7 +407,7 @@ namespace StarterAssets.Prototype
                 
                 if (_wasRunningRecently && isNowStopping)
                 {
-                    CrossFadeV2("Run To Stop", 0.15f);
+                    CrossFadeV2(StateRunToStop, 0.15f);
                     Debug.Log($"[AnimV2] RunToStop triggered! Speed={currentSpeed:F2}");
                     _isInRunToStop = true;
                     SetMovementLock(true); // Lock movement agar tidak slide
