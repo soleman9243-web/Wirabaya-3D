@@ -172,6 +172,11 @@ namespace StarterAssets
 
         private float _rotationVelocity;
 
+        public void ResetRotationVelocity()
+        {
+            _rotationVelocity = 0f;
+        }
+
         private float _currentTurnValue;
 
         private float _verticalVelocity;

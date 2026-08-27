@@ -47,6 +47,7 @@ GameObject:
   - component: {fileID: 6514816259790695636}
   - component: {fileID: 9177849658074728576}
   - component: {fileID: 3401323888456532720}
+  - component: {fileID: -1895409434046449859}
   - component: {fileID: 3782649021619342649}
   - component: {fileID: 6587180599738422085}
   - component: {fileID: 2857168891362218608}
@@ -115,7 +116,7 @@ Animator:
   m_GameObject: {fileID: 22648217249824622}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: 0eb79b23b34a8a946895fe6bb2f4eaae, type: 3}
-  m_Controller: {fileID: 9100000, guid: 40db3173a05ae3242b1c182a09b0a183, type: 2}
+  m_Controller: {fileID: 9100000, guid: fa9d4ed9276e56647880e36196e855f4, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -169,6 +170,7 @@ MonoBehaviour:
   RotationSmoothTime: 0.12
   SpeedChangeRate: 10
   LandingAudioClip: {fileID: 8300000, guid: ff697d3070687ce4583faa0561a145a2, type: 3}
+  JumpAudioClip: {fileID: 0}
   FootstepAudioClips:
   - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
   - {fileID: 8300000, guid: 85016e0f2b01da248b9663dd49a161b0, type: 3}
@@ -333,6 +335,31 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &-1895409434046449859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22648217249824622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfa78197de9b09341ba362bfd6121f3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StarterAssets.Prototype.WeightAnimationScript
+  IdleTurnThreshold: 60
+  Turn180Threshold: 140
+  RunSpeedThreshold: 3
+  StopCooldown: 0.5
+  WasRunningMemory: 0.4
+  Turn90Duration: 0.85
+  Turn180Duration: 1.2
+  SubStateMachineName: V2 Locomotion
+  StateIdleWalkRun: Idle Walk Run Blend
+  StateRunToStop: Run To Stop
+  StateLeftTurn: Left Turn
+  StateRightTurn: Right Turn
+  StateRunningTurn180: Running Turn 180
 --- !u!114 &3782649021619342649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -361,8 +388,8 @@ MonoBehaviour:
   maxMana: 100
   manaRegenRate: 0
   <mana>k__BackingField: 0
-  autoHideStaminaBar: 1
-  autoHideManaBar: 1
+  autoHideStaminaBar: 0
+  autoHideManaBar: 0
   barVisibleDuration: 2
   barFadeInSpeed: 8
   barFadeOutSpeed: 3
@@ -575,6 +602,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   takedownObjectiveId: obj_LakukanPenyergapan
+  audioSource: {fileID: 0}
+  takedownStartAudioClip: {fileID: 0}
+  takedownImpactAudioClip: {fileID: 0}
+  audioVolume: 1
 --- !u!114 &6670693284278004508
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -664,6 +695,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 646c31f61a8f31748a9e360c8166ac98, type: 2}
   rotationSpeed: 500
   parkourObjectiveId: obj_SelesaikanParkour
+  audioSource: {fileID: 0}
 --- !u!114 &3011335528351908180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6788,7 +6820,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 590079010718477513}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0005895177, y: 0.9943469, z: 0.0055282386, w: 0.106034614}
+  m_LocalRotation: {x: -0.00058909506, y: 0.9943491, z: 0.0055253864, w: 0.1060136}
   m_LocalPosition: {x: -0.4, y: 1.5, z: 1.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -14996,7 +15028,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2615514130806563386}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.03468094, y: 0.9489198, z: -0.112408005, w: -0.29276767}
+  m_LocalRotation: {x: -0.03468679, y: 0.94891894, z: -0.11242911, w: -0.29276174}
   m_LocalPosition: {x: 1.2900391, y: 1.7080078, z: 1.886}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -16468,7 +16500,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3425822126880005714}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.10203014, y: -0.21007669, z: 0.022049416, w: 0.97209644}
+  m_LocalRotation: {x: -0.10203789, y: 0.2100789, z: -0.022051351, w: -0.9720951}
   m_LocalPosition: {x: -0.38000488, y: 1.6300049, z: -2.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -25995,7 +26027,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6207708234438559407}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.02204942, y: 0.97209644, z: -0.10203013, w: 0.21007675}
+  m_LocalRotation: {x: 0.022051351, y: 0.9720951, z: -0.10203789, w: 0.2100789}
   m_LocalPosition: {x: 0.38000488, y: 1.6300049, z: 2.36}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -39073,7 +39105,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8156907856552919298}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.02421013, y: 0.8963734, z: 0.049334586, w: 0.43988046}
+  m_LocalRotation: {x: -0.024202984, y: 0.8963758, z: 0.049320463, w: 0.43987757}
   m_LocalPosition: {x: -2.6099854, y: 1.0600586, z: 1.86}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -40301,7 +40333,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8810143432657038913}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.02360283, y: 0.88193214, z: 0.04441379, w: -0.46868548}
+  m_LocalRotation: {x: 0.023595791, y: 0.88193214, z: 0.044400398, w: -0.46868694}
   m_LocalPosition: {x: 2.6099854, y: 1.0600586, z: 1.86}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
