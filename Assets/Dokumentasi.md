@@ -1027,3 +1027,82 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
 - Cara Setting di Unity:
   1. Klik tombol "Clear" di Console Unity.
   2. Klik tombol hijau "🌾 Pasang Rumput Toby Fredson (1200 Rumpun)" di Inspector Infinite Grass.
+
+
+91. Penggabungan Mask Alpha ke Base Map RGBA & Konfigurasi Material URP Lit Grass
+- Perubahan: Menggabungkan tekstur GrassAlpha.tga ke dalam channel Alpha dari Grass_MAT_Base_Color_RGBA.png, mengonfigurasi GrassNormals.tga sebagai Normal Map, serta mengaktifkan Alpha Cutout (_AlphaClip: 1) dan Two-Sided Rendering (_Cull: 0) pada Grass_MAT_Base_Color.mat.
+- Fitur dan Perbaikan:
+  1. Penjelasan Penempatan Alpha di URP Lit: Menjelaskan bahwa shader standard URP Lit membaca transparansi dari channel Alpha (A) pada slot Base Map.
+  2. Tekstur RGBA Siap Pakai: Menyediakan Grass_MAT_Base_Color_RGBA.png yang sudah berisi data warna dan alpha cutout presisi.
+  3. Visual Daun Rumput Utuh & Tembus Pandang: Helai rumput terpotong bersih mengikuti bentuk daun dan terlihat dari kedua sisi.
+- Cara Setting di Unity:
+  1. Pasang Grass_MAT_Base_Color_RGBA.png pada slot Base Map.
+  2. Pasang GrassNormals.tga.png pada slot Normal Map.
+  3. Centang "Alpha Clipping" (Threshold: 0.5) dan atur "Render Face: Both" pada material Inspector.
+
+
+92. Penerapan Koleksi Procegrass & Sistem Goyangan Angin GPU Toby Foliage Engine (Genshin / WuWa Style)
+- Perubahan: Memperbarui TerrainGrassSpawner.cs agar menggunakan 4 variasi model rumput yang disediakan (Grass_Clump01GRP, Grass_Ckump02GRP, Grass_Ckump03GRP, Grass_ShapeVariantGRP) di folder Procegrass, serta mengonfigurasi material Grass_MAT_Base_Color 5.mat dengan shader GPU Vertex Wind bawaan Toby Foliage Engine ((TTFE) Grass Foliage (Mobile)).
+- Fitur dan Perbaikan:
+  1. Variasi Rumput Procegrass Pilihan Anda: 4 variasi rumpun rumput (lebat, mekar, sedang, dan bilah acak) tersebar natural membentuk hamparan padang rumput anime.
+  2. Goyangan Ombak Angin Genshin Impact / Wuthering Waves: Animasi goyangan angin diproses langsung di GPU Vertex Shader dengan ombak dinamis, lentur, dan sangat ringan di 85+ FPS.
+  3. Render Daun Dua Sisi & Cutout Halus: Alpha clipping dan double-sided rendering aktif sempurna.
+- Cara Setting di Unity:
+  1. Klik objek Infinite Grass di Hierarchy.
+  2. Klik tombol hijau "🌾 Pasang Rumput Procegrass (1200 Rumpun)".
+
+
+93. Sistem Aktivasi Collider Pohon Terrain Berdasarkan Proximity Player (TreeColliderProximity)
+- Perubahan: Membuat script TreeColliderProximity.cs yang mengaktifkan CapsuleCollider sementara di posisi pohon terrain terdekat saat player mendekat, dan menghapusnya saat player menjauh. Menggunakan object pooling untuk performa optimal.
+- Fitur dan Perbaikan:
+  1. Aktivasi Otomatis: Collider pohon menyala secara otomatis ketika player berada dalam radius tertentu dan mati saat menjauh.
+  2. Object Pooling: Collider didaur ulang sehingga tidak ada alokasi memori berulang (zero garbage collection).
+  3. Performa Ringan: Pengecekan dilakukan setiap 0.3 detik dengan batas maksimal 40 collider aktif bersamaan.
+  4. Skala Otomatis: Ukuran collider menyesuaikan skala pohon terrain yang berbeda-beda.
+- Cara Setting di Unity:
+  1. Buat GameObject kosong di Hierarchy, beri nama "TreeColliderSystem".
+  2. Tambahkan komponen TreeColliderProximity.
+  3. Atur Activation Radius, Collider Radius, dan Collider Height sesuai ukuran pohon Anda.
+
+
+94. Sistem Aktivasi Collider Objek Umum Berdasarkan Proximity Player (ProximityColliderActivator)
+- Perubahan: Membuat script ProximityColliderActivator.cs yang mengaktifkan/menonaktifkan collider objek apapun di scene saat player mendekat/menjauh. Mendukung 3 mode pencarian target: Manual Drag & Drop, Tag, atau Layer.
+- Fitur dan Perbaikan:
+  1. Fleksibel 3 Mode Target: Pilih objek secara manual, berdasarkan tag, atau berdasarkan layer.
+  2. Collider Asli Objek: Langsung mengaktifkan/menonaktifkan collider yang sudah ada di objek (tidak perlu spawn collider baru).
+  3. Performa Ringan: Pengecekan berkala setiap 0.25 detik tanpa alokasi memori baru di runtime.
+  4. Gizmo Visual: Menampilkan radius aktivasi dan objek aktif di Scene View.
+- Cara Setting di Unity:
+  1. Buat GameObject kosong di Hierarchy, beri nama "ProximityColliderSystem".
+  2. Tambahkan komponen ProximityColliderActivator.
+  3. Pilih mode target (Manual, Tag, atau Layer) lalu atur Activation Radius.
+
+
+95. Perbaikan Bug Rumput Melebar / Melar Horizontal (Genshin / WuWa GPU Foliage Shader)
+- Penyebab Bug: Shader bawaan Toby Foliage Engine membutuhkan script `Global Controller` bawaan Toby yang mengatur variabel shader global (`_GlobalWindStrength`, `_WindDirection`, `_StrongWindSpeed`). Tanpa script tersebut atau dengan mesh FBX eksternal, rotasi vertex Toby shader mengalami pembagian 0 / perkalian nilai tak hingga sehingga helai rumput melar puluhan meter secara horizontal.
+- Perbaikan:
+  1. Dibuat shader baru `FantasyKingdom/GenshinGrassFoliage` (Assets/8-13-2026/Grass/Materials/GenshinGrassFoliage.shader).
+  2. Sistem GPU Vertex Wind Mandiri (Self-Contained): Menghasilkan ombak dinamis melintasi padang rumput (Genshin/WuWa style) langsung dari shader tanpa membutuhkan script Global Controller eksternal.
+  3. Bagian akar rumput terkunci kokoh di tanah (`UV.y = 0`) dan ujung rumput melambai lentur (`UV.y = 1`).
+  4. Pencahayaan Anime Lembut: Dilengkapi normal upward bias dan double-sided alpha cutout rendering.
+- Cara Pemakaian:
+  1. Klik objek `Infinite Grass` di Hierarchy.
+  2. Klik tombol merah "🗑️ Hapus Semua Rumput" lalu klik tombol hijau "🌾 Pasang Rumput Procegrass".
+
+
+96. Penerapan Koleksi Asli Toby Foliage Engine (VP_Grass)
+- Perubahan: Memperbarui TerrainGrassSpawner.cs agar langsung memuat 9 variasi prefab resmi bawaan Toby Foliage Engine dari folder `Assets/Toby Fredson/The Toby Foliage Engine/(TTFE)_Demo/Prefabs/Prefabs_Vegetation/Vegetation_Plants/VP_Grass/` (GrassBig_A, GrassBig_B, GrassMedium_A, GrassMedium_B, GrassMedium_D, GrassShort_A, GrassShort_B, GrassShort_C, GrassShort_D).
+- Keunggulan:
+  1. 100% Native & Stable: Menggunakan prefab resmi Toby yang sudah terintegrasi sempurna dengan LOD, material, dan konfigurasi shader bawaan.
+  2. Bebas Masalah Alpha / Model: Tidak memerlukan modifikasi channel tekstur atau konversi mesh eksternal.
+  3. Variasi Lengkap: Paduan rumput tinggi, sedang, dan pendek yang tersebar natural.
+- Cara Pemakaian:
+  1. Klik objek `Infinite Grass` di Hierarchy.
+  2. Klik tombol merah "🗑️ Hapus Semua Rumput".
+  3. Klik tombol hijau "🌾 Pasang Rumput Toby VP_Grass (1200 Rumpun)".
+
+
+
+
+
+

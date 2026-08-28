@@ -9,17 +9,16 @@ using UnityEditor.SceneManagement;
 namespace Unity.FantasyKingdom
 {
     /// <summary>
-    /// TerrainGrassSpawner: Sistem Padang Rumput Toby Fredson Foliage Engine.
-    /// - Menggunakan Variasi Rumput Toby Fredson Single Clump (VP_GrassSingle & VP_Grass).
-    /// - Skala Standar Asli (1.0x Standard Scale).
-    /// - Memanfaatkan Animasi Angin GPU Vertex Asli Bawaan Toby Fredson Shader.
-    /// - Eksekusi Editor DelayCall (100% Bebas dari SerializedObject & MissingReferenceException).
-    /// - 85+ FPS Mulus & Ringan.
+    /// TerrainGrassSpawner: Sistem Padang Rumput Toby Foliage Engine (VP_Grass).
+    /// - Menggunakan Koleksi Asli Toby Fredson VP_Grass (GrassBig, GrassMedium, GrassShort).
+    /// - LOD & Shader Bawaan Toby Asli dengan Wind System Siap Pakai.
+    /// - Posisi menapak pas di atas permukaan tanah bukit.
+    /// - Performa Tinggi (85+ FPS).
     /// </summary>
     [ExecuteAlways]
     public class TerrainGrassSpawner : MonoBehaviour
     {
-        [Header("Toby Fredson Grass Prefabs (VP_GrassSingle & VP_Grass)")]
+        [Header("Toby Foliage Engine Grass Prefabs (VP_Grass Collection)")]
         public GameObject[] grassPrefabs;
 
         [Header("Meadow Density & Area (Hamparan Padang Rumput)")]
@@ -35,17 +34,17 @@ namespace Unity.FantasyKingdom
         [Tooltip("Jarak minimal antar rumpun rumput.")]
         public float minSpacing = 0.08f;
 
-        [Header("Grass Dimensions (Skala Standar 1.0x)")]
+        [Header("Grass Dimensions (Proporsi Alami)")]
         [Range(0.5f, 2.0f)]
-        [Tooltip("Pengali tinggi rumput (1.0 = Standar).")]
+        [Tooltip("Pengali tinggi rumput.")]
         public float heightMultiplier = 1.0f;
 
         [Range(0.5f, 2.0f)]
-        [Tooltip("Skala minimal (1.0 = Ukuran asli prefab).")]
+        [Tooltip("Skala minimal.")]
         public float minScale = 1.0f;
 
         [Range(0.5f, 2.0f)]
-        [Tooltip("Skala maksimal (1.0 = Ukuran asli prefab).")]
+        [Tooltip("Skala maksimal.")]
         public float maxScale = 1.0f;
 
         [Range(0.0f, 1.0f)]
@@ -64,9 +63,9 @@ namespace Unity.FantasyKingdom
         [Tooltip("Jarak interaksi CPU aktif.")]
         public float cpuAnimationDistance = 14f;
 
-        [Header("Toby Fredson Native GPU Wind")]
-        [Tooltip("Gunakan shader angin GPU bawaan Toby Fredson yang sudah sangat optimal dan indah.")]
-        public bool useNativeTobyShaderWind = true;
+        [Header("GPU Vertex Wind System (Toby / Genshin / WuWa Style)")]
+        [Tooltip("Shader angin GPU Vertex aktif secara alami di material.")]
+        public bool useNativeGpuWind = true;
 
         [Header("Player Interaction (Injakan Kaki Halus / Trample)")]
         public bool enableTrample = true;
@@ -139,33 +138,30 @@ namespace Unity.FantasyKingdom
         public void ForceLoadTobyGrassPrefabs()
         {
             #if UNITY_EDITOR
-            if (grassPrefabs == null || grassPrefabs.Length == 0 || grassPrefabs[0] == null)
+            string basePath = "Assets/Toby Fredson/The Toby Foliage Engine/(TTFE)_Demo/Prefabs/Prefabs_Vegetation/Vegetation_Plants/VP_Grass/";
+            string[] prefabNames = new string[]
             {
-                string singlePath = "Assets/Toby Fredson/The Toby Foliage Engine/(TTFE)_Demo/Prefabs/Prefabs_Vegetation/Vegetation_Plants/VP_GrassSingle/";
-                string multiPath = "Assets/Toby Fredson/The Toby Foliage Engine/(TTFE)_Demo/Prefabs/Prefabs_Vegetation/Vegetation_Plants/VP_Grass/";
+                "GrassBig_A.prefab",
+                "GrassBig_B.prefab",
+                "GrassMedium_A.prefab",
+                "GrassMedium_B.prefab",
+                "GrassMedium_D.prefab",
+                "GrassShort_A.prefab",
+                "GrassShort_B.prefab",
+                "GrassShort_C.prefab",
+                "GrassShort_D.prefab"
+            };
 
-                string[] prefabPaths = new string[]
-                {
-                    singlePath + "Grass_Single_B.prefab",
-                    singlePath + "Grass_Single_C2.prefab",
-                    singlePath + "Grass_Single_E.prefab",
-                    singlePath + "Grass_Single_X.prefab",
-                    multiPath + "GrassShort_A.prefab",
-                    multiPath + "GrassShort_B.prefab",
-                    multiPath + "GrassMedium_A.prefab"
-                };
+            List<GameObject> loaded = new List<GameObject>();
+            foreach (var name in prefabNames)
+            {
+                var p = AssetDatabase.LoadAssetAtPath<GameObject>(basePath + name);
+                if (p != null) loaded.Add(p);
+            }
 
-                List<GameObject> loaded = new List<GameObject>();
-                foreach (var path in prefabPaths)
-                {
-                    var p = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    if (p != null) loaded.Add(p);
-                }
-
-                if (loaded.Count > 0)
-                {
-                    grassPrefabs = loaded.ToArray();
-                }
+            if (loaded.Count > 0)
+            {
+                grassPrefabs = loaded.ToArray();
             }
             #endif
 
@@ -281,7 +277,7 @@ namespace Unity.FantasyKingdom
             Quaternion targetRot = Quaternion.FromToRotation(Vector3.up, blendedUp) * Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
             instance.transform.rotation = targetRot;
 
-            // 3. Skala Standar 1.0x (Sesuai ukuran asli prefab Toby Fredson)
+            // 3. Skala Standar 1.0x
             float s = (minScale == maxScale) ? minScale : Random.Range(minScale, maxScale);
             instance.transform.localScale = new Vector3(s, s * heightMultiplier, s);
 
@@ -413,15 +409,15 @@ namespace Unity.FantasyKingdom
             }
 
             CacheClumpData();
-            Debug.Log($"[TerrainGrassSpawner] Berhasil menggelar {transform.childCount} rumput Toby Fredson skala standar!");
+            Debug.Log($"[TerrainGrassSpawner] Berhasil menggelar {transform.childCount} rumput Toby VP_Grass di scene!");
         }
 
         private void Update()
         {
             if (!Application.isPlaying) return;
 
-            // Jika menggunakan GPU vertex wind bawaan Toby Fredson, animasi angin berjalan otomatis di GPU shader
-            if (useNativeTobyShaderWind && !enableTrample) return;
+            // Jika menggunakan GPU vertex wind bawaan, animasi angin berjalan otomatis di GPU shader
+            if (useNativeGpuWind && !enableTrample) return;
 
             FindPlayer();
             Vector3 pPos = (playerTransform != null) ? playerTransform.position : Vector3.zero;
@@ -484,11 +480,11 @@ namespace Unity.FantasyKingdom
             DrawDefaultInspector();
 
             EditorGUILayout.Space(14);
-            EditorGUILayout.LabelField($"🌿 Total Rumput Toby Fredson: {spawner.transform.childCount} Rumpun", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField($"🌿 Total Rumput Toby: {spawner.transform.childCount} Rumpun", EditorStyles.boldLabel);
 
             GUILayout.BeginHorizontal();
             GUI.backgroundColor = new Color(0.35f, 1f, 0.45f);
-            if (GUILayout.Button($"🌾 Pasang Rumput Toby Fredson ({spawner.targetClumpCount} Rumpun)", GUILayout.Height(44)))
+            if (GUILayout.Button($"🌾 Pasang Rumput Toby VP_Grass ({spawner.targetClumpCount} Rumpun)", GUILayout.Height(44)))
             {
                 EditorApplication.delayCall += () =>
                 {
@@ -519,7 +515,7 @@ namespace Unity.FantasyKingdom
             if (spawner.enableBrushMode)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox("🌲 TOBY FREDSON NATIVE FOLIAGE (STANDAR 1.0x)!\n- Menggunakan variasi VP_GrassSingle & VP_Grass Toby Fredson.\n- Menggunakan animasi angin GPU Shader bawaan Toby Fredson yang indah & optimal di 85+ FPS.", MessageType.Info);
+                EditorGUILayout.HelpBox("🌿 TOBY FOLIAGE ENGINE (VP_GRASS) AKTIF!\n- Menggunakan 9 variasi prefab resmi Toby Fredson (GrassBig, GrassMedium, GrassShort).\n- Sudah terintegrasi LOD dan Material resmi Toby.", MessageType.Info);
             }
         }
 
