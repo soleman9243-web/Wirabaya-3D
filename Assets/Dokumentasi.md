@@ -1102,6 +1102,21 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
   3. Klik tombol hijau "🌾 Pasang Rumput Toby VP_Grass (1200 Rumpun)".
 
 
+97. Sistem Senjata & Hand Grip IK Humanoid Bawaan Unity (PlayerWeaponIK)
+- Perubahan: Membuat script PlayerWeaponIK.cs yang menggunakan event OnAnimatorIK bawaan resmi Unity Humanoid.
+- Fitur dan Keunggulan:
+  1. 100% Bebas Error Burst: Tidak memerlukan RigBuilder / RigLayer yang rentan crash pada struktur karakter Mixamo bertingkat.
+  2. Hand Grip Presisi: Menempelkan tangan kiri/kanan ke target gagang pedang secara akurat dan mulus.
+  3. Natural Elbow Hint: Arah siku menyesuaikan posisi alami saat memegang senjata.
+  4. Auto Curve Blending: Membaca parameter float Animator (misal: "IKWeight") untuk transisi on/off yang halus saat Draw/Sheath.
+  5. Socket Switching: Menyediakan fungsi EquipSword() dan SheathSword() untuk dipanggil dari Animation Event.
+- Cara Pemakaian:
+  1. Pasang komponen PlayerWeaponIK pada PlayerArmature.
+  2. Isi slot Sword Transform, Hand Socket, Sheath Socket, Left Hand Grip Target, dan Left Elbow Hint.
+  3. Aktifkan centang "IK Pass" pada Base Layer di Animator Controller.
+
+
+
 
 
 
