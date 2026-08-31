@@ -25,6 +25,7 @@ public class ImageCutscene : MonoBehaviour
     [Header("Settings")]
     public float textSpeed = 0.05f;
     public float imageFadeDuration = 0.5f;
+    public float textFadeDuration = 0.5f;
     
     [Header("End Sequence")]
     [Tooltip("Nama scene selanjutnya yang akan diload saat cutscene habis.")]
@@ -90,27 +91,47 @@ public class ImageCutscene : MonoBehaviour
 
     private IEnumerator PlayFrame(int index)
     {
-        // 1. Transisi Gambar (Hanya fade in/out jika gambarnya berubah)
-        if (imageComponent != null && frames[index].image != null)
-        {
-            if (imageComponent.sprite != frames[index].image)
-            {
-                // Fade out gambar lama jika ini bukan frame pertama
-                if (index > 0 && imageComponent.color.a > 0)
-                {
-                    yield return StartCoroutine(FadeImage(0f));
-                }
+        bool needsImageTransition = imageComponent != null 
+            && frames[index].image != null 
+            && imageComponent.sprite != frames[index].image;
 
-                // Pasang gambar baru dan fade in
-                imageComponent.sprite = frames[index].image;
-                yield return StartCoroutine(FadeImage(1f));
+        // 1. Fade out: gambar lama + teks lama secara bersamaan
+        if (index > 0)
+        {
+            Coroutine imageFadeOut = null;
+            Coroutine textFadeOut = null;
+
+            // Fade out gambar lama
+            if (needsImageTransition && imageComponent.color.a > 0)
+            {
+                imageFadeOut = StartCoroutine(FadeImage(0f));
             }
+
+            // Fade out teks lama
+            if (textComponent != null && textComponent.text.Length > 0)
+            {
+                textFadeOut = StartCoroutine(FadeText(0f));
+            }
+
+            // Tunggu keduanya selesai
+            if (imageFadeOut != null) yield return imageFadeOut;
+            if (textFadeOut != null) yield return textFadeOut;
         }
 
-        // 2. Mengetik Teks
+        // 2. Fade in gambar baru
+        if (needsImageTransition)
+        {
+            imageComponent.sprite = frames[index].image;
+            yield return StartCoroutine(FadeImage(1f));
+        }
+
+        // 3. Mengetik Teks (masuk dengan animasi ngetik, alpha direset ke 1)
         if (textComponent != null)
         {
             textComponent.text = string.Empty;
+            Color c = textComponent.color;
+            c.a = 1f;
+            textComponent.color = c;
             typingCoroutine = StartCoroutine(TypeSentence(frames[index].text));
         }
     }
@@ -152,6 +173,30 @@ public class ImageCutscene : MonoBehaviour
         Color finalColor = imageComponent.color;
         finalColor.a = targetAlpha;
         imageComponent.color = finalColor;
+    }
+
+    private IEnumerator FadeText(float targetAlpha)
+    {
+        if (textComponent == null) yield break;
+
+        float startAlpha = textComponent.color.a;
+        float time = 0f;
+
+        while (time < textFadeDuration)
+        {
+            time += Time.deltaTime;
+            float newAlpha = Mathf.Lerp(startAlpha, targetAlpha, time / textFadeDuration);
+
+            Color c = textComponent.color;
+            c.a = newAlpha;
+            textComponent.color = c;
+
+            yield return null;
+        }
+
+        Color finalColor = textComponent.color;
+        finalColor.a = targetAlpha;
+        textComponent.color = finalColor;
     }
 
     private void EndCutscene()
