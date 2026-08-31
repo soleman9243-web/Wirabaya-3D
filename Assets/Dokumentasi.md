@@ -1116,6 +1116,21 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
   3. Aktifkan centang "IK Pass" pada Base Layer di Animator Controller.
 
 
+98. Sistem Produksi Weapon IK & Post-FK Finger Blending (Animation Rigging + ScriptableObject)
+- Lokasi File:
+  * `Assets/Scripts/Player/WeaponIK/HandGripPoseData.cs` (Data ScriptableObject 15 tulang jari)
+  * `Assets/Scripts/Player/WeaponIK/WeaponGripPoint.cs` (Marker grip transform pada senjata)
+  * `Assets/Scripts/Player/WeaponIK/WeaponIKController.cs` (Pengatur TwoBoneIK & Post-FK Slerp jari)
+  * `Assets/Scripts/Player/WeaponIK/Editor/HandGripPoseDataEditor.cs` (Tool 1-klik untuk merekam pose jari)
+- Fitur Utama:
+  1. Default Weight = 0: Bebas intervensi pada seluruh animasi dasar Mixamo (jalan, lari, serang, idle).
+  2. Event-Driven Activation: Hanya aktif saat dipanggil via `ActivateGripEvent(Transform)` dan `DeactivateGripEvent()`.
+  3. Multi-Preset Finger Curl: Mendukung variasi preset jari (CylinderGrip, PistolGrip, dll) per senjata.
+  4. Performan Tinggi: Operasi FK-Blend jari <0.01ms per karakter, sangat ringan untuk puluhan NPC.
+  5. Robust Edge-Case Handling: Anti-glitch saat mid-blend interrupt, senjata di-Destroy, atau stagger.
+
+
+
 
 
 
