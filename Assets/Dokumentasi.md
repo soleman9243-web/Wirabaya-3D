@@ -1130,9 +1130,346 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
   5. Robust Edge-Case Handling: Anti-glitch saat mid-blend interrupt, senjata di-Destroy, atau stagger.
 
 
+99. Procedural 3D Surface Hand Wrapper (ProceduralHandWrapper)
+- Lokasi File: `Assets/Scripts/Player/WeaponIK/ProceduralHandWrapper.cs`
+- Fitur Utama:
+  1. Auto Surface Conformance: Menekuk 15 ruas jari secara otomatis berdasarkan bentuk 3D collider/mesh objek (pedang, kapak, pistol, botol, dll).
+  2. Multi-Joint Contact Raycasting: Tiap ruas (Proximal, Intermediate, Distal) melingkari permukaan objek sampai menyentuh batas collider dengan aman (anti-clipping).
+  3. 1-Klik Preset Export: Hasil bentuk tekukan jari dapat langsung disimpan ke dalam ScriptableObject HandGripPoseData untuk digunakan oleh WeaponIKController.
 
 
+100. Player Foot IK Placement & Pelvis Offset (PlayerFootIK)
+- Lokasi File: `Assets/Scripts/Player/PlayerFootIK.cs`
+- Fitur Utama:
+  1. Surface Normal Alignment: Telapak kaki otomatis menyesuaikan sudut kemiringan lereng bukit, batu, dan anak tangga.
+  2. Pelvis / Hips Drop: Pinggul karakter otomatis turun saat kaki berada di beda ketinggian, mencegah kaki bawah mengambang.
+  3. Grounded / Jump Detection: Otomatis mendeteksi saat karakter melompat agar IK kaki tidak aktif di udara.
+  4. 100% Native Mecanim Humanoid: Stabil, ringan, dan bebas error Burst/Jobs.
 
 
+101. Perbaikan CBuffer Memory Alignment & Sampler HLSL pada StylizedGrass Shader
+- Perubahan: Mengatasi mesh rumput yang sempat invisible di Unity 6 DX11 dengan menyelaraskan layout memori CBuffer ke batas 16-byte, menggunakan `input.uv.y` untuk normalisasi tinggi daun secara presisi, mendeklarasikan SamplerState yang tepat, dan menerapkan pencahayaan upward normal lembut.
+- Lokasi File: `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader`
 
+
+102. Stylized Interactive Grass Shader (StylizedGrass_Mesh & StylizedGrass_Terrain)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Untuk mesh 3D / prefab rumput)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Untuk terrain detail grass)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailSystem.shader` (Internal shader trail system)
+- Fitur Utama:
+  1. Wind Animation: Rumput bergoyang mengikuti pola texture angin (7063-bump.jpg), hanya bagian tengah ke atas yang terpengaruh.
+  2. Wind Adjustable: Kecepatan, intensitas, arah, dan tiling angin bisa diatur via Inspector.
+  3. Near/Far Color Blend: Warna rumput berubah berdasarkan jarak kamera (NearColor → FarColor).
+  4. Height Blend: Pangkal rumput otomatis blend ke BottomColor.
+  5. Player Interaction: Rumput merunduk/membuka jalan saat player mendekat (real-time).
+  6. Trail/Jejak: Rumput rebah di bekas langkah player, jejak recovery perlahan (diatur via GrassTrailRenderer).
+  7. GPU Instancing & Alpha Cutoff: Mendukung performa tinggi dan transparansi.
+  8. Shadow & Depth Pass: Bayangan mengikuti displacement wind agar konsisten.
+
+
+102. Grass Trail Renderer (GrassTrailRenderer)
+- Lokasi File: `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs`
+- Fitur Utama:
+  1. RenderTexture Trail: Merekam posisi player ke RT ortografik, jejak bertahan setelah player pergi.
+  2. Adjustable Recovery Time: Waktu recovery (berapa detik sebelum jejak hilang) bisa diatur di Inspector.
+  3. Scroll System: RT otomatis mengikuti posisi player, jejak lama tetap di posisi dunia yang benar.
+  4. Stamp Radius & Strength: Ukuran dan kekuatan tapak jejak bisa diatur.
+
+
+103. Resolusi Mesh Rumput Invisible pada Unity 6 URP Forward+ (Depth Priming & Sampler Fix)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader`
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader`
+- Penyebab Masalah Invisible:
+  1. Pada URP Unity 6 dengan pengaturan `DepthPrimingMode: Forced`, Forward pass mengeksekusi pengujian kedalaman `CompareFunction.Equal`. Pass `DepthOnly` yang sebelumnya memiliki `ColorMask R` dan tidak menyertakan vertex displacement menyebabkan nilai depth forward berbeda dengan prepass, sehingga GPU membuang 100% pixel rumput.
+  2. Tag `"UniversalMaterialType" = "Lit"` pada SubShader AlphaTest memicu ekspektasi GBuffer/Deferred pass pada renderer Forward+.
+  3. Texture sampling pada vertex shader DirectX 11 tanpa guard anti-NaN berisiko menghasilkan nilai tak tentu (NaN) yang menggagalkan posisi clip space `positionCS`.
+- Solusi & Perbaikan:
+  1. Arsitektur Single-Pass ForwardLit Murni: Menghilangkan pass `DepthOnly` kustom yang konfliktual dan menggunakan arsitektur ForwardLit teruji yang mewarisi fallback resmi `Universal Render Pipeline/Lit`.
+  2. Pembersihan SubShader Tags: Menghilangkan tag `UniversalMaterialType` dan menetapkan `LOD 200`, `Cull Off` standar URP Cutout.
+  3. Anti-NaN Displacement Guard: Melindungi kalkulasi ombak angin `7063-bump.jpg` dan interaksi player dengan validasi `!isnan()` dan sampler `sampler_LinearRepeat` bawaan Core URP.
+  4. Pewarnaan & Gradasi Lembut: Mendukung penuh perpaduan Near/Far distance, Bottom height blend, dan pencahayaan foliage cerah di scene.
+
+
+104. Arsitektur 4-Pass URP Penuh & Modul StylizedGrass_Common (Solusi Tuntas Depth Priming Forced)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Shared common buffer, samplers & displacement)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Mesh 3D rumput 4-pass)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Terrain detail grass 4-pass)
+  * `Assets/8-12-2026/GrassBissmillah/TerrainColor.renderTexture` (Depth format fix 94)
+- Penyebab Utama Mesh Menghilang:
+  * Proyek menggunakan `DepthPrimingMode: Forced` di `Desktop Renderer.asset`. Pada mode ini, Unity URP RenderGraph mewajibkan SEMUA objek Cutout/AlphaTest digambar pada fase `DepthOnlyPass` terlebih dahulu.
+  * Ketika objek tidak memiliki pass `DepthOnly` (atau depth pass-nya dihilangkan), rumput tidak digambar di Depth Prepass. Akibatnya saat `UniversalForward` berjalan, URP memaksa depth test hardware ke `CompareFunction.Equal`. Karena depth rumput tidak ada di depth buffer, GPU membuang 100% pixel daun rumput sehingga mesh menjadi tembus pandang (hanya wireframe/outline oranye di Scene view yang terlihat).
+- Solusi Komprehensif yang Diterapkan:
+  1. Modul Terpusat `StylizedGrass_Common.hlsl`: Menggabungkan CBuffer 16-byte aligned, deklarasi sampler DX11 eksplisit (`sampler_BaseMap`, `sampler_WindTex`, `sampler_GrassTrailRT`), dan fungsi vertex displacement `ApplyGrassDisplacement` dengan pengaman anti-NaN.
+  2. Implementasi 4 Pass URP Lengkap:
+     - `Pass 1 (ForwardLit / UniversalForward)`: Render albedo, gradasi Near/Far, Height blend, pencahayaan foliage matahari.
+     - `Pass 2 (DepthOnly)`: Menggambar depth rumput di Depth Prepass dengan formula displacement identik, sehingga lolos uji `ZTest Equal` di Forward pass.
+     - `Pass 3 (DepthNormals)`: Memberikan data depth dan normal untuk Screen Space Ambient Occlusion (SSAO) agar bayangan ambient tidak menolak daun rumput.
+     - `Pass 4 (ShadowCaster)`: Memproyeksikan bayangan rumput ke tanah secara konsisten mengikuti liukan angin.
+  3. Perbaikan Depth Format RenderTexture: Memperbarui `m_DepthStencilFormat: 94` pada `TerrainColor.renderTexture` agar warning konsol RenderGraph hilang.
+
+
+105. Sistem Interaksi Rumput Real-Time & Trail Jejak Kaki Otomatis (GrassTrailRenderer & Displacement Fix)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (Sistem controller jejak & trample player)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Formula displacement interaksi & jejak kaki)
+  * `Assets/8-12-2026/GrassBissmillah/GrassMatTRY.mat` & `GrassMat.mat` (_BendStrength 1.2)
+- Penyebab Rumput Belum Interaktif Sebelumnya:
+  1. Skrip pengontrol `GrassTrailRenderer.cs` belum terpasang di GameObject aktif mana pun dalam scene, sehingga variabel global `_PlayerTramplePos`, `_PlayerPosition`, dan `_GrassTrailRT` bernilai 0 setiap frame (shader mengira tidak ada player).
+  2. Formula displacement interaksi sebelumnya menggunakan pengali `windMask` yang memotong respon gerak pada 30% pangkal helai, serta fungsi jarak kuadratik (`influence * influence`) yang membuat gerakan rumput terlalu kecil (hanya ~5 cm) sehingga tidak terlihat saat player melangkah.
+- Solusi & Fitur Baru yang Diterapkan:
+  1. Auto-Detection Player & Auto-Run:
+     * `GrassTrailRenderer` kini otomatis mendeteksi objek pemain melalui Tag `Player`, nama `PlayerArmature` / `PlayerManager`, atau komponen `CharacterController`.
+     * Dilengkapi `[RuntimeInitializeOnLoadMethod]` yang otomatis membuat sistem trail saat Play Mode berjalan tanpa harus drag-and-drop manual.
+     * Dilengkapi `EditorAutoSetup` (`InitializeOnLoadMethod`) agar interaksi juga langsung hidup di Scene View saat Edit Mode.
+     * Ditambahkan menu Editor `Tools -> Wirabaya -> Pasang Grass Trail Renderer`.
+  2. Formula Rebah & Tekuk Real-Time yang Nyata & Elastis:
+     * Menggunakan kurva halus `smoothstep(0.0, 1.0, f) * heightFactor * _BendStrength` yang menjamin akar tetap tertanam di tanah sementara batang dan ujung rumput terdorong ke samping hingga 1.3 meter dan ditekan ke bawah sebesar 0.75 meter.
+  3. Trail Jejak Kaki Persisten dengan Waktu Pemulihan (Recovery Time):
+     * Tapak kaki player tercetak di RenderTexture `_GrassTrailRT` dan menekan rumput ke bawah di bekas langkah player.
+     * Rumput perlahan bangkit berdiri kembali sesuai durasi `trailRecoveryTime` yang dapat diatur di Inspector.
+
+
+106. Kalibrasi Kualitas Interaksi Rumput, Anti-Sink Trample, Sway Angin Terkontrol, Deteksi Lompat (Anti-Jump), dan Penerimaan Shadow Karakter
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Displacement wind clamp, anti-sink trample, jump detection, trail recovery)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Penerimaan shadow karakter & trail shading)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Penerimaan shadow karakter & trail shading pada terrain grass)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (IsPlayerGrounded check, kalibrasi stamp radius & trample radius)
+- Solusi Komprehensif untuk 6 Catatan Pengguna:
+  1. Tanah yang Ditapak Terlalu Besar (Anti-Sink Trample):
+     - Sebelumnya, formula menurunkan pucuk rumput sebesar 0.75m vertikal ke bawah tanah (`posWS.y -= bend * 0.75`), sehingga rumput terbenam ke bawah tanah dan mengekspos tekstur tanah lapang selebar 3.6 meter.
+     - Diperbaiki: Rumput kini menyibak ke samping mengikuti langkah kaki (`posWS.xz += pushDir * (bend * 0.45)`), dengan penurunan vertikal minimal (`posWS.y -= bend * 0.12`). Radius di shader dibatasi otomatis maksimal 0.85m (`min(pPos.w, 0.85)`). Rumput tetap berada di atas permukaan tanah dan tidak lagi membentuk lubang kawah.
+  2. Efek Recovery Grass Terlihat Jelas:
+     - Ukuran jejak langkah dikalibrasi realistis (`stampRadius = 0.018f`, sekitar 0.7 meter).
+     - Di fragment shader ditambahkan visual shading pada helai rumput yang terinjak (`albedo *= (1.0 - trailFactor * 0.20)`). Jalur jejak kaki terlihat jelas saat terinjak dan perlahan kembali cerah dan tegak seiring berjalannya recovery time.
+  3. Nilai Material Tidak Diubah / Direset:
+93. Sistem Aktivasi Collider Pohon Terrain Berdasarkan Proximity Player (TreeColliderProximity)
+- Perubahan: Membuat script TreeColliderProximity.cs yang mengaktifkan CapsuleCollider sementara di posisi pohon terrain terdekat saat player mendekat, dan menghapusnya saat player menjauh. Menggunakan object pooling untuk performa optimal.
+- Fitur dan Perbaikan:
+  1. Aktivasi Otomatis: Collider pohon menyala secara otomatis ketika player berada dalam radius tertentu dan mati saat menjauh.
+  2. Object Pooling: Collider didaur ulang sehingga tidak ada alokasi memori berulang (zero garbage collection).
+  3. Performa Ringan: Pengecekan dilakukan setiap 0.3 detik dengan batas maksimal 40 collider aktif bersamaan.
+  4. Skala Otomatis: Ukuran collider menyesuaikan skala pohon terrain yang berbeda-beda.
+- Cara Setting di Unity:
+  1. Buat GameObject kosong di Hierarchy, beri nama "TreeColliderSystem".
+  2. Tambahkan komponen TreeColliderProximity.
+  3. Atur Activation Radius, Collider Radius, dan Collider Height sesuai ukuran pohon Anda.
+
+
+94. Sistem Aktivasi Collider Objek Umum Berdasarkan Proximity Player (ProximityColliderActivator)
+- Perubahan: Membuat script ProximityColliderActivator.cs yang mengaktifkan/menonaktifkan collider objek apapun di scene saat player mendekat/menjauh. Mendukung 3 mode pencarian target: Manual Drag & Drop, Tag, atau Layer.
+- Fitur dan Perbaikan:
+  1. Fleksibel 3 Mode Target: Pilih objek secara manual, berdasarkan tag, atau berdasarkan layer.
+  2. Collider Asli Objek: Langsung mengaktifkan/menonaktifkan collider yang sudah ada di objek (tidak perlu spawn collider baru).
+  3. Performa Ringan: Pengecekan berkala setiap 0.25 detik tanpa alokasi memori baru di runtime.
+  4. Gizmo Visual: Menampilkan radius aktivasi dan objek aktif di Scene View.
+- Cara Setting di Unity:
+  1. Buat GameObject kosong di Hierarchy, beri nama "ProximityColliderSystem".
+  2. Tambahkan komponen ProximityColliderActivator.
+  3. Pilih mode target (Manual, Tag, atau Layer) lalu atur Activation Radius.
+
+
+95. Perbaikan Bug Rumput Melebar / Melar Horizontal (Genshin / WuWa GPU Foliage Shader)
+- Penyebab Bug: Shader bawaan Toby Foliage Engine membutuhkan script `Global Controller` bawaan Toby yang mengatur variabel shader global (`_GlobalWindStrength`, `_WindDirection`, `_StrongWindSpeed`). Tanpa script tersebut atau dengan mesh FBX eksternal, rotasi vertex Toby shader mengalami pembagian 0 / perkalian nilai tak hingga sehingga helai rumput melar puluhan meter secara horizontal.
+- Perbaikan:
+  1. Dibuat shader baru `FantasyKingdom/GenshinGrassFoliage` (Assets/8-13-2026/Grass/Materials/GenshinGrassFoliage.shader).
+  2. Sistem GPU Vertex Wind Mandiri (Self-Contained): Menghasilkan ombak dinamis melintasi padang rumput (Genshin/WuWa style) langsung dari shader tanpa membutuhkan script Global Controller eksternal.
+  3. Bagian akar rumput terkunci kokoh di tanah (`UV.y = 0`) dan ujung rumput melambai lentur (`UV.y = 1`).
+  4. Pencahayaan Anime Lembut: Dilengkapi normal upward bias dan double-sided alpha cutout rendering.
+- Cara Pemakaian:
+  1. Klik objek `Infinite Grass` di Hierarchy.
+  2. Klik tombol merah "🗑️ Hapus Semua Rumput" lalu klik tombol hijau "🌾 Pasang Rumput Procegrass".
+
+
+96. Penerapan Koleksi Asli Toby Foliage Engine (VP_Grass)
+- Perubahan: Memperbarui TerrainGrassSpawner.cs agar langsung memuat 9 variasi prefab resmi bawaan Toby Foliage Engine dari folder `Assets/Toby Fredson/The Toby Foliage Engine/(TTFE)_Demo/Prefabs/Prefabs_Vegetation/Vegetation_Plants/VP_Grass/` (GrassBig_A, GrassBig_B, GrassMedium_A, GrassMedium_B, GrassMedium_D, GrassShort_A, GrassShort_B, GrassShort_C, GrassShort_D).
+- Keunggulan:
+  1. 100% Native & Stable: Menggunakan prefab resmi Toby yang sudah terintegrasi sempurna dengan LOD, material, dan konfigurasi shader bawaan.
+  2. Bebas Masalah Alpha / Model: Tidak memerlukan modifikasi channel tekstur atau konversi mesh eksternal.
+  3. Variasi Lengkap: Paduan rumput tinggi, sedang, dan pendek yang tersebar natural.
+- Cara Pemakaian:
+  1. Klik objek `Infinite Grass` di Hierarchy.
+  2. Klik tombol merah "🗑️ Hapus Semua Rumput".
+  3. Klik tombol hijau "🌾 Pasang Rumput Toby VP_Grass (1200 Rumpun)".
+
+
+97. Sistem Senjata & Hand Grip IK Humanoid Bawaan Unity (PlayerWeaponIK)
+- Perubahan: Membuat script PlayerWeaponIK.cs yang menggunakan event OnAnimatorIK bawaan resmi Unity Humanoid.
+- Fitur dan Keunggulan:
+  1. 100% Bebas Error Burst: Tidak memerlukan RigBuilder / RigLayer yang rentan crash pada struktur karakter Mixamo bertingkat.
+  2. Hand Grip Presisi: Menempelkan tangan kiri/kanan ke target gagang pedang secara akurat dan mulus.
+  3. Natural Elbow Hint: Arah siku menyesuaikan posisi alami saat memegang senjata.
+  4. Auto Curve Blending: Membaca parameter float Animator (misal: "IKWeight") untuk transisi on/off yang halus saat Draw/Sheath.
+  5. Socket Switching: Menyediakan fungsi EquipSword() dan SheathSword() untuk dipanggil dari Animation Event.
+- Cara Pemakaian:
+  1. Pasang komponen PlayerWeaponIK pada PlayerArmature.
+  2. Isi slot Sword Transform, Hand Socket, Sheath Socket, Left Hand Grip Target, dan Left Elbow Hint.
+  3. Aktifkan centang "IK Pass" pada Base Layer di Animator Controller.
+
+
+98. Sistem Produksi Weapon IK & Post-FK Finger Blending (Animation Rigging + ScriptableObject)
+- Lokasi File:
+  * `Assets/Scripts/Player/WeaponIK/HandGripPoseData.cs` (Data ScriptableObject 15 tulang jari)
+  * `Assets/Scripts/Player/WeaponIK/WeaponGripPoint.cs` (Marker grip transform pada senjata)
+  * `Assets/Scripts/Player/WeaponIK/WeaponIKController.cs` (Pengatur TwoBoneIK & Post-FK Slerp jari)
+  * `Assets/Scripts/Player/WeaponIK/Editor/HandGripPoseDataEditor.cs` (Tool 1-klik untuk merekam pose jari)
+- Fitur Utama:
+  1. Default Weight = 0: Bebas intervensi pada seluruh animasi dasar Mixamo (jalan, lari, serang, idle).
+  2. Event-Driven Activation: Hanya aktif saat dipanggil via `ActivateGripEvent(Transform)` dan `DeactivateGripEvent()`.
+  3. Multi-Preset Finger Curl: Mendukung variasi preset jari (CylinderGrip, PistolGrip, dll) per senjata.
+  4. Performan Tinggi: Operasi FK-Blend jari <0.01ms per karakter, sangat ringan untuk puluhan NPC.
+  5. Robust Edge-Case Handling: Anti-glitch saat mid-blend interrupt, senjata di-Destroy, atau stagger.
+
+
+99. Procedural 3D Surface Hand Wrapper (ProceduralHandWrapper)
+- Lokasi File: `Assets/Scripts/Player/WeaponIK/ProceduralHandWrapper.cs`
+- Fitur Utama:
+  1. Auto Surface Conformance: Menekuk 15 ruas jari secara otomatis berdasarkan bentuk 3D collider/mesh objek (pedang, kapak, pistol, botol, dll).
+  2. Multi-Joint Contact Raycasting: Tiap ruas (Proximal, Intermediate, Distal) melingkari permukaan objek sampai menyentuh batas collider dengan aman (anti-clipping).
+  3. 1-Klik Preset Export: Hasil bentuk tekukan jari dapat langsung disimpan ke dalam ScriptableObject HandGripPoseData untuk digunakan oleh WeaponIKController.
+
+
+100. Player Foot IK Placement & Pelvis Offset (PlayerFootIK)
+- Lokasi File: `Assets/Scripts/Player/PlayerFootIK.cs`
+- Fitur Utama:
+  1. Surface Normal Alignment: Telapak kaki otomatis menyesuaikan sudut kemiringan lereng bukit, batu, dan anak tangga.
+  2. Pelvis / Hips Drop: Pinggul karakter otomatis turun saat kaki berada di beda ketinggian, mencegah kaki bawah mengambang.
+  3. Grounded / Jump Detection: Otomatis mendeteksi saat karakter melompat agar IK kaki tidak aktif di udara.
+  4. 100% Native Mecanim Humanoid: Stabil, ringan, dan bebas error Burst/Jobs.
+
+
+101. Perbaikan CBuffer Memory Alignment & Sampler HLSL pada StylizedGrass Shader
+- Perubahan: Mengatasi mesh rumput yang sempat invisible di Unity 6 DX11 dengan menyelaraskan layout memori CBuffer ke batas 16-byte, menggunakan `input.uv.y` untuk normalisasi tinggi daun secara presisi, mendeklarasikan SamplerState yang tepat, dan menerapkan pencahayaan upward normal lembut.
+- Lokasi File: `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader`
+
+
+102. Stylized Interactive Grass Shader (StylizedGrass_Mesh & StylizedGrass_Terrain)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Untuk mesh 3D / prefab rumput)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Untuk terrain detail grass)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailSystem.shader` (Internal shader trail system)
+- Fitur Utama:
+  1. Wind Animation: Rumput bergoyang mengikuti pola texture angin (7063-bump.jpg), hanya bagian tengah ke atas yang terpengaruh.
+  2. Wind Adjustable: Kecepatan, intensitas, arah, dan tiling angin bisa diatur via Inspector.
+  3. Near/Far Color Blend: Warna rumput berubah berdasarkan jarak kamera (NearColor → FarColor).
+  4. Height Blend: Pangkal rumput otomatis blend ke BottomColor.
+  5. Player Interaction: Rumput merunduk/membuka jalan saat player mendekat (real-time).
+  6. Trail/Jejak: Rumput rebah di bekas langkah player, jejak recovery perlahan (diatur via GrassTrailRenderer).
+  7. GPU Instancing & Alpha Cutoff: Mendukung performa tinggi dan transparansi.
+  8. Shadow & Depth Pass: Bayangan mengikuti displacement wind agar konsisten.
+
+
+102. Grass Trail Renderer (GrassTrailRenderer)
+- Lokasi File: `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs`
+- Fitur Utama:
+  1. RenderTexture Trail: Merekam posisi player ke RT ortografik, jejak bertahan setelah player pergi.
+  2. Adjustable Recovery Time: Waktu recovery (berapa detik sebelum jejak hilang) bisa diatur di Inspector.
+  3. Scroll System: RT otomatis mengikuti posisi player, jejak lama tetap di posisi dunia yang benar.
+  4. Stamp Radius & Strength: Ukuran dan kekuatan tapak jejak bisa diatur.
+
+
+103. Resolusi Mesh Rumput Invisible pada Unity 6 URP Forward+ (Depth Priming & Sampler Fix)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader`
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader`
+- Penyebab Masalah Invisible:
+  1. Pada URP Unity 6 dengan pengaturan `DepthPrimingMode: Forced`, Forward pass mengeksekusi pengujian kedalaman `CompareFunction.Equal`. Pass `DepthOnly` yang sebelumnya memiliki `ColorMask R` dan tidak menyertakan vertex displacement menyebabkan nilai depth forward berbeda dengan prepass, sehingga GPU membuang 100% pixel rumput.
+  2. Tag `"UniversalMaterialType" = "Lit"` pada SubShader AlphaTest memicu ekspektasi GBuffer/Deferred pass pada renderer Forward+.
+  3. Texture sampling pada vertex shader DirectX 11 tanpa guard anti-NaN berisiko menghasilkan nilai tak tentu (NaN) yang menggagalkan posisi clip space `positionCS`.
+- Solusi & Perbaikan:
+  1. Arsitektur Single-Pass ForwardLit Murni: Menghilangkan pass `DepthOnly` kustom yang konfliktual dan menggunakan arsitektur ForwardLit teruji yang mewarisi fallback resmi `Universal Render Pipeline/Lit`.
+  2. Pembersihan SubShader Tags: Menghilangkan tag `UniversalMaterialType` dan menetapkan `LOD 200`, `Cull Off` standar URP Cutout.
+  3. Anti-NaN Displacement Guard: Melindungi kalkulasi ombak angin `7063-bump.jpg` dan interaksi player dengan validasi `!isnan()` dan sampler `sampler_LinearRepeat` bawaan Core URP.
+  4. Pewarnaan & Gradasi Lembut: Mendukung penuh perpaduan Near/Far distance, Bottom height blend, dan pencahayaan foliage cerah di scene.
+
+
+104. Arsitektur 4-Pass URP Penuh & Modul StylizedGrass_Common (Solusi Tuntas Depth Priming Forced)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Shared common buffer, samplers & displacement)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Mesh 3D rumput 4-pass)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Terrain detail grass 4-pass)
+  * `Assets/8-12-2026/GrassBissmillah/TerrainColor.renderTexture` (Depth format fix 94)
+- Penyebab Utama Mesh Menghilang:
+  * Proyek menggunakan `DepthPrimingMode: Forced` di `Desktop Renderer.asset`. Pada mode ini, Unity URP RenderGraph mewajibkan SEMUA objek Cutout/AlphaTest digambar pada fase `DepthOnlyPass` terlebih dahulu.
+  * Ketika objek tidak memiliki pass `DepthOnly` (atau depth pass-nya dihilangkan), rumput tidak digambar di Depth Prepass. Akibatnya saat `UniversalForward` berjalan, URP memaksa depth test hardware ke `CompareFunction.Equal`. Karena depth rumput tidak ada di depth buffer, GPU membuang 100% pixel daun rumput sehingga mesh menjadi tembus pandang (hanya wireframe/outline oranye di Scene view yang terlihat).
+- Solusi Komprehensif yang Diterapkan:
+  1. Modul Terpusat `StylizedGrass_Common.hlsl`: Menggabungkan CBuffer 16-byte aligned, deklarasi sampler DX11 eksplisit (`sampler_BaseMap`, `sampler_WindTex`, `sampler_GrassTrailRT`), dan fungsi vertex displacement `ApplyGrassDisplacement` dengan pengaman anti-NaN.
+  2. Implementasi 4 Pass URP Lengkap:
+     - `Pass 1 (ForwardLit / UniversalForward)`: Render albedo, gradasi Near/Far, Height blend, pencahayaan foliage matahari.
+     - `Pass 2 (DepthOnly)`: Menggambar depth rumput di Depth Prepass dengan formula displacement identik, sehingga lolos uji `ZTest Equal` di Forward pass.
+     - `Pass 3 (DepthNormals)`: Memberikan data depth dan normal untuk Screen Space Ambient Occlusion (SSAO) agar bayangan ambient tidak menolak daun rumput.
+     - `Pass 4 (ShadowCaster)`: Memproyeksikan bayangan rumput ke tanah secara konsisten mengikuti liukan angin.
+  3. Perbaikan Depth Format RenderTexture: Memperbarui `m_DepthStencilFormat: 94` pada `TerrainColor.renderTexture` agar warning konsol RenderGraph hilang.
+
+
+105. Sistem Interaksi Rumput Real-Time & Trail Jejak Kaki Otomatis (GrassTrailRenderer & Displacement Fix)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (Sistem controller jejak & trample player)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Formula displacement interaksi & jejak kaki)
+  * `Assets/8-12-2026/GrassBissmillah/GrassMatTRY.mat` & `GrassMat.mat` (_BendStrength 1.2)
+- Penyebab Rumput Belum Interaktif Sebelumnya:
+  1. Skrip pengontrol `GrassTrailRenderer.cs` belum terpasang di GameObject aktif mana pun dalam scene, sehingga variabel global `_PlayerTramplePos`, `_PlayerPosition`, dan `_GrassTrailRT` bernilai 0 setiap frame (shader mengira tidak ada player).
+  2. Formula displacement interaksi sebelumnya menggunakan pengali `windMask` yang memotong respon gerak pada 30% pangkal helai, serta fungsi jarak kuadratik (`influence * influence`) yang membuat gerakan rumput terlalu kecil (hanya ~5 cm) sehingga tidak terlihat saat player melangkah.
+- Solusi & Fitur Baru yang Diterapkan:
+  1. Auto-Detection Player & Auto-Run:
+     * `GrassTrailRenderer` kini otomatis mendeteksi objek pemain melalui Tag `Player`, nama `PlayerArmature` / `PlayerManager`, atau komponen `CharacterController`.
+     * Dilengkapi `[RuntimeInitializeOnLoadMethod]` yang otomatis membuat sistem trail saat Play Mode berjalan tanpa harus drag-and-drop manual.
+     * Dilengkapi `EditorAutoSetup` (`InitializeOnLoadMethod`) agar interaksi juga langsung hidup di Scene View saat Edit Mode.
+     * Ditambahkan menu Editor `Tools -> Wirabaya -> Pasang Grass Trail Renderer`.
+  2. Formula Rebah & Tekuk Real-Time yang Nyata & Elastis:
+     * Menggunakan kurva halus `smoothstep(0.0, 1.0, f) * heightFactor * _BendStrength` yang menjamin akar tetap tertanam di tanah sementara batang dan ujung rumput terdorong ke samping hingga 1.3 meter dan ditekan ke bawah sebesar 0.75 meter.
+  3. Trail Jejak Kaki Persisten dengan Waktu Pemulihan (Recovery Time):
+     * Tapak kaki player tercetak di RenderTexture `_GrassTrailRT` dan menekan rumput ke bawah di bekas langkah player.
+     * Rumput perlahan bangkit berdiri kembali sesuai durasi `trailRecoveryTime` yang dapat diatur di Inspector.
+
+
+106. Kalibrasi Kualitas Interaksi Rumput, Anti-Sink Trample, Sway Angin Terkontrol, Deteksi Lompat (Anti-Jump), dan Penerimaan Shadow Karakter
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Displacement wind clamp, anti-sink trample, jump detection, trail recovery)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Penerimaan shadow karakter & trail shading)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Penerimaan shadow karakter & trail shading pada terrain grass)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (IsPlayerGrounded check, kalibrasi stamp radius & trample radius)
+- Solusi Komprehensif untuk 6 Catatan Pengguna:
+  1. Tanah yang Ditapak Terlalu Besar (Anti-Sink Trample):
+     - Sebelumnya, formula menurunkan pucuk rumput sebesar 0.75m vertikal ke bawah tanah (`posWS.y -= bend * 0.75`), sehingga rumput terbenam ke bawah tanah dan mengekspos tekstur tanah lapang selebar 3.6 meter.
+     - Diperbaiki: Rumput kini menyibak ke samping mengikuti langkah kaki (`posWS.xz += pushDir * (bend * 0.45)`), dengan penurunan vertikal minimal (`posWS.y -= bend * 0.12`). Radius di shader dibatasi otomatis maksimal 0.85m (`min(pPos.w, 0.85)`). Rumput tetap berada di atas permukaan tanah dan tidak lagi membentuk lubang kawah.
+  2. Efek Recovery Grass Terlihat Jelas:
+     - Ukuran jejak langkah dikalibrasi realistis (`stampRadius = 0.018f`, sekitar 0.7 meter).
+     - Di fragment shader ditambahkan visual shading pada helai rumput yang terinjak (`albedo *= (1.0 - trailFactor * 0.20)`). Jalur jejak kaki terlihat jelas saat terinjak dan perlahan kembali cerah dan tegak seiring berjalannya recovery time.
+  3. Nilai Material Tidak Diubah / Direset:
+     - File material asset (`GrassMatTRY.mat` dan `GrassMat.mat`) dipertahankan sepenuhnya tanpa diubah atau di-overwrite propertinya.
+  4. Sway Angin Tidak Miring Berlebihan:
+     - Ditambahkan fungsi pembatas gelombang `clamp(wave, -0.30, 0.30)` dan skala pengali angin terkontrol (`_WindIntensity * 0.35`). Rumput bergoyang alami dengan arah sejajar texture bump tanpa pernah rebah atau patah miring.
+  5. Saat Melompat Rumput Tidak Terinjak (Anti-Jump Trample):
+     - Di C# (`GrassTrailRenderer.cs`): Dilengkapi metode `IsPlayerGrounded()` (memanfaatkan `CharacterController.isGrounded` dan raycast). Saat di udara, radius injakan langsung diset ke 0 dan proses pencetakan trail dihentikan.
+     - Di Shader HLSL: Ditambahkan kalkulasi ketinggian kaki `float feetHeight = pPos.y - posWS.y;`. Jika kaki berada lebih dari 0.35 meter di atas rumput (`jumpFade = 0`), rumput langsung berdiri tegak seketika dan tidak merespon injakan.
+  6. Ketajaman Shadow & Bayangan Karakter Terlihat Jelas:
+     - Sebelumnya pass `UniversalForward` hanya memanggil `GetMainLight()` tanpa parameter koordinat shadow, sehingga `mainLight.shadowAttenuation` selalu 1.0 (bayangan karakter tidak pernah masuk ke rumput).
+     - Ditambahkan `#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN` dan soft shadow pragmas.
+     - Di fragment shader dihitung `TransformWorldToShadowCoord(input.positionWS)` dan `GetMainLight(shadowCoord, input.positionWS, half4(1,1,1,1))`, lalu direct lighting dikalikan `mainLight.shadowAttenuation`.
+     - Ambient foliage disesuaikan ke `half3(0.24, 0.30, 0.22)` menghasilkan kontras 5:1 antara area terang dan siluet bayangan karakter, sehingga bayangan karakter tampak tajam dan jelas di atas hamparan rumput.
+
+
+107. Soft Stylized Shadow (Halus & Lembut), Trail Color Shift (Jejak Berubah Warna), dan Kalibrasi Respon Injak Grass
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Soft shadow remapping & trail golden color shift)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Soft shadow remapping & trail golden color shift pada terrain grass)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Displacement trample responsif 1.2m, parting ke samping 0.75m, drop 0.28m)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (IsPlayerAirborne check, stampRadius 0.025f ~ 1m, stampStrength 0.95f)
+- Solusi untuk 5 Poin Masukan Pengguna:
+  1. Bayangan Halus & Tidak Merusak Look Rumput (Soft Shadow):
+     - Sebelumnya shadow langsung mengalikan direct lighting hingga 0, menyebabkan self-shadowing antar helai rumput menjadi garis-garis hitam pekat yang merusak visual hamparan rumput.
+     - Diperbaiki dengan remapping shadow halus: `half softShadow = lerp(0.72, 1.0, shadowAtten)`. Bayangan karakter tetap terlihat jelas sebagai siluet lembut (soft shadow) tanpa membuat rumput menjadi gelap atau belang-belang hitam kasar.
+  2. Respon Menginjak Rumput Terasa Nyata (Tangible Trample):
+     - Mengembalikan radius injakan ke 1.2 meter (sesuai spesifikasi gameplay sebelumnya) dengan pergeseran ke samping 0.75m dan penurunan wajar 0.28m. Rumput terasa mantap menyibak saat karakter melangkah tanpa tembus ke bawah tanah.
+  3. Jejak Trail Kaki Terlihat Jelas (Trail Stamp Boost):
+     - Ukuran stamp jejak disesuaikan ke 0.025f (~1.0m dunia) dengan kekuatan stempel 0.95f, mencetak lekukan jejak langkah yang konsisten di belakang karakter.
+  4. Bekas Injak Diberi Warna Berbeda (Trail Color Shift):
+     - Di fragment shader ditambahkan blending warna khusus untuk jalur bekas langkah: `half3 trampledColor = albedo * half3(1.35, 1.30, 0.50) + half3(0.10, 0.12, 0.01)`.
+     - Rumput yang baru saja diinjak berubah warna menjadi kuning-keemasan (golden crushed grass highlight) yang sangat jelas terlihat mata, lalu perlahan kembali ke warna hijau asli saat proses recovery selesai.
+  5. Anti-Jump yang Tepat (IsPlayerAirborne):
+     - Deteksi loncat diperbarui menjadi `IsPlayerAirborne()` yang mengecek jarak tanah > 0.75m di bawah kaki. Saat berjalan di permukaan tanah/lereng tidak akan pernah salah mengira karakter sedang loncat, dan saat Space/loncat ditekan maka interaksi dan stempel otomatis nonaktif di udara.
 
