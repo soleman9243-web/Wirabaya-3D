@@ -17,8 +17,8 @@ namespace Unity.FantasyKingdom
 
         [Header("Real-Time Player Trample")]
         [Tooltip("Radius area rumput yang merunduk & membuka jalan di sekitar player (meter).")]
-        [Range(0.5f, 3.0f)]
-        public float interactionRadius = 1.2f;
+        [Range(0.3f, 2.0f)]
+        public float interactionRadius = 0.65f;
 
         [Tooltip("Offset titik kaki player.")]
         public Vector3 footOffset = new Vector3(0f, 0.05f, 0f);
@@ -58,6 +58,7 @@ namespace Unity.FantasyKingdom
         // Shader property IDs
         private static readonly int PlayerTramplePos_ID = Shader.PropertyToID("_PlayerTramplePos");
         private static readonly int PlayerPosition_ID = Shader.PropertyToID("_PlayerPosition");
+        private static readonly int PlayerForwardDir_ID = Shader.PropertyToID("_PlayerForwardDir");
         private static readonly int GrassTrailRT_ID = Shader.PropertyToID("_GrassTrailRT");
         private static readonly int GrassTrailCenter_ID = Shader.PropertyToID("_GrassTrailCenter");
         private static readonly int GrassTrailSize_ID = Shader.PropertyToID("_GrassTrailSize");
@@ -83,8 +84,10 @@ namespace Unity.FantasyKingdom
             if (pObj != null)
             {
                 Vector3 pos = pObj.transform.position;
-                Shader.SetGlobalVector(PlayerTramplePos_ID, new Vector4(pos.x, pos.y + 0.05f, pos.z, 1.2f));
-                Shader.SetGlobalVector(PlayerPosition_ID, new Vector4(pos.x, pos.y + 0.05f, pos.z, 1.2f));
+                Vector3 fwd = pObj.transform.forward;
+                Shader.SetGlobalVector(PlayerTramplePos_ID, new Vector4(pos.x, pos.y + 0.05f, pos.z, 0.65f));
+                Shader.SetGlobalVector(PlayerPosition_ID, new Vector4(pos.x, pos.y + 0.05f, pos.z, 0.65f));
+                Shader.SetGlobalVector(PlayerForwardDir_ID, new Vector4(fwd.x, fwd.z, 0, 0));
             }
         }
 
@@ -246,8 +249,10 @@ namespace Unity.FantasyKingdom
                 bool airborne = IsPlayerAirborne();
                 float currentRadius = airborne ? 0f : interactionRadius;
                 Vector3 pPos = playerTransform.position + footOffset;
+                Vector3 fwd = playerTransform.forward;
                 Shader.SetGlobalVector(PlayerTramplePos_ID, new Vector4(pPos.x, pPos.y, pPos.z, currentRadius));
                 Shader.SetGlobalVector(PlayerPosition_ID, new Vector4(pPos.x, pPos.y, pPos.z, currentRadius));
+                Shader.SetGlobalVector(PlayerForwardDir_ID, new Vector4(fwd.x, fwd.z, 0, 0));
             }
         }
 
@@ -315,8 +320,10 @@ namespace Unity.FantasyKingdom
                 bool airborne = IsPlayerAirborne();
                 float currentRadius = airborne ? 0f : interactionRadius;
                 Vector3 pPos = playerTransform.position + footOffset;
+                Vector3 fwd = playerTransform.forward;
                 Shader.SetGlobalVector(PlayerTramplePos_ID, new Vector4(pPos.x, pPos.y, pPos.z, currentRadius));
                 Shader.SetGlobalVector(PlayerPosition_ID, new Vector4(pPos.x, pPos.y, pPos.z, currentRadius));
+                Shader.SetGlobalVector(PlayerForwardDir_ID, new Vector4(fwd.x, fwd.z, 0, 0));
             }
         }
 

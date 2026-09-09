@@ -40,6 +40,15 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
         [Header(Player Interaction)]
         _BendStrength ("Bend Strength", Range(0.0, 2.0)) = 0.8
         _Smoothness ("Smoothness", Range(0.0, 1.0)) = 0.0
+
+        [Header(Trample And Recovery Color)]
+        _RecoveryColor ("Recovery / Trample Color", Color) = (0.92, 0.95, 0.40, 1.0)
+        _RecoveryColorStrength ("Recovery Color Intensity", Range(0.0, 2.0)) = 1.0
+
+        [Header(Adjustable Emission Glow)]
+        [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)
+        _EmissionIntensity ("Emission Intensity", Range(0.0, 10.0)) = 1.0
+        _EmissionTipBoost ("Emission on Tips Only", Range(0.0, 1.0)) = 0.0
     }
 
     SubShader
@@ -91,6 +100,7 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
                 float2 uv           : TEXCOORD0;
                 float3 positionWS   : TEXCOORD1;
                 float  heightFactor : TEXCOORD2;
+                float3 normalWS     : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -103,12 +113,18 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
                 float heightFactor = max(saturate(input.color.a), saturate(input.uv.y));
                 output.heightFactor = heightFactor;
 
-                float3 posWS = TransformObjectToWorld(input.positionOS.xyz);
-                posWS = ApplyGrassDisplacement(posWS, heightFactor);
+                float3 originalPosWS = TransformObjectToWorld(input.positionOS.xyz);
+                float3 posWS = ApplyGrassDisplacement(originalPosWS, heightFactor);
 
                 output.positionWS = posWS;
                 output.positionCS = TransformWorldToHClip(posWS);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+
+                // Normal dunia yang merespon pembengkokan rumput oleh angin dan injakan kaki
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 disp = posWS - originalPosWS;
+                normalWS = normalize(normalWS + float3(disp.x, -abs(disp.y) * 0.5, disp.z) * 1.5);
+                output.normalWS = normalWS;
 
                 return output;
             }
@@ -128,9 +144,10 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
                 float bottomMask = 1.0 - saturate(input.heightFactor / max(_HighBlend, 0.001));
                 half3 baseColor = lerp(distColor, _BottomColor.rgb, bottomMask);
 
+                // Warna albedo rumput alami dan bersih (tanpa garis zebra buatan)
                 half3 albedo = baseColor * (texCol.rgb * 0.6 + 0.4);
 
-                // ── Trail Footprint Color Shift (Bekas injakan kaki diberi warna berbeda yang perlahan pulih) ──
+                // ── Trail & Real-Time Footprint Color Shift (Warna bekas injakan & recovery dapat diatur di Inspector) ──
                 float2 trailUV = (input.positionWS.xz - _GrassTrailCenter.xy) / max(_GrassTrailSize, 1.0) + 0.5;
                 float trailSample = 1.0;
                 if (_GrassTrailSize > 1.0 && trailUV.x >= 0.001 && trailUV.x <= 0.999 && trailUV.y >= 0.001 && trailUV.y <= 0.999)
@@ -138,11 +155,22 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
                     trailSample = SAMPLE_TEXTURE2D(_GrassTrailRT, sampler_GrassTrailRT, trailUV).r;
                 }
                 float trailFactor = saturate(1.0 - trailSample);
-                // Bekas injakan diberi warna golden/kuning-jerami cerah khas rumput terinjak, memudar saat pulih
-                half3 trampledColor = albedo * half3(1.35, 1.30, 0.50) + half3(0.10, 0.12, 0.01);
-                albedo = lerp(albedo, trampledColor, trailFactor * 0.9);
 
-                // ── Soft Stylized Shadow (Halus & Lembut, tidak merusak tampilan rumput) ──
+                // Interaksi tapak kaki langsung di bawah player
+                float4 pPos = (_PlayerTramplePos.w > 0.05) ? _PlayerTramplePos : _PlayerPosition;
+                float trampleInstant = 0.0;
+                if (pPos.w > 0.05)
+                {
+                    float dist = length(input.positionWS.xz - pPos.xyz);
+                    trampleInstant = saturate(1.0 - dist / max(pPos.w, 0.01));
+                }
+                float totalTrample = saturate(trailFactor + trampleInstant * 0.85);
+
+                // Ganti warna bekas injakan & recovery sesuai _RecoveryColor dari Material Inspector
+                half3 trampleTint = lerp(albedo, _RecoveryColor.rgb, 0.80);
+                albedo = lerp(albedo, trampleTint, totalTrample * saturate(_RecoveryColorStrength));
+
+                // ── Soft Stylized Lighting & Shading (Merespon Liukan Angin & Bayangan Halus) ──
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord, input.positionWS, half4(1, 1, 1, 1));
                 half shadowAtten = mainLight.shadowAttenuation;
@@ -150,10 +178,28 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
                 // Remap shadow agar bayangan karakter tetap terlihat jelas namun sangat halus (soft shadow)
                 half softShadow = lerp(0.72, 1.0, shadowAtten);
 
-                half NdotL = saturate(dot(float3(0, 1, 0), mainLight.direction) * 0.25 + 0.75);
-                half3 direct = mainLight.color * (NdotL * softShadow);
+                float3 N = NormalizeNormalPerPixel(input.normalWS);
+                N = normalize(lerp(float3(0.0, 1.0, 0.0), N, 0.60));
+
+                float3 V = GetWorldSpaceNormalizeViewDir(input.positionWS);
+                float3 L = mainLight.direction;
+                float3 H = normalize(L + V);
+
+                // Diffuse dinamis yang berubah saat rumput meliuk ditiup angin
+                half NdotL = saturate(dot(N, L) * 0.35 + 0.65);
+
+                // Specular sheen halus saat helai rumput meliuk memantulkan cahaya matahari (seperti di video Infinite Grass)
+                float NdotH = saturate(dot(N, H));
+                float specular = pow(NdotH, 16.0) * (input.heightFactor * 0.35);
+
+                half3 direct = mainLight.color * ((NdotL * softShadow) + specular);
                 half3 ambient = half3(0.32, 0.38, 0.28);
                 half3 litColor = albedo * (direct + ambient);
+
+                // ── Adjustable Emission Glow (Murni Warna & Intensitas, Tanpa Perlu Tekstur) ──
+                float tipFactor = lerp(1.0, input.heightFactor, _EmissionTipBoost);
+                half3 emission = _EmissionColor.rgb * (_EmissionIntensity * tipFactor);
+                litColor += emission;
 
                 return half4(litColor, 1.0);
             }

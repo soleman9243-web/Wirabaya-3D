@@ -55,6 +55,11 @@ namespace Unity.FantasyKingdom
         [Min(0.1f)]
         public float distanceTransitionSpeed = 5f;
 
+        [Space(5)]
+        [Tooltip("Waktu tunda / delay (detik) sebelum kamera mulai zoom out saat player sprint.")]
+        [Range(0f, 2f)]
+        public float zoomOutDelay = 0.4f;
+
         // ============================================================
         // AUDIO SFX
         // ============================================================
@@ -79,6 +84,7 @@ namespace Unity.FantasyKingdom
         // === Private ===
         private Cinemachine3rdPersonFollow _thirdPersonFollow;
         private bool _wasSprinting = false;
+        private float _sprintTimer = 0f;
 
         private void Awake()
         {
@@ -126,8 +132,21 @@ namespace Unity.FantasyKingdom
 
             bool isSprinting = GetSprintState();
 
-            HandleSprintFOV(isSprinting);
-            HandleSprintDistance(isSprinting);
+            // Hitung timer sprint untuk delay zoom-out
+            if (isSprinting)
+            {
+                _sprintTimer += Time.deltaTime;
+            }
+            else
+            {
+                _sprintTimer = 0f;
+            }
+
+            // Kamera zoom-out hanya aktif setelah melewati waktu delay
+            bool shouldZoomOut = isSprinting && (_sprintTimer >= zoomOutDelay);
+
+            HandleSprintFOV(shouldZoomOut);
+            HandleSprintDistance(shouldZoomOut);
             HandleSprintAudio(isSprinting);
 
             // === Tambahkan panggilan fitur kamera baru di sini ===

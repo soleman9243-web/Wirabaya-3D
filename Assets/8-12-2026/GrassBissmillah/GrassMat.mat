@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: GrassMat
-  m_Shader: {fileID: -6465566751694194690, guid: 7596b1964f7264841a30210917aaf730, type: 3}
+  m_Shader: {fileID: 4800000, guid: 8639a06a6ffbb1440971b79eb4b054ed, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -90,7 +90,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WindTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 323291dd6b780c14fa010bedd64a84a1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WindTexture:
@@ -115,7 +115,7 @@ Material:
     - _AlphaClip: 1
     - _AlphaThreshold: 0.5
     - _AlphaToMask: 1
-    - _BendStrength: 1.2
+    - _BendStrength: 1.26
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -127,13 +127,15 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
+    - _EmissionIntensity: 1
+    - _EmissionTipBoost: 0
     - _EnvironmentReflections: 1
-    - _FarDist: 25
+    - _FarDist: 17.95
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _GrassHeight: 1
-    - _HighBlend: 0.2
+    - _HighBlend: 1
     - _Metallic: 0
     - _NearDist: 3
     - _OcclusionStrength: 1
@@ -141,7 +143,8 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0
+    - _RecoveryColorStrength: 0.62
+    - _Smoothness: 0.4
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -152,21 +155,22 @@ Material:
     - _WindDirX: 1
     - _WindDirZ: 0.5
     - _WindHeight: 0.5
-    - _WindIntensity: 0.01
+    - _WindIntensity: 0.48
     - _WindNoiseSpeed: 1
-    - _WindSpeed: 0.5
-    - _WindTiling: 0.08
+    - _WindSpeed: 0.1
+    - _WindTiling: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.1874021, g: 0.4188679, b: 0.030822307, a: 1}
-    - _BottomColor: {r: 0.20261295, g: 0.5396226, b: 0.41010523, a: 1}
+    - _BottomColor: {r: 0.11777139, g: 0.4490565, b: 0.3276561, a: 1}
     - _Color: {r: 0, g: 0.22264141, b: 0.039139584, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FarColor: {r: 0.27465066, g: 0.7207546, b: 0.2488643, a: 1}
-    - _NearColor: {r: 0.7631993, g: 1, b: 0.4660377, a: 1}
+    - _FarColor: {r: 0.13837653, g: 0.6377357, b: 0.19674315, a: 1}
+    - _NearColor: {r: 0.40857106, g: 0.85660374, b: 0.25698105, a: 1}
     - _NearFarRange: {r: 3.1, g: 17.79, b: 0, a: 0}
+    - _RecoveryColor: {r: 0.042456374, g: 0.335849, b: 0.071795605, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _TerrainColor: {r: 0, g: 0, b: 0, a: 0}
     - _WindNoiseContrast: {r: 0.23, g: 1, b: 0, a: 0}

@@ -29,55 +29,80 @@ CBUFFER_START(UnityPerMaterial)
     float  _GrassHeight;
     float  _BendStrength;
     float  _Smoothness;
+
+    float4 _RecoveryColor;
+    float  _RecoveryColorStrength;
+    float3 _Pad0;
+
+    float4 _EmissionColor;
+    float  _EmissionIntensity;
+    float  _EmissionTipBoost;
+    float2 _Pad1;
 CBUFFER_END
 
 // ── Global Variables ──
 float4 _PlayerPosition;
 float4 _PlayerTramplePos;
+float4 _PlayerForwardDir;
 float4 _GrassTrailCenter;
 float  _GrassTrailSize;
 
 // ── Safe Displacement (100% Anti-NaN) ──
 float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
 {
-    // Bagian tengah ke atas saja yang goyang terkena angin (akar tetap kokoh di tanah)
-    float windMask = smoothstep(0.25, 1.0, heightFactor);
+    // Bagian pangkal tetap di tanah, makin ke ujung makin bebas meliuk
+    float windMask = pow(saturate(heightFactor), 1.35);
 
-    // === 1. WIND WAVE SEJAJAR DENGAN 7063-BUMP.JPG (TERKONTROL, TIDAK REBAH BERLEBIHAN) ===
+    // === 1. WIND WAVE BERBASIS TEKSTUR 7063-BUMP.JPG (ORGANIK, ALAMI, SEPERTI INFINITE GRASS) ===
     if (_WindIntensity > 0.001)
     {
         float2 rawDir = float2(_WindDirX, _WindDirZ);
         float dirLen = length(rawDir);
         float2 windDir = (dirLen > 0.001) ? (rawDir / dirLen) : float2(1.0, 0.0);
+        float2 perpDir = float2(-windDir.y, windDir.x);
 
-        float waveProj = (posWS.x * windDir.x + posWS.z * windDir.y) * _WindTiling;
-        float waveTime = _Time.y * _WindSpeed;
+        float tiling = max(_WindTiling, 0.005);
+        float speed = _WindSpeed * 0.50;
 
-        // Modulasi tekstur pola angin 7063-bump.jpg
-        float2 windUV = posWS.xz * _WindTiling + windDir * (waveTime * 0.15);
-        float windSample = SAMPLE_TEXTURE2D_LOD(_WindTex, sampler_WindTex, windUV, 0).r;
-        float bumpFactor = (!isnan(windSample) && !isinf(windSample)) ? (windSample * 0.6 + 0.4) : 1.0;
+        // Sampling tekstur 7063-bump.jpg yang mengalir di world space
+        // Menggunakan 2 layer UV bertingkat untuk memecah pengulangan dan menciptakan gelombang hembusan angin organik
+        float2 uv1 = posWS.xz * (tiling * 0.7) - windDir * (_Time.y * speed);
+        float2 uv2 = posWS.xz * (tiling * 1.6) - windDir * (_Time.y * speed * 1.4) + float2(0.35, 0.65);
 
-        float wave = sin(waveTime + waveProj) * (_WindIntensity * 0.35) * windMask * bumpFactor;
+        float sample1 = SAMPLE_TEXTURE2D_LOD(_WindTex, sampler_WindTex, uv1, 0).r;
+        float sample2 = SAMPLE_TEXTURE2D_LOD(_WindTex, sampler_WindTex, uv2, 0).r;
 
-        // Batasi kemiringan maksimal agar rumput tidak pernah miring berlebihan
-        wave = clamp(wave, -0.30, 0.30);
+        if (isnan(sample1) || isinf(sample1)) sample1 = 0.5;
+        if (isnan(sample2) || isinf(sample2)) sample2 = 0.5;
 
-        if (!isnan(wave) && !isinf(wave))
+        // Gelombang hembusan angin gabungan (0.0 s/d 1.0)
+        float gustWave = sample1 * 0.65 + sample2 * 0.35;
+
+        // Kontras hembusan: zona tenang vs zona gelombang angin bergulung
+        float gustPush = smoothstep(0.20, 0.85, gustWave);
+
+        // Kekuatan dorongan fisik saat gelombang hembusan lewat
+        float pushAmount = gustPush * (_WindIntensity * 1.5) * windMask;
+
+        // Getaran mikro melintang (side flutter) agar rumput tampak alami dan berdesir
+        float flutter = sin(_Time.y * (_WindSpeed * 3.2) + posWS.x * 1.8 + posWS.z * 1.8) * (0.10 * _WindIntensity * windMask);
+
+        if (!isnan(pushAmount) && !isinf(pushAmount))
         {
-            posWS.xz += windDir * wave;
-            posWS.y  -= abs(wave) * 0.08;
+            // Mendorong rumput meliuk searah angin dan merunduk saat puncak hembusan lewat
+            posWS.xz += windDir * (pushAmount * 0.85) + perpDir * flutter;
+            posWS.y  -= pushAmount * 0.28;
         }
     }
 
-    // === 2. PLAYER INTERACTION REAL-TIME (TANGIBLE TRAMPLE & SIDE-PARTING) ===
+    // === 2. PLAYER INTERACTION REAL-TIME (TANGIBLE, RAPI & SATU ARAH) ===
     float4 pPos = (_PlayerTramplePos.w > 0.05) ? _PlayerTramplePos : _PlayerPosition;
     if (pPos.w > 0.05)
     {
         float3 diff = posWS - pPos.xyz;
         float distXZ = length(diff.xz);
 
-        // Ketinggian vertikal: merespon saat karakter di sekitar rumput (tidak merespon jika loncat tinggi di udara)
+        // Ketinggian vertikal: merespon saat karakter di sekitar rumput
         float vertDist = diff.y;
         if (distXZ < pPos.w && vertDist > -2.0 && vertDist < 2.0)
         {
@@ -85,9 +110,15 @@ float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
             float bend = smoothstep(0.0, 1.0, f) * heightFactor * _BendStrength;
             float2 pushDir = (distXZ > 0.01) ? normalize(diff.xz) : float2(0.0, 1.0);
 
-            // Menyibak jelas ke samping & merunduk wajar (terasa mantap diinjak, tidak tembus tanah)
-            posWS.xz += pushDir * (bend * 0.75);
-            posWS.y  -= bend * 0.28;
+            // Arah rebah SATU ARAH: dominan searah hadap/langkah player (_PlayerForwardDir),
+            // dipadukan sedikit dengan arah dorongan radial agar rumput melipat rapi ke satu arah
+            float2 fwdDir = normalize(_PlayerForwardDir.xy);
+            if (length(_PlayerForwardDir.xy) < 0.01) fwdDir = float2(0.0, 1.0);
+            float2 unifiedBendDir = normalize(fwdDir * 0.80 + pushDir * 0.20);
+
+            // Rebah rapi satu arah (tidak mekar berantakan ke segala arah)
+            posWS.xz += unifiedBendDir * (bend * 0.60);
+            posWS.y  -= bend * 0.22;
         }
     }
 

@@ -141,7 +141,8 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0
+    - _RecoveryColorStrength: 0.62
+    - _Smoothness: 0.482
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
@@ -152,10 +153,10 @@ Material:
     - _WindDirX: 1
     - _WindDirZ: 0.5
     - _WindHeight: 0.5
-    - _WindIntensity: 0.5
+    - _WindIntensity: 0.48
     - _WindNoiseSpeed: 1
-    - _WindSpeed: 0.5
-    - _WindTiling: 0.08
+    - _WindSpeed: 0.1
+    - _WindTiling: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
@@ -167,6 +168,7 @@ Material:
     - _FarColor: {r: 0.2780307, g: 0.83396226, b: 0.2438945, a: 1}
     - _NearColor: {r: 0.5573637, g: 0.9924528, b: 0.23781411, a: 1}
     - _NearFarRange: {r: 3.1, g: 17.79, b: 0, a: 0}
+    - _RecoveryColor: {r: 0.27049625, g: 0.5622641, b: 0.14746167, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _TerrainColor: {r: 0, g: 0, b: 0, a: 0}
     - _WindNoiseContrast: {r: 0.23, g: 1, b: 0, a: 0}

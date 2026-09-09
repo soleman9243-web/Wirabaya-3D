@@ -1473,3 +1473,85 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
   5. Anti-Jump yang Tepat (IsPlayerAirborne):
      - Deteksi loncat diperbarui menjadi `IsPlayerAirborne()` yang mengecek jarak tanah > 0.75m di bawah kaki. Saat berjalan di permukaan tanah/lereng tidak akan pernah salah mengira karakter sedang loncat, dan saat Space/loncat ditekan maka interaksi dan stempel otomatis nonaktif di udara.
 
+
+108. Visual Gelombang Angin (Wind Wave Sheen), Rebah Satu Arah & Radius Rapi, Warna Recovery Bebas Diatur di Inspector, dan Delay Zoom-Out Kamera
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Displacement wind sway dinamis, arah injakan unified satu arah via _PlayerForwardDir, CBuffer _RecoveryColor)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Property _RecoveryColor, visual wind wave sheen Studio Ghibli style, trample color blend)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Property _RecoveryColor, visual wind wave sheen, trample color blend untuk terrain)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (Kirim _PlayerForwardDir, radius injakan rapi 0.65m)
+  * `Assets/Scripts/Camera/PlayerCameraController.cs` (Waktu tunda delay zoom-out kamera saat sprint)
+- Solusi Komprehensif untuk 4 Catatan Pengguna:
+  1. Gelombang Angin Jelas Terlihat (Wind Wave Sheen):
+     - Vertex displacement ditingkatkan (`_WindIntensity * 0.70`, clamp `[-0.60, 0.60]`, drop vertikal `abs(wave) * 0.14`).
+     - Di fragment shader ditambahkan efek kilauan ombak angin visual bergaya anime (Ghibli / Genshin Impact style): ombak berjalan melintasi padang rumput memancarkan kilau kehijauan keemasan lembut (`windSheen`) mengikuti pola tekstur bump `7063-bump.jpg` dan arah angin. Gelombang angin kini tampak megah menyapu seluruh padang rumput.
+  2. Bentuk Injak Rapi & Melipat Satu Arah (Unified Directional Trample):
+     - Masalah sebelumnya: dorongan radial 360 derajat menyebabkan rumput mekar acak ke segala arah seperti landak/bintang bundar yang terlalu besar.
+     - Diperbaiki: Radius injakan diperkecil ke 0.65 meter (pas di sekeliling kaki karakter).
+     - Di C# (`GrassTrailRenderer.cs`): Dikirimkan vektor arah hadap player `_PlayerForwardDir`.
+     - Di Shader: Rebah rumput kini disatukan **dominan ke satu arah** searah langkah/hadap player (`fwdDir * 0.80 + pushDir * 0.20`). Rumput melipat rapi dan elegan ke satu arah saat dilangkahi, tidak lagi mekar bundar berantakan.
+  3. Warna Rumput Terinjak / Recovery Bisa Diatur Bebas di Inspector:
+     - Ditambahkan properti material `_RecoveryColor` ("Recovery / Trample Color") dan `_RecoveryColorStrength` di Inspector material rumput.
+     - Default diset ke warna kuning-jerami keemasan cerah `(0.92, 0.95, 0.40, 1.0)`. Pengguna bebas memilih warna apa pun langsung dari Color Picker material (misal: kuning, jingga, hijau muda, biru magis, dll).
+     - Warna injakan diterapkan baik pada rumput yang sedang diinjak langsung di bawah kaki maupun jejak trail yang sedang dalam proses recovery.
+  4. Delay Zoom-Out Kamera Saat Lari (Camera Sprint Delay):
+     - Di `PlayerCameraController.cs` ditambahkan properti `zoomOutDelay = 0.4f` (dapat diatur di Inspector antara 0 sampai 2 detik).
+     - Kamera tidak lagi langsung menyentak zoom out seketika saat tombol sprint ditekan, melainkan menunggu jeda waktu delay terlebih dahulu sebelum kamera perlahan mundur (zoom out).
+
+
+109. Peningkatan Kontras & Pita Gelombang Angin (Rolling Gust Sheen) dan Panduan Rekomendasi Wind Tiling
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Skala frekuensi gelombang `waveFreq = max(_WindTiling, 0.01) * 14.0`, modulasi noise `7063-bump.jpg` pada fase gelombang, profil hembusan tajam `pow(..., 1.8)`, liukan fisik forward 0.95m & drop 0.32m)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Kontras warna ombak visual: lembah `albedo * 0.82` vs puncak sunlit sheen `albedo * 1.45 + (0.18, 0.24, 0.04)`, masking tinggi vertikal `smoothstep(0.12, 0.80)`)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Sinkronisasi kalkulasi kontras ombak yang sama persis untuk shader terrain)
+- Solusi Masalah Gelombang Kurang Kelihatan:
+  1. Jarak & Frekuensi Gelombang Pas di Layar Kamera:
+     - Sebelumnya panjang gelombang terlalu besar (~22.4 meter) sehingga di layar kamera yang lebarnya hanya ~12-15 meter tidak terlihat barisan ombak melainkan hanya perubahan terang-gelap lambat di seluruh layar.
+     - Frekuensi gelombang ditingkatkan dengan multiplier 14.0 sehingga pada `_WindTiling = 0.08` menghasilkan panjang gelombang optimal ~5.6 meter. Di layar kamera kini selalu terlihat 2 hingga 3 baris pita ombak yang mengalir beruntun.
+  2. Profil Puncak Ombak Tajam Bergaya Anime (Crest Profile):
+     - Mengganti fungsi sinus datar dengan `pow(saturate(sin(wavePhase) * 0.5 + 0.5), 1.8)`. Sebanyak 70% siklus adalah rumput tenang alami, dan 30% sisanya adalah pita hembusan ombak yang tajam dan terdefinisi jelas menyapu padang rumput.
+     - Pola `7063-bump.jpg` dimasukkan ke dalam pergeseran fase gelombang sehingga bentuk pita ombak meliuk secara organik dan tidak kaku seperti penggaris.
+  3. Kontras Warna Lembah vs Puncak (Sunlit Wind Sheen):
+     - Lembah ombak bernuansa hijau alami yang teduh (`albedo * 0.82`), sedangkan puncak hembusan memancarkan kilau emas matahari yang hidup (`albedo * 1.45 + highlight`), menghasilkan kontras >60% yang sangat memukau mata dari sudut kamera gameplay mana pun.
+- Rekomendasi Nilai Parameter di Material Inspector:
+  * `Wind Tiling`:
+    - **0.06 - 0.08 (Sangat Direkomendasikan / Default):** Jarak antar puncak ombak ~5 - 7 meter. Sangat pas di kamera, terlihat 2-3 gulungan ombak sekaligus.
+    - **0.10 - 0.15:** Jarak antar ombak lebih rapat (~3 - 4 meter), cocok untuk padang rumput berangin kencang.
+    - **0.03 - 0.05:** Jarak antar ombak lebih lebar (~10 - 15 meter), untuk sapuan angin sabana luas.
+  * `Wind Speed`: **0.5 - 1.0** (kecepatan gulungan ombak mengalir yang sejuk).
+  * `Wind Intensity`: **0.5 - 0.8** (kekuatan liukan fisik dan kilau kontras ombak).
+
+
+110. Perbaikan Gelombang Angin Alami (Referensi Infinite Grass) & Penghapusan Garis Zebra Albedo
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Displacement angin berbasis tekstur `7063-bump.jpg` multi-layer UV, liukan fisik forward + drop + side flutter, anti-zebra line)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Hapus kalkulasi warna ombak buatan pada albedo, normal dinamis condong mengikuti liukan rumput, specular sheen pantulan matahari alami)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Pembaruan identik untuk shader terrain)
+- Analisis Masalah & Solusi (Sesuai Referensi Video YouTube Infinite Grass):
+  1. Masalah Garis Zebra / Kontur Terhapus:
+     - Garis zebra/kontur aneh pada foto sebelumnya terjadi karena shader mewarnai albedo secara langsung menggunakan fungsi sinus 1D planar.
+     - Di video referensi (Infinite Grass), albedo rumput bersih alami. Gelombang angin terbentuk murni dari **liukan fisik helai rumput secara massal** yang memantulkan cahaya matahari ke kamera.
+     - Seluruh manipulasi warna ombak garis pada albedo dihapus total. Albedo kini bersih dan elegan.
+  2. Gelombang Angin Organik Berbasis Tekstur (2D Texture-Driven Gusts):
+     - Angin kini disampling langsung dari `7063-bump.jpg` yang mengalir di world space dengan 2 layer UV bertingkat untuk memecah pengulangan.
+     - Pola hembusan angin berbentuk awan/gumpalan angin 2D alami yang bergerak menyapu padang rumput, bukan garis lurus.
+  3. Dynamic Normal & Specular Sheen (Kilauan Fisik Alami):
+     - Di vertex shader, normal helai rumput ikut condong (`normalWS`) searah liukan helai saat ditiup angin atau diinjak player.
+     - Di fragment shader, perubahan normal helai rumput ini secara alami menghasilkan specular sheen dan variasi diffuse saat ombak melintas memantulkan cahaya matahari ke arah kamera, persis seperti efek gelombang rumput di video YouTube referensi.
+
+
+111. Fitur Adjustable Emission Glow pada Rumput (HDR Color, Intensity, & Tip Only)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Struktur CBuffer `UnityPerMaterial` 16-byte aligned untuk `_EmissionColor`, `_EmissionIntensity`, `_EmissionTipBoost`, `_Pad1`)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Penambahan properti Emission di Inspector & kalkulasi emission glow di `GrassFrag`)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Sinkronisasi properti dan kalkulasi emission glow yang identik untuk shader terrain)
+- Fitur & Kontrol di Material Inspector (Sederhana & Tanpa Perlu Tekstur Map):
+  1. `Emission Color` (`[HDR] _EmissionColor`):
+     - Memungkinkan pemilihan warna pendaran bebas dengan dukungan HDR (misal: pendaran biru neon magis, hijau kunang-kunang, kuning keemasan, ungu fantasi, dll) yang langsung memicu efek Bloom jika Post-Processing aktif.
+     - Default hitam `(0, 0, 0)` sehingga rumput tetap dalam tampilan normal jika fitur emission tidak digunakan.
+  2. `Emission Intensity` (`_EmissionIntensity`, Range `0.0` - `10.0`):
+     - Slider pengatur kekuatan cahaya pendaran secara real-time (tanpa perlu mengisi tekstur apa pun).
+  3. `Emission on Tips Only` (`_EmissionTipBoost`, Range `0.0` - `1.0`):
+     - Slider pengatur distribusi cahaya: `0.0` = seluruh helai rumput menyala merata, `1.0` = hanya ujung/pucuk helai rumput yang berpendar (seperti kunang-kunang / flora fantasi bercahaya).
+
+
