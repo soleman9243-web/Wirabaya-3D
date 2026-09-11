@@ -45,6 +45,21 @@ public class ParkourController : MonoBehaviour
         // Pastikan Anda menaruh aksi spesifik (seperti Vault) di urutan paling atas di Unity Inspector.
     }
 
+    /// <summary>
+    /// Menerapkan root motion posisi saat parkour sedang berjalan.
+    /// Ini diperlukan karena OnAnimatorMove di ThirdPersonController tidak menerapkan
+    /// deltaPosition, sehingga karakter tidak bergerak tanpa handler ini.
+    /// Catatan: Rotasi TIDAK diterapkan di sini karena sudah di-handle oleh
+    /// ThirdPersonController.OnAnimatorMove() dan RotateToObstacle di coroutine.
+    /// </summary>
+    private void OnAnimatorMove()
+    {
+        if (inAction && animator != null)
+        {
+            transform.position += animator.deltaPosition;
+        }
+    }
+
     private void Update()
     {
         if (_input.jump && !inAction)
