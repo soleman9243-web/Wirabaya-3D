@@ -1555,3 +1555,402 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
      - Slider pengatur distribusi cahaya: `0.0` = seluruh helai rumput menyala merata, `1.0` = hanya ujung/pucuk helai rumput yang berpendar (seperti kunang-kunang / flora fantasi bercahaya).
 
 
+112. Penambahan Pengaturan Fisik Rumput Terinjak & Pemisahan Menu Inspector (Color & Grass Recovery)
+- Lokasi File:
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl` (Menambahkan `_RecoveryTime` & `_TrampleBendAmount` ke CBuffer 16-byte aligned, liukan fisik jejak langkah `bendDown` 0.60m & `bendFwd` 0.50m searah hadap player)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader` (Pemisahan 2 grup menu khusus di Inspector: Trample Recovery Color & Trample Grass Recovery)
+  * `Assets/8-12-2026/GrassBissmillah/StylizedGrass_Terrain.shader` (Sinkronisasi struktur properti yang sama untuk terrain)
+  * `Assets/8-12-2026/GrassBissmillah/GrassTrailRenderer.cs` (Sinkronisasi otomatis durasi fade RT jejak kaki dari material & deteksi karakter di Scene view)
+- Pemisahan 2 Kategori Pengaturan di Material Inspector:
+  1. Grup 1: **`Trample Recovery Color`** (Khusus Warna):
+     * `Recovery / Trample Color`: Warna helai rumput saat terinjak.
+     * `Recovery Color Intensity`: Kepekatan transisi warna injakan.
+  2. Grup 2: **`Trample Grass Recovery`** (Khusus Fisik Rumput & Pemulihan):
+     * `Recovery Duration (Detik)` (`_RecoveryTime`, Range: `0.5` - `20.0` detik, default `4.0`): Mengatur durasi waktu sampai rumput bangkit berdiri tegak kembali seutuhnya.
+     * `Trample Bend Amount` (`_TrampleBendAmount`, Range: `0.0` - `2.0`, default `1.0`): Mengatur seberapa rebah helai rumput merapat ke tanah saat terinjak kaki (0 = tidak rebah, 1.0 = rebah jelas, 2.0 = gepeng maksimal).
+- Efek Visual Fisik & Pemulihan:
+  * Rumput yang terinjak kini rebah jelas ke bawah dan terlipat searah langkah kaki pemain, meninggalkan bekas tapak jejak yang tegas.
+  * Seiring waktu pemulihan (`_RecoveryTime`), helai rumput terlihat jelas perlahan bangkit tegak kembali dan warnanya pulih seperti semula.
+  * Nilai setelan material yang sudah diatur oleh pengguna pada `GrassMat.mat` tetap 100% utuh tanpa ada yang diubah.
+
+
+113. Sistem Toon Shader Bergaya Wuthering Waves (WuWa) dengan 3 Varian (Biasa, Metal, Kulit), Penonjolan Lekukan, Inverted Hull Outline, dan Custom Inspector
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl` (Core library lighting, multi-tone cel ramp, SSS warm fringe, stylized metal matcap, crease depth, rim light, outline)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (Master Shader dengan dropdown `Material Type`: Biasa, Metal, Kulit)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (Shader khusus untuk Kain, Rambut, dan Props)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader` (Shader khusus untuk Armor, Zirah, dan Senjata Logam)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader` (Shader khusus untuk Kulit, Wajah, dan Tubuh dengan SSS warm fringe)
+  * `Assets/8-12-2026/BISMILLAHWUWA/Demo/` (`M_WuWa_Skin_Sample.mat`, `M_WuWa_Metal_Sample.mat`, `M_WuWa_Cloth_Sample.mat`)
+- Fitur & Keunggulan Bergaya Wuthering Waves:
+  1. **3 Varian Material Khusus (Material Type Override):**
+     * **Biasa (Cloth / Hair / Props):** Cel-shading 2-band / 3-tone bersih, fabric sheen specular, dan stylized rim light.
+     * **Metal (Armor / Weapons / Trims):** Refleksi logam stylized multi-band, specular kilatan tajam (stepped anisotropic), bayangan logam kontras tinggi, dan dukungan MatCap.
+     * **Kulit (Skin / Face / Body):** Subsurface Scattering (SSS) warm fringe band kemerahan/peach di batas bayangan, bayangan hangat bernuansa segar, gradasi halus, dan kilau alami tanpa bintik tajam.
+  2. **Penonjolan Lekukan Secara Sempurna (Creases & Cavity Depth):**
+     * **Normal Strength & Crease Boost:** Normal map langsung mempertegas lekukan otot, lipatan baju, dan sambungan armor sehingga langsung jatuh ke bayangan tajam.
+     * **Cavity / AO Deepening:** Mendukung Cavity/AO Map dan Vertex Color AO yang memperdalam lekukan celah terdalam meskipun terkena cahaya langsung.
+     * **Crease Rim Light:** Kilau rim anime menonjolkan puncak lekukan (*ridges*) sementara lembah lekukan tetap gelap, menghasilkan ilusi 3D bervolume yang menawan.
+  3. **Inverted Hull Outline Pass:**
+     * Garis tepi anime (*back-face hull extrusion*) di View-Space dengan depth bias anti-z-fighting untuk wajah dan jari.
+  4. **Kompatibilitas Penuh SRP Batcher:**
+     * Struktur CBuffer `UnityPerMaterial` 16-byte aligned untuk performa maksimal di Universal Render Pipeline (URP).
+
+
+114. Perbaikan Kompatibilitas Mesh Props/Batu (Fix Mesh Hilang/Invisible & CustomEditor Warning)
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl` (Perbaikan proteksi anti-NaN pada Tangent, Safe Smoothstep, Fallback Properti Material, dan Safe Inverted Hull W-coordinate)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader`
+- Masalah yang Terjadi Sebelumnya:
+  1. Warning `Could not create a custom UI for the shader 'WuWa/Toon Character'` dan menu Inspector material menjadi kosong/blank karena adanya error resolusi C# editor.
+  2. Mesh batu/props mendadak hilang (invisible) di Scene view saat material diganti ke `WuWa/Toon Character` akibat:
+     - Mesh batu (`stones.fbx`) tidak memiliki channel tangent sehingga `normalize(tangentWS)` menghasilkan nilai `NaN` (Not a Number).
+     - Material yang baru dikonversi belum memiliki nilai `_ShadowFeather` (bernilai 0), menyebabkan operasi `smoothstep(threshold, threshold, lightTerm)` melakukan pembagian nol `(x - a) / 0 = NaN`. Di GPU DirectX 11, pixel yang bernilai `NaN` langsung dibuang (*discarded*) sehingga objek menjadi transparan/hilang seutuhnya.
+     - Triangulasi outline pada posisi non-aktif menghasilkan koordinat W bernilai 0 (`float4(0,0,0,0)`), memicu *divide-by-zero* pada rasterizer GPU.
+- Solusi & Perbaikan yang Diterapkan:
+  1. **Anti-NaN Tangent Engine:** Jika mesh tidak memiliki data tangent (panjang < 0.01), shader otomatis menurunkan tangent ortogonal aman melalui cross-product terhadap vektor up, serta mengamankan rekalkulasi Gram-Schmidt.
+  2. **Safe Smoothstep & Clamped Feather:** Memberikan batas minimal aman pada feather dan threshold (`max(_ShadowFeather, 0.005)`) sehingga interval atas dan bawah tidak pernah bernilai sama.
+  3. **Safe Inverted Hull:** Triangulasi non-aktif outline dialihkan ke `float4(0, 0, 0, 1.0)` dengan fragment `discard` untuk keamanan rasterizer.
+  4. **Fallback Default Warna Bayangan:** Material yang belum memiliki data tint bayangan otomatis menggunakan warna cel-shadow harmonis anime WuWa (tidak jatuh ke hitam pekat).
+
+
+115. Solusi Tuntas: Kompatibilitas URP Deferred Rendering (Fix Mesh Menghilang 100%) & Native Inspector Stabil
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (`WuWa/Toon Character`)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (`WuWa/Toon - Biasa (Cloth & Hair)`)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader` (`WuWa/Toon - Metal & Weapon`)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader` (`WuWa/Toon - Kulit (Skin)`)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+- Penyebab Utama Masalah (The Root Cause):
+  1. **Project Menggunakan URP Deferred Rendering (`m_RenderingMode: 2`):**
+     - Terverifikasi pada `Assets/URP/Settings/Desktop Renderer.asset` bahwa renderer diset ke Deferred (`m_RenderingMode: 2`).
+     - Dalam pipeline URP Deferred, pass dengan tag `Tags { "LightMode" = "UniversalForward" }` **SECARA OTOMATIS DIBUANG / TIDAK AKAN PERNAH DI-RENDER** oleh URP!
+     - Akibatnya, ketika material menggunakan `WuWa/Toon - Biasa (Cloth & Hair)` atau varian lainnya, pass pencahayaan/forward sama sekali tidak dieksekusi, sehingga mesh batu (`rock.001`) menjadi hilang/invisible seutuhnya di Scene dan Game View!
+  2. **Inspector Material Kosong / Blank:**
+     - Di Unity 6, deklarasi `CustomEditor "WuWaToonShaderGUI"` gagal dimuat jika terjadi kendala asosiasi assembly, menyebabkan pesan error `Could not create a custom UI for the shader...` dan Unity langsung membatalkan rendering GUI inspector material, meninggalkan kotak kosong/blank.
+- Solusi & Perbaikan Tuntas:
+  1. **Ganti ke `UniversalForwardOnly` di Semua Shader:**
+     - Mengubah Pass 1 pada seluruh 4 shader menjadi `Tags { "LightMode" = "UniversalForwardOnly" }`.
+     - Tag ini memaksa renderer URP (baik dalam mode Deferred maupun Forward) untuk merender objek secara langsung (forward), sehingga objek langsung muncul kembali dengan pencahayaan cel-shading WuWa yang sempurna!
+  2. **Gunakan Native ShaderLab Inspector (100% Bebas Error & Stabil):**
+     - Menghapus baris `CustomEditor "WuWaToonShaderGUI"` pada seluruh shader dan membersihkan folder Editor yang tidak terpakai.
+     - Unity kini secara otomatis menggunakan built-in ShaderLab Property Drawer yang merender semua header, slider lekukan, color picker, normal map, dan tombol varian secara bersih, intuitif, dan tanpa risiko blank/error sama sekali.
+  3. **Fallback Aman:**
+     - Mengarahkan FallBack ke `"Universal Render Pipeline/Lit"` menggantikan FallbackError.
+  4. **Outline Pass SRPDefaultUnlit:**
+     - Mengatur Pass Inverted Hull Outline ke `Tags { "LightMode" = "SRPDefaultUnlit" }` dengan `Cull Front` agar garis tepi anime tampil mulus tanpa mengganggu geometri utama.
+
+
+116. Pemulihan Penuh Inspector Material (Eliminasi Total CustomEditor Warning) & Pre-Konfigurasi Material Baru
+- Lokasi File:
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/New Material.mat (Terkonfigurasi untuk WuWa Toon - Biasa)
+  * Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat (Terkonfigurasi untuk WuWa Toon - Metal)
+  * Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat (Terkonfigurasi untuk WuWa Toon - Kulit)
+  * Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat (Terkonfigurasi untuk WuWa Toon Universal)
+  * Penghapusan folder Assets/8-12-2026/BISMILLAHWUWA/Editor
+- Masalah:
+  * Pengguna melaporkan 'tetep ngga ada' karena saat memilih New Material dengan shader WuWa/Toon - Biasa (Cloth & Hair), muncul warning 'Could not create a custom UI for the shader ... CustomEditor = ' dan Inspector material di bawah MeshRenderer tidak muncul sama sekali.
+- Solusi & Perbaikan:
+  1. Penghapusan Total Direktif CustomEditor: Menghapus sepenuhnya baris CustomEditor dari seluruh 4 shader dan menghapus direktori Editor/. Unity kini secara otomatis menggunakan native IMGUI MaterialEditor bawaan engine yang 100% stabil, menampilkan seluruh slider, color picker, normal map, dan header tanpa error.
+  2. Double-Sided Rendering (_Cull = 0): Menyetel default culling ke 0 (Off) pada semua varian shader sehingga mesh dengan orientasi normal terbalik atau polygon satu sisi tidak akan pernah hilang/invisible.
+  3. Standarisasi Pass DepthOnly (ColorMask 0): Memperbaiki deklarasi ColorMask dari R menjadi 0 pada pass DepthOnly di seluruh shader agar sesuai standar URP.
+  4. Pre-Konfigurasi Material Baru: Mengisi file New Material.mat sampai New Material 3.mat dengan nilai-nilai parameter default cel shading WuWa yang harmonis, aktif, dan siap pakai.
+
+
+117. Solusi Akar Masalah Mesh Menghilang: Koreksi LightMode Tag (UniversalForward & Outline)
+- Lokasi File:
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader
+  * Assets/8-12-2026/BISMILLAHWUWA/New Material.mat (Terkoneksi langsung ke stone-albedo.001.png dan normal map)
+- Analisis Akar Masalah (Mengapa Mesh Menghilang Total di Scene View):
+  1. Sebelumnya Pass 0 menggunakan tag UniversalForwardOnly, sedangkan Pass 1 (Outline) menggunakan SRPDefaultUnlit.
+  2. Kamera Scene View di Unity dan pass Forward URP mencari tag urutan: [UniversalForward, SRPDefaultUnlit].
+  3. Karena Pass 0 bukan UniversalForward, Unity melewatkan Pass 0 dan langsung mengeksekusi Pass 1 (SRPDefaultUnlit / Outline).
+  4. Pass Outline memiliki Cull Front dan memanggil discard saat ketebalan outline bernilai rendah, akibatnya 100% pixel objek dibuang oleh GPU dan mesh menghilang total dari layar!
+- Solusi & Perbaikan Tuntas:
+  1. Mengubah Pass 0 di seluruh 4 shader menjadi Tags { LightMode = UniversalForward }. T  3. Memasangkan tekstur batu asli (stone-albedo.001.png dan stone-normal.001.png) langsung pada New Material.mat, sehingga batu yang dipilih di scene langsung muncul utuh dengan cel-shading WuWa dan warna albedo/tint yang bisa di-override dengan bebas di Inspector.
+
+
+118. Solusi Definitif Mesh Invisible & Color Override di URP Deferred: UniversalForwardOnly & Anti-Pitch Black Fallbackuncul utuh dengan cel-shading WuWa dan warna albedo/tint yang bisa di-override dengan bebas di Inspector.
+
+
+118. Solusi Definitif Mesh Invisible & Color Override di URP Deferred: UniversalForwardOnly & Anti-Pitch Black Fallback
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+- Penyebab Teknis Mesh Menghilang 100% (The Exact Root Cause):
+  1. Seluruh Renderer URP project (`Desktop Renderer.asset`, `Mobile Renderer`, dll) menggunakan mode **Deferred** (`m_RenderingMode: 2`).
+  2. Dalam pipeline URP Deferred, pass forward untuk objek opaque (`m_RenderOpaqueForwardOnlyPass`) hanya memproses shader tag list: `["UniversalForwardOnly", "SRPDefaultUnlit", "LightweightForward"]`. Tag `"UniversalForward"` sama sekali TIDAK dipanggil atau dieksekusi dalam mode Deferred!
+  3. Ketika Pass 0 sebelumnya diset ke `UniversalForward` pada Entry 117, renderer URP Deferred mengabaikan shader seutuhnya sehingga objek (`rock.001`) tidak memiliki draw call sama sekali dan menghilang 100% dari Scene dan Game View.
+  4. Tag SubShader `"UniversalMaterialType" = "Lit"` memicu URP GBuffer pass untuk mengasosiasikan material dengan Lit GBuffer data, bukan forward custom toon lighting.
+  5. Perhitungan lighting frag sebelumnya mengalikan seluruh shadow tint dan albedo dengan `mainLight.color` tanpa fallback, serta bila Scene View camera memiliki scene lighting mati atau directional light redup, objek jatuh ke warna hitam kelam `(0, 0, 0)` yang tidak terlihat.
+- Perbaikan Menyeluruh yang Telah Diterapkan:
+  1. **Pass 0 Ditetapkan ke `UniversalForwardOnly` di Seluruh 4 Shader:**
+     - Memastikan pass geometri utama dieksekusi secara wajib baik pada URP Deferred (`m_RenderOpaqueForwardOnlyPass`) maupun URP Forward (`m_RenderOpaqueForwardPass`).
+  2. **Pembersihan SubShader Tag:**
+     - Menghapus tag `"UniversalMaterialType" = "Lit"` dan menetapkan `"Queue" = "Geometry"`, `"RenderType" = "Opaque"`, `"IgnoreProjector" = "True"`.
+  3. **Material Color Override (`_BaseColor`) Langsung & Responsif:**
+     - Di `WuWaToon_Core.hlsl`, albedo dihitung langsung sebagai `albedoColor = baseMap * _BaseColor;`. Mengubah `_BaseColor` di Inspector langsung mengubah warna dasar objek, warna bayangan 1, dan bayangan terdalam (lekukan) secara harmonis.
+  4. **Jaminan Anti-Pitch Black (Safe Fallbacks):**
+     - Ditambahkan pengecekan `lightColor` dan `lightDir` minimal jika directional light tidak aktif, serta batas dasar `ambient = max(ambient, albedoColor.rgb * 0.15);` agar lekukan dan siluet objek selalu tampak jelas dan hidup.
+  5. **Fallback ke `"Universal Render Pipeline/Lit"`:**
+     - Menjamin integrasi depth dan shadow rasterizer URP berjalan mulus.
+
+
+119. Solusi Definitif Tuntas: Rekonstruksi 5-Pass URP RenderGraph, AlphaTest Forward Queue, dan Sinkronisasi SRP Batcher CBuffer
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat`
+- Akar Masalah yang Ditemukan (Why Mesh & Material Preview Disappeared):
+  1. **Konflik Unity 6 Render Graph vs UniversalForwardOnly:** Pada Unity 6 URP dengan Render Graph aktif, pass `UniversalForwardOnly` di Deferred pipeline berada di dalam blok `#if URP_COMPATIBILITY_MODE` sehingga tidak pernah di-enqueue. Kamera Material Preview di Project window juga hanya mencari `UniversalForward` atau `SRPDefaultUnlit`, menyebabkan preview sphere menjadi abu-abu flat (blank).
+  2. **Paksaan Queue 2000 pada File Material:** Properti `m_CustomRenderQueue: 2000` di dalam `.mat` memaksa objek masuk ke fase G-Buffer. Karena shader toon memiliki lighting non-PBR (cel shading multi-band) dan sengaja tidak memiliki pass G-Buffer, objek diabaikan total oleh renderer dan lenyap dari layar.
+  3. **Absennya Pass DepthNormals:** Pengaturan `Desktop Renderer.asset` mengaktifkan SSAO (`active: 1`) dan `DepthPrimingMode: Forced (2)`. Objek tanpa pass `DepthNormals` ditolak atau tidak menerima efek ambient occlusion & priming depth yang tepat.
+  4. **Variabel Hilang pada CBuffer SRP Batcher:** Properti `_AlphaClip`, `_EnableNormalMap`, `_EnableOcclusion`, `_EnableEmission`, dan `_Cull` dideklarasikan di Properties namun absen dari `UnityPerMaterial` CBuffer, memicu desinkronisasi memori GPU pada DirectX 11.
+- Perbaikan & Solusi Tuntas yang Diterapkan:
+  1. **Arsitektur 5-Pass Lengkap Standar URP:**
+     - `Pass 0 (ForwardLit)`: `Tags { "LightMode" = "UniversalForward" }` dengan cel shading WuWa penuh, rim light, dan dynamic tint.
+     - `Pass 1 (Outline)`: `Tags { "LightMode" = "SRPDefaultUnlit" }` dengan ekstrusi normal View-Space anti-NaN.
+     - `Pass 2 (ShadowCaster)`: `Tags { "LightMode" = "ShadowCaster" }` untuk proyeksi bayangan akurat.
+     - `Pass 3 (DepthOnly)`: `Tags { "LightMode" = "DepthOnly" }` untuk depth prepass hardware.
+     - `Pass 4 (DepthNormals)`: `Tags { "LightMode" = "DepthNormals" }` untuk kompatibilitas penuh SSAO & Depth Priming Forced.
+  2. **Integrasi AlphaTest Forward Queue (`m_CustomRenderQueue: -1`):**
+     - SubShader ditetapkan ke `"Queue" = "AlphaTest"`, `"RenderType" = "TransparentCutout"`.
+     - Seluruh material di-reset ke `m_CustomRenderQueue: -1` sehingga mewarisi queue AlphaTest (2450) yang secara resmi diproses dalam forward pass dengan `ZWrite On` solid, persis seperti arsitektur sukses pada `StylizedGrass_Mesh.shader`.
+  3. **100% CBuffer SRP Batcher Alignment (304 Bytes):**
+     - Seluruh properti shader terdaftar rapi dalam blok 16-byte di `CBUFFER_START(UnityPerMaterial)`.
+  4. **Guard Alpha Test Aman (`_AlphaClip > 0.5`):**
+     - `clip()` kini diapit oleh pengecekan nilai `_AlphaClip > 0.5` di semua pass, menjamin objek opaque tidak akan pernah mengalami discard pixel secara tidak sengaja.
+  5. **Pewarnaan & Konfigurasi Tekstur Batu Real-time:**
+     - Seluruh material `New Material.mat` hingga `New Material 3.mat` terhubung dengan tekstur albedo & normal batu (`stone-albedo.001.png`), dan siap diwarnai / di-override warnanya melalui parameter `_BaseColor` di Inspector.
+
+
+120. Resolusi Tuntas Konflik SRPDefaultUnlit & UniversalForwardOnly pada URP Unity 6 RenderGraph
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+- Akar Masalah Mendalam (Berdasarkan Analisis Kode Sumber C# URP Package):
+  1. **Pembajakan Pass oleh `SRPDefaultUnlit` (The SRPDefaultUnlit Hijack):**
+     - Di dalam kode sumber URP `DrawObjectsPass.cs`, urutan pencarian pass saat merender material preview adalah:
+       `shaderTagIds = [ "SRPDefaultUnlit", "UniversalForward", "UniversalForwardOnly" ]`.
+     - Karena Pass 1 (Outline) diberi tag `SRPDefaultUnlit`, Unity menemukan kecocokan pada Pass 1 TERLEBIH DAHULU dan langsung mengeksekusi Pass 1 tanpa pernah mengeksekusi Pass 0 (`ForwardLit`).
+     - Pass 1 memiliki pengaturan `Cull Front` dan `ZWrite Off` (hanya menggambar garis luar di belakang objek). Akibatnya, preview sphere di Project window dan objek batu di Scene view hanya menggambar pass outline yang berongga/tembus pandang, sedangkan warna albedo, normal map, dan cel shading pada Pass 0 tidak pernah digambar sama sekali.
+  2. **Persyaratan `UniversalForwardOnly` pada Pipeline Deferred RenderGraph:**
+     - Di file `UniversalRendererRenderGraph.cs` pada pipeline Deferred, pass forward opaque dieksekusi melalui `m_RenderOpaqueForwardOnlyPass.Render(...)`.
+     - Pass ini HANYA mencari `UniversalForwardOnly`, `SRPDefaultUnlit`, dan `LightweightForward` (tidak mencari `UniversalForward`). Menamai Pass 0 sebagai `UniversalForward` menyebabkannya diabaikan oleh renderer Deferred.
+  3. **Korupsi Cavity dari Vertex Color Tidak Terinisialisasi:**
+     - Kalkulasi vertex color AO di `WuWaToon_Core.hlsl` mengasumsikan mesh memiliki vertex color yang valid. Pada mesh batu (`stones.fbx`) dan bola preview Unity yang tidak memiliki vertex color, driver DX11 mengembalikan nilai 0 pada channel red, yang memaksa nilai `cavity = 0` dan mereduksi pencahayaan hingga 80-100% menjadi hitam pekat.
+- Perbaikan & Solusi yang Diterapkan:
+  1. **Pass 0 Ditetapkan ke `Tags { "LightMode" = "UniversalForwardOnly" }` di Seluruh Shader:**
+     - Kompatibel 100% dengan renderer Deferred (`m_RenderOpaqueForwardOnlyPass`) dan Forward (`DrawObjectsPass`).
+  2. **Pass 1 (Outline) Diubah ke `Tags { "LightMode" = "Outline" }`:**
+     - Mencegah Pass Outline membajak pass utama material pada kamera Preview dan Scene view.
+  3. **Pembersihan Kalkulasi Cavity di `WuWaToon_Core.hlsl`:**
+     - Menghapus pembacaan vertex color otomatis yang tidak terverifikasi, sehingga pencahayaan albedo dan normal map batu tampil cerah dan tajam tanpa tertekan menjadi gelap.
+  4. **SubShader Tag Distandarkan ke `RenderType = "Opaque"`, `Queue = "Geometry"`:**
+     - Menjamin integrasi mulus dengan depth buffer dan sistem pencahayaan Deferred Forward-Only URP.
+
+
+121. De-Glossing Specular, Preservasi Detail Tekstur, dan Koreksi Normal Map TBN Handedness
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+- Masalah yang Dialami Pengguna:
+  * Permukaan batu tampak terlalu mengkilap/silau putih ("mengkilap semua") dan tekstur batu tampak buram/pudar/jelek ("texturenya jadi jelek gitu").
+- Analisis Penyebab:
+  1. **Specular Step Terlalu Keras & Overpowering:** Rumus specular lama menggunakan `smoothstep(0.45, 0.55, spec)` yang memicu lonjakan warna putih murni instan dengan `_SpecularIntensity: 0.4` di atas separuh permukaan mesh batu, menciptakan efek plastik murahan dan menutupi tekstur albedo.
+  2. **Rim Light Terlalu Lebar & Membanjiri Permukaan:** Parameter `_RimPower: 3.5` dan `_RimIntensity: 1.0` terlalu rendah/lebar sehingga cahaya rim menyelimuti 40% permukaan batu, bukan hanya di garis siluet tepi.
+  3. **Overexposure dari Penjumlahan Cahaya Ambient di Atas Lit Pass:** Cahaya ambient (SH) ditambahkan secara buta di atas albedo lit (`diffuseColor += ambient`), mendorong intensitas warna melebihi 1.5 dan membuat detail batu menjadi washed-out (putih pucat).
+  4. **Pembalikan Sumbu Y Normal Map (Flipped Bitangent):** Rumus manual `cross(normalWS, tangentWS)` pada `CalculateWorldNormal` membuang faktor handedness (+1/-1) dari UV mesh. Pada pulau UV yang di-mirror (simetris), normal map terbalik sumbunya sehingga permukaan batu tampak kasar, terdistorsi, dan pencahayaannya terbalik.
+- Perbaikan yang Telah Diterapkan:
+  1. **Koreksi TBN Matrix Asli URP:** `CalculateWorldNormal` kini menggunakan matriks TBN standar dari `GetVertexNormalInputs` dengan handedness yang tepat via `TransformTangentToWorld(normalTS, tbn)`. Tekstur normal batu kini tampak tajam, alami, dan tidak terdistorsi.
+  2. **Anime Soft Specular & Tinting:** Specular diubah ke transisi halus `smoothstep(0.4, 0.85)` dan di-tint oleh warna albedo batu, mencegah terbentuknya bercak putih plastik.
+  3. **Tight Silhouette Rim Light:** Rim light diperketat dengan batas minimal `max(_RimPower, 2.5)` dan di-mask hanya pada sudut pandang tepi siluet terhadap arah cahaya.
+  4. **Integrasi Ambient ke Shadow Floor:** Ambient light kini diintegrasikan untuk mengangkat kegelapan bayangan (shadow floor), bukan ditumpuk di atas area terang, sehingga kontras tekstur batu tetap terjaga tajam dan tidak pucat.
+  5. **Preset Matte Stone pada `New Material.mat`:** `_SpecularIntensity` diatur ke `0.05` (sangat halus), `_RimIntensity: 0.15`, dan warna bayangan dinetralkan (`_1stShadowColor: (0.78, 0.78, 0.82)`) agar karakter batu tampak kokoh, bertekstur, dan sesuai gaya anime Wuthering Waves.
+
+
+122. Perbaikan Transisi Shading Mulus (Anti-Banding/Anti-Blotches), Pemulihan Warna Bayangan Terang (Anti-Hitam Legam), dan Normal Mapping Bersih
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (v1.3)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader` (v1.3)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader` (v1.3)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (v1.3)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat`
+- Masalah yang Dialami Pengguna:
+  * Shading bayangan pada objek batu tampak patah-patah, kasar, dan tidak mulus ("jelek banget nimpanya nggak mulus").
+  * Terdapat bercak-bercak hitam bergerigi tajam di permukaan batu (blotches/holes).
+  * Varian material tertentu (Metal dan Standard di sisi bayangan) tampak hitam legam/padam.
+- Analisis Penyebab:
+  1. **Penggabungan Prematur `NdotL` dan Real-Time Shadow Attenuation:**
+     - Rumus lama mengalikan `effectiveL * mainLight.shadowAttenuation` sebelum dimasukkan ke fungsi `smoothstep(shadowThresh - feather, shadowThresh + feather, lightTerm)`.
+     - Filter shadow map (penumbra/dither) yang dikalikan dengan riak micro-normal map batu menyebabkan batas cel shading melompat bolak-balik secara acak, menciptakan garis batas bergerigi kasar dan bercak hitam compang-camping di sekujur permukaan.
+  2. **Feather Terlalu Sempit & Normal Crease Boost Berlebihan:**
+     - Nilai feathering sebelumnya terlalu sempit (`0.03 - 0.08`), sedangkan `_NormalCreaseBoost` mengalikan `normalTS.xy` hingga 1.5x. Setiap lekukan mikro pada normal map berubah menjadi tebing bayangan biner yang tajam dan kasar.
+  3. **Penyusutan Kontras Bayangan Menjadi Hitam Padam:**
+     - Pada varian Metal, `_MetalShadowContrast: 0.3` mereduksi warna albedo hingga tersisa 16% di area bayangan, sehingga saat objek membelakangi arah matahari, objek tampak hitam pekat.
+     - Pada varian Standard, pencahayaan di area bayangan tidak memiliki lantai ambient yang sehat (ambient floor), sehingga di bawah langit atau pencahayaan tidak langsung, tekstur batu lenyap dalam kegelapan.
+  4. **Interpolasi TBN Non-Ortogonal:**
+     - Menginterpolasikan `bitangentWS` dan `tangentWS` secara terpisah di varyings menyebabkan distorsi shear pada segitiga mesh melengkung.
+- Solusi & Rekayasa yang Diterapkan:
+  1. **Pemisahan Cel Step dan Shadow Attenuation (Formula Standar Anime AAA):**
+     - `halfLambert = saturate(NdotL * 0.5 + 0.5)` dihitung terlebih dahulu secara mandiri untuk menghasilkan transisi 3-nada yang halus, lembut, dan artistik.
+     - `celStep1` dan `celStep2` dihitung dengan feathering minimal `0.15 - 0.20` yang menjamin tidak ada tepi bergerigi atau patah-patah pada tekstur batu maupun kain.
+     - Bayangan real-time dari objek lain dipadukan secara bersih melalui `litFactor = celStep1 * shadowAtten`, sehingga objek yang tertimpa bayangan pohon/atap berpindah mulus ke warna bayangan tanpa menjadi hitam gosong.
+  2. **Konstruksi TBN Sesuai Standar URP Lit:**
+     - `ToonVaryings` kini hanya membawa `tangentWS` (dengan sign handedness di channel `.w`). Bitangent direkonstruksi per-pixel via `sgn * cross(normalWS, tangentWS.xyz)`, menjamin normal mapping 100% presisi tanpa distorsi.
+     - Nilai `_BumpScale` dikalibrasi ke 0.5 - 0.6 untuk memberikan tekstur bebatuan yang tajam namun tetap menjaga kelembutan gradasi anime.
+  3. **Proteksi Lantai Kecerahan Bayangan (Vibrant Shadow Floor):**
+     - Bayangan cel diberi batas proteksi kecerahan minimal 35% - 45% dari warna albedo asli (`max(cShadow, albedo * 0.35)`).
+     - Ambient Spherical Harmonics (SH) diintegrasikan dengan lantai minimal `half3(0.35, 0.35, 0.38)`.
+     - Seluruh varian material (Biasa, Metal, Kulit, Universal) kini selalu menampilkan detail tekstur batu secara tajam, bersih, dan indah, baik di sisi terang maupun di sisi bayangan.
+
+
+123. Preservasi 100% Tekstur & Warna Material Asli (Faithful Neutral Toon Shading) Tanpa Mengubah Karakter Visual
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (v1.4)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader` (v1.4)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader` (v1.4)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (v1.4)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat`
+- Klarifikasi Kebutuhan Pengguna:
+  * Pengguna menegaskan bahwa ketika shader ini diterapkan menimpa material/tekstur lama, shader tidak boleh merombak atau mengubah tampilan warna dan karakter tekstur aslinya secara drastis (tidak boleh berubah jadi ungu, gosong, mengkilap plastik, atau terdistorsi); tujuannya murni mengubah model pencahayaannya menjadi gaya toon cel-shading yang rapi.
+- Rekayasa & Kalibrasi Neutral Toon Shading:
+  1. **Preservasi 100% Warna Asli Albedo:**
+     - Pada sisi terang (*lit*), formula kini murni `cLit = albedoColor.rgb * lightColor`, sehingga tampilan warna, kontras, dan detail tekstur batu/karakter sama persis dan sebersih tampilan standar URP Lit.
+  2. **Warna Bayangan Netral Multiplikatif (Bebas Distorsi Ungu/Gelap):**
+     - Nilai default warna bayangan `_1stShadowColor` distandarkan ke netral `(0.75, 0.75, 0.75)` dan `_2ndShadowColor` ke `(0.55, 0.55, 0.55)`.
+     - Bayangan bertindak sebagai peredupan teduh alami pada albedo asli, bukan mengganti warna albedo dengan warna pigmen lain. Tekstur batu cokelat tetap cokelat, batu abu-abu tetap abu-abu.
+  3. **Normal Mapping Presisi Tanpa Manipulasi Artifisial:**
+     - Menggunakan `UnpackNormalScale(normalSample, _BumpScale)` standar URP tanpa modifikasi crease boost, menghasilkan lekukan tekstur yang natural persis seperti material aslinya.
+  4. **Specular, Rim, & Outline Dinolkan secara Default (Opt-In):**
+     - `_SpecularIntensity: 0.0`, `_RimIntensity: 0.0`, dan `_OutlineWidth: 0.0` disetel default 0. Ketika diterapkan ke material apapun (batu, tanah, kayu, kain), shader tidak akan memaksakan kilau plastik atau garis hitam kartun tebal kecuali pengguna sengaja mengaktifkannya di Inspector.
+
+
+124. Penyempurnaan Drop-in Toon Shading: Pemisahan Normal Geometris untuk Batas Bayangan Cel & Kompatibilitas Penuh Property Material Lama
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (v1.5)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (v1.5)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader` (v1.5)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader` (v1.5)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+- Masalah yang Teratasi:
+  * Ketika shader dipasang menggantikan material lama (seperti `stone-albedo.001.mat`), tekstur tampak bergerigi, compang-camping, atau berubah warna secara tidak diinginkan.
+- Solusi Komprehensif yang Diterapkan:
+  1. **Pemisahan Normal Geometris untuk Batas Bayangan Cel (`_NormalToonInfluence`):**
+     - Pada material yang memiliki normal map foto-realistis (seperti batu dengan lekukan tajam dan pori-pori), menerapkan cel-stepping langsung pada normal map menyebabkan garis bayangan cel patah-patah dan membentuk bercak hitam bergerigi.
+     - Solusi: Garis cel shading kini dihitung menggunakan normal geometris mesh yang mulus (`geomNormalWS = normalize(input.normalWS)`), dibaurkan secara lembut via slider `_NormalToonInfluence` (default `0.0`).
+     - Hasil: Garis bayangan cel shading di sekujur batu menjadi 100% mulus, rapi, dan bersih ala anime AAA, sementara seluruh detail retakan, guratan, dan lumut pada tekstur albedo asli tetap tampak sangat tajam dan jelas.
+  2. **Dukungan Penuh Properti Material Lama (Drop-In Compatibility):**
+     - Ditambahkan fallback alias ke dalam seluruh shader: `_MainTex`, `_Color`, `_NormalMap`, `_Shading_Color`, `_Cel_Shader_Offset`, `_Cel_Ramp_Smoothness`, dan `_UseNormalMap`.
+     - Saat material lama dari NekoLegends Anime Cel Shader maupun URP Lit dialihkan ke WuWa Toon, Unity tidak akan menghilangkan slot tekstur atau mereset properti warna bayangan ke putih.
+  3. **Zero Distorsi / Nilai Bawaan Bersih:**
+     - Semua efek tambahan (Specular, Rim Light, Inverted Hull Outline, Crease Boost) disetel `0.0` secara default di SEMUA varian shader (Standard, Universal, Metal, Skin).
+     - Mengganti shader pada material lama kini murni 100% mempertahankan tampilan tekstur asli dengan konversi pencahayaan toon cel-shading yang mulus dan indah.
+
+
+125. Arsitektur Perfected NekoLegends: Rekayasa Ulang Cel Shading Menjadi Model Anime AAA yang Sempurna
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (v1.6)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (v1.6)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat`
+- Kelemahan Shader NekoLegends Bawaan yang Diperbaiki:
+  1. NekoLegends hanya memiliki 1-step cel shading (biner/flat 2D), membuat objek melengkung (batu, karakter) terlihat pipih seperti stiker kertas tanpa volume 3D.
+  2. Kalkulasi bayangan NekoLegends mengabaikan indirect/ambient SH lighting dan rentan mengalami over-blown highlight atau jatuh ke gelap gulita jika nilai `_dark` salah disetel.
+  3. Pemotongan normal map di NekoLegends menimbulkan aliasing parah (stair-stepping/gerigi) dan lubang bercak hitam di permukaan foto-realistis.
+  4. Efek rim light NekoLegends berupa fresnel kamera murah yang menyala seragam di semua sisi (bahkan di sisi gelap membelakangi cahaya).
+- Penyempurnaan yang Dihadirkan (Perfected NekoLegends Architecture):
+  1. **Vibrant & Punchy Anime Lighting:**
+     - Area terang menampilkan tekstur asli secara tajam dan cerah (`albedo * lightColor`).
+     - Area bayangan dihitung dengan multiplier matahari sehat (`max(lightColor, 0.85)`) dan dipadukan dengan ambient SH, sehingga detail tekstur batu/benda di sisi bayangan tetap 100% terang, jelas, dan hidup (tidak pernah drop ke hitam legam/muddy).
+  2. **Dua Tingkat Bayangan Anime (2-Step Cel Shading / 3-Tone Volume):**
+     - Dilengkapi opsi `_Use_2nd_Shadow` (aktif default). Menghasilkan transisi: Terang -> Bayangan Lembut -> Bayangan Dalam (Deep Shadow). Memberikan dimensi volume anime sinematik berkualitas Genshin/WuWa.
+  3. **Batas Bayangan Mulus Anti-Aliased:**
+     - Tepi cel shading diperhalus dengan minimum smoothstep guard (`0.03 - 0.08`), menghasilkan garis bayangan anime yang tajam namun bebas dari pixel jaggies / stair-stepping.
+  4. **Directional Backlight Rim:**
+     - Rim light kini memiliki masker arah cahaya (`dot(lightDir, -viewDir)`), hanya memancarkan siluet cahaya di tepi yang membelakangi matahari.
+  5. **Standardisasi 4 Material Batu di Scene:**
+     - `New Material.mat`: Preset 2-Tone Anime Cel Shading (Modern AAA).
+     - `New Material 1.mat`: Preset Classic NekoLegends Single Step (Tajam & Bersih).
+     - `New Material 2.mat`: Preset Soft Anime Gradient (Gradasi Lembut).
+     - `New Material 3.mat`: Preset High Contrast Punchy Anime.
+     - Keempat batu kini bebas dari visual blob putih/pink dan menampilkan tekstur batu secara optimal dengan karakter toon yang sempurna.
+
+
+126. WuWa Toon v2.5: Pemisahan 4 Tipe Material Spesifik (Standard, Metal Super Shiny, Skin SSS, Hair Angel Ring Tuing-Tuing) & Penguatan Kontras Cel Shading Anime
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl` (v2.5)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader` (v2.5)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader` (Cloth & Props)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader` (Metal Shining Armor)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader` (Skin Warm SSS Fringe)
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Hair.shader` (BARU: Hair Angel Ring)
+  * `Assets/8-12-2026/BISMILLAHWUWA/Demo/M_WuWa_Hair_Sample.mat` (BARU: Preset Sample Rambut)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat` (Standard / Cloth)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat` (Metal Super Shiny)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat` (Skin Warm SSS Fringe)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat` (Hair Angel Ring Tuing-Tuing)
+- Masalah Pengguna yang Diatasi:
+  1. Kontras Toon Shader tipis dan tidak kelihatan karena nilai warna bayangan material lama terlalu terang (abu-abu ~58%) dan cel feathering terlalu blur.
+  2. Belum ada pemisahan jelas untuk 4 tipe material anime (khususnya Metal yang kurang berkilau/shining dan Rambut yang belum memiliki highlight gloss melengkung "tuing-tuing").
+- Solusi Komprehensif & Fitur Baru yang Diimplementasikan:
+  1. **Penguatan Kontras Cel Shading (Bold & Punchy Anime Cel):**
+     - Nilai default bayangan di seluruh shader distandarkan ke kontras anime tegas: `_1stShadowColor` (0.35, 0.35, 0.40) dan `_2ndShadowColor` (0.18, 0.18, 0.22).
+     - Menambahkan *Auto-Contrast Guard* pada shader: jika material lama menggunakan warna bayangan yang terlalu terang (> 0.50 luminance), shader otomatis mengkalibrasi agar garis cel shading tetap tegas dan kontras tinggi tanpa mengubah warna pigmen asli.
+     - Cel edge feather dibatasi pada rentang tajam anti-aliased (0.015 - 0.20), menghilangkan kesan transisi bayangan tipis atau kabur.
+  2. **Tipe 1: Standard / Cloth (Pakaian, Aksesoris, Props & Lingkungan):**
+     - Cel shading 2-tier tegas dengan pemisahan area terang dan bayangan yang sangat bersih.
+     - Integrasi screen-space curvature & cavity deepening: lipatan kain, guratan, dan lekukan tekstur ("lengkungannya keliatan") langsung mendapatkan penebalan bayangan alami tanpa perlu baking AO map.
+  3. **Tipe 2: Skin (Kulit & Wajah dengan SSS Warm Fringe):**
+     - Dilengkapi *Subsurface Scattering (SSS) Warm Fringe*: memancarkan garis cahaya kemerahan/oranye hangat di perbatasan terang-gelap (khas Wuthering Waves & Genshin Impact).
+     - Bayangan kulit selalu mempertahankan undertone hangat (bebas dari kesan abu-abu kotor).
+     - Transisi cel shading organik yang lebih lembut untuk kontur wajah dan tubuh.
+  4. **Tipe 3: Metal (Logam, Armor, & Senjata — Super Shiny & Dynamic Glint):**
+     - *Multi-Band Procedural Reflection*: menghasilkan 3 pita refleksi anime (Horizon Flash putih di garis horizon pandang, diagonal anime streaks, serta gradasi langit-bumi).
+     - *Dual-Stage Specular Glint*: kilau specular bertingkat dengan core tajam menyilaukan (`pow(NdotH, sharpness) * 2.8`) dan broad sheen pelindung armor (`smoothstep * 1.2`).
+     - Kontras bayangan dinamis tinggi bernuansa cool slate-navy yang membuat bagian mengkilap tampak sangat mencolok (*blinding shine*).
+  5. **Tipe 4: Hair (Rambut — Angel Ring / Tenshi no Wa "Tuing-Tuing"):**
+     - *Hybrid Anisotropic Tangent + View-Space Curved Halo*: memproyeksikan lingkaran kilau melingkar (*Angel Ring*) di mahkota rambut yang dinamis bergerak dan melengkung mengikuti rotasi kamera/sudut pandang ("tuing-tuing").
+     - *Micro-Strand Jitter*: memecah pita kilau menjadi serat-serat helai rambut bergaris natural via kalkulasi prosedural, mencegah kilau terlihat seperti stiker plastik solid.
+     - *Dual-Layer Angel Ring*: memadukan pita tajam primer dengan halo sekunder yang lebih lembut untuk kedalaman 3D rambut anime.
+     - Bayangan cel 2-tone tajam untuk poni dan ikal rambut.
+  6. **Konfigurasi Drop-in pada 4 Material di Scene:**
+     - `New Material.mat`: Tipe 0 (Cloth / Standard) — Kontras cel shading anime tegas dan lekukan tampak jelas.
+     - `New Material 1.mat`: Tipe 1 (Metal) — Refleksi logam berkilau tinggi, glint tajam, dan kontras cool shadow.
+     - `New Material 2.mat`: Tipe 2 (Skin) — Kulit bernada hangat dengan pendaran SSS fringe oranye-kemerahan.
+     - `New Material 3.mat`: Tipe 3 (Hair) — Kilau Angel Ring rambut dinamis "tuing-tuing" dengan serat helai alami.

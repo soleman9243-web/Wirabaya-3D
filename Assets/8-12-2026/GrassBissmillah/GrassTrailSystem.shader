@@ -2,7 +2,13 @@ Shader "Hidden/FantasyKingdom/GrassTrailSystem"
 {
     // Shader internal untuk sistem trail rumput.
     // Pass 0: ScrollFade — geser isi RT mengikuti pergerakan player + pudarkan jejak (recovery).
-    // Pass 1: Stamp — cap/stempel posisi player sebagai lingkaran gelap di RT.
+    // Pass 1: Stamp — cap/stempel posisi player sebagai lingkaran gelap di RT + simpan arah langkah.
+    //
+    // Format RT: ARGB32
+    //   R = trail intensity (1 = bersih, 0 = terinjak penuh)
+    //   G = dirX encoded (0..1, decode: *2-1 → -1..1)
+    //   B = dirZ encoded (0..1, decode: *2-1 → -1..1)
+    //   A = 1 (unused)
 
     Properties
     {
@@ -17,7 +23,8 @@ Shader "Hidden/FantasyKingdom/GrassTrailSystem"
         // ============================================================
         // PASS 0: Scroll + Fade
         // Menggeser konten RT berdasarkan _ScrollDelta (agar jejak tetap di posisi dunia)
-        // sekaligus memudarkan (fade) seluruh RT ke arah putih (recovery).
+        // sekaligus memudarkan (fade) R channel ke arah putih (recovery).
+        // G & B (arah) dipertahankan apa adanya selama masih ada jejak.
         // ============================================================
         Pass
         {
@@ -58,18 +65,25 @@ Shader "Hidden/FantasyKingdom/GrassTrailSystem"
             {
                 float2 srcUV = input.uv + _ScrollDelta;
 
-                // Jika UV sumber di luar batas [0,1], kembalikan putih (area baru yang bersih)
+                // Jika UV sumber di luar batas [0,1], kembalikan bersih (area baru yang bersih)
                 float inBounds = step(0.0, srcUV.x) * step(srcUV.x, 1.0)
                                * step(0.0, srcUV.y) * step(srcUV.y, 1.0);
 
                 half4 existing = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, srcUV);
-                half4 clean = half4(1, 1, 1, 1);
+                // clean = R=1 (no trail), G=0.5 (neutral dir X), B=0.5 (neutral dir Z), A=1
+                half4 clean = half4(1.0, 0.5, 0.5, 1.0);
 
-                // Pilih existing jika masih di dalam batas, putih jika di luar
+                // Pilih existing jika masih di dalam batas, clean jika di luar
                 half4 scrolled = lerp(clean, existing, inBounds);
 
-                // Pudarkan menuju putih (recovery)
-                scrolled.rgb = lerp(scrolled.rgb, half3(1, 1, 1), _FadeAmount);
+                // Pudarkan R (intensity) menuju 1.0 (recovery)
+                scrolled.r = lerp(scrolled.r, 1.0, _FadeAmount);
+
+                // G & B (arah) tetap dipertahankan selama jejak masih ada.
+                // Saat jejak sudah pulih (R ≈ 1.0), kembalikan G & B ke netral (0.5)
+                float trailStrength = saturate(1.0 - scrolled.r);
+                scrolled.g = lerp(0.5, scrolled.g, step(0.01, trailStrength));
+                scrolled.b = lerp(0.5, scrolled.b, step(0.01, trailStrength));
 
                 return scrolled;
             }
@@ -79,7 +93,8 @@ Shader "Hidden/FantasyKingdom/GrassTrailSystem"
         // ============================================================
         // PASS 1: Stamp
         // Menggambar lingkaran gelap halus (soft circle) di posisi player.
-        // Membaca RT yang sudah ada, lalu menggelapkan area sekitar _StampUV.
+        // R = gelapkan (trail intensity), G & B = simpan arah langkah player saat stamp.
+        // Arah di-bake agar rumput yang sudah terinjak TIDAK ikut berputar saat player berputar.
         // ============================================================
         Pass
         {
@@ -108,6 +123,7 @@ Shader "Hidden/FantasyKingdom/GrassTrailSystem"
             float2 _StampUV;
             float _StampRadius;
             float _StampStrength;
+            float2 _StampDir; // Encoded arah forward player: (dirX*0.5+0.5, dirZ*0.5+0.5)
 
             Varyings vert(Attributes input)
             {
@@ -127,10 +143,17 @@ Shader "Hidden/FantasyKingdom/GrassTrailSystem"
                 // Lingkaran halus (soft circle): 1 di tengah, 0 di pinggir
                 float circle = 1.0 - smoothstep(_StampRadius * 0.3, _StampRadius, dist);
 
-                // Gelapkan area: semakin gelap = semakin kuat jejak
-                float darken = 1.0 - circle * _StampStrength;
+                // Kekuatan stamp
+                float stampInfluence = circle * _StampStrength;
 
-                existing.rgb = min(existing.rgb, half3(darken, darken, darken));
+                // R: Gelapkan area (semakin gelap = semakin kuat jejak)
+                float darken = 1.0 - stampInfluence;
+                existing.r = min(existing.r, darken);
+
+                // G & B: Bake arah forward player saat ini ke dalam texel.
+                // Hanya di area yang terkena stamp, dan overwrite jika stamp lebih kuat.
+                existing.g = lerp(existing.g, _StampDir.x, stampInfluence);
+                existing.b = lerp(existing.b, _StampDir.y, stampInfluence);
 
                 return existing;
             }

@@ -41,9 +41,13 @@ Shader "FantasyKingdom/StylizedGrass_Terrain"
         _BendStrength ("Bend Strength", Range(0.0, 2.0)) = 0.8
         _Smoothness ("Smoothness", Range(0.0, 1.0)) = 0.0
 
-        [Header(Trample And Recovery Color)]
+        [Header(Trample Recovery Color)]
         _RecoveryColor ("Recovery / Trample Color", Color) = (0.92, 0.95, 0.40, 1.0)
         _RecoveryColorStrength ("Recovery Color Intensity", Range(0.0, 2.0)) = 1.0
+
+        [Header(Trample Grass Recovery)]
+        _RecoveryTime ("Recovery Duration (Detik)", Range(0.5, 20.0)) = 4.0
+        _TrampleBendAmount ("Trample Bend Amount", Range(0.0, 2.0)) = 1.0
 
         [Header(Adjustable Emission Glow)]
         [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)

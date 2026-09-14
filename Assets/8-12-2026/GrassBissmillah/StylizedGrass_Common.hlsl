@@ -32,7 +32,9 @@ CBUFFER_START(UnityPerMaterial)
 
     float4 _RecoveryColor;
     float  _RecoveryColorStrength;
-    float3 _Pad0;
+    float  _RecoveryTime;
+    float  _TrampleBendAmount;
+    float  _Pad0;
 
     float4 _EmissionColor;
     float  _EmissionIntensity;
@@ -122,21 +124,37 @@ float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
         }
     }
 
-    // === 3. TRAIL INTERACTION (JEJAK KAKI DENGAN RECOVERY JELAS) ===
+    // === 3. TRAIL INTERACTION (JEJAK KAKI — ARAH REBAH DI-BAKE, TIDAK IKUT PUTAR PLAYER) ===
     if (_GrassTrailSize > 1.0)
     {
         float2 trailUV = (posWS.xz - _GrassTrailCenter.xy) / _GrassTrailSize + 0.5;
         if (trailUV.x >= 0.001 && trailUV.x <= 0.999 && trailUV.y >= 0.001 && trailUV.y <= 0.999)
         {
-            float trailSample = SAMPLE_TEXTURE2D_LOD(_GrassTrailRT, sampler_GrassTrailRT, trailUV, 0).r;
-            if (!isnan(trailSample) && !isinf(trailSample))
+            float4 trailSample = SAMPLE_TEXTURE2D_LOD(_GrassTrailRT, sampler_GrassTrailRT, trailUV, 0);
+            float trailIntensity = trailSample.r;
+            if (!isnan(trailIntensity) && !isinf(trailIntensity))
             {
                 // 1.0 = normal/tanpa jejak, < 1.0 = ada jejak kaki
-                float trailFactor = saturate(1.0 - trailSample) * heightFactor;
+                float trailFactor = saturate(1.0 - trailIntensity) * heightFactor;
                 if (trailFactor > 0.01)
                 {
-                    posWS.y -= trailFactor * 0.25;
-                    posWS.xz += float2(0.25, 0.20) * (trailFactor * 0.50);
+                    // Baca arah rebah yang sudah di-bake ke dalam RT saat stamp.
+                    // G & B menyimpan arah forward player saat menginjak,
+                    // di-encode 0..1 → decode kembali ke -1..1.
+                    // Arah ini TERKUNCI dan TIDAK ikut berputar saat player putar badan.
+                    float2 bakedDir;
+                    bakedDir.x = trailSample.g * 2.0 - 1.0; // decode G → dirX
+                    bakedDir.y = trailSample.b * 2.0 - 1.0; // decode B → dirZ
+                    float bLen = length(bakedDir);
+                    float2 fwdDir = (bLen > 0.01) ? (bakedDir / bLen) : float2(0.0, 1.0);
+
+                    // Rebah fisik jelas di tanah saat terinjak (_TrampleBendAmount),
+                    // lalu perlahan bangkit berdiri kembali seiring pudarnya jejak (_RecoveryTime)
+                    float bendDown = trailFactor * (0.60 * max(_TrampleBendAmount, 0.0));
+                    float bendFwd  = trailFactor * (0.50 * max(_TrampleBendAmount, 0.0));
+
+                    posWS.y  -= bendDown;
+                    posWS.xz += fwdDir * bendFwd;
                 }
             }
         }

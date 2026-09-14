@@ -24,9 +24,12 @@ namespace Unity.FantasyKingdom
         public Vector3 footOffset = new Vector3(0f, 0.05f, 0f);
 
         [Header("Trail / Footprint Settings")]
+        [Tooltip("Material rumput utama (opsional). Jika diisi atau terdeteksi di scene, durasi recovery otomatis sinkron dari slider 'Recovery Duration' di Material.")]
+        public Material targetGrassMaterial;
+
         [Tooltip("Berapa detik sebelum jejak langkah menghilang sepenuhnya (recovery time).")]
         [Range(0.5f, 30f)]
-        public float trailRecoveryTime = 5f;
+        public float trailRecoveryTime = 4f;
 
         [Tooltip("Ukuran stempel tapak jejak (persentase dari capture area, ~0.025 = 1.0m).")]
         [Range(0.005f, 0.1f)]
@@ -67,6 +70,7 @@ namespace Unity.FantasyKingdom
         private static readonly int StampUV_ID = Shader.PropertyToID("_StampUV");
         private static readonly int StampRadius_ID = Shader.PropertyToID("_StampRadius");
         private static readonly int StampStrength_ID = Shader.PropertyToID("_StampStrength");
+        private static readonly int StampDir_ID = Shader.PropertyToID("_StampDir");
 
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
@@ -81,6 +85,11 @@ namespace Unity.FantasyKingdom
             // Di Edit Mode, cari player dan kirim posisi ke shader agar rumput di Scene view juga langsung interaktif
             var pObj = GameObject.FindGameObjectWithTag("Player");
             if (pObj == null) pObj = GameObject.Find("PlayerArmature");
+            if (pObj == null)
+            {
+                var cc = FindFirstObjectByType<CharacterController>();
+                if (cc != null) pObj = cc.gameObject;
+            }
             if (pObj != null)
             {
                 Vector3 pos = pObj.transform.position;
@@ -88,6 +97,12 @@ namespace Unity.FantasyKingdom
                 Shader.SetGlobalVector(PlayerTramplePos_ID, new Vector4(pos.x, pos.y + 0.05f, pos.z, 0.65f));
                 Shader.SetGlobalVector(PlayerPosition_ID, new Vector4(pos.x, pos.y + 0.05f, pos.z, 0.65f));
                 Shader.SetGlobalVector(PlayerForwardDir_ID, new Vector4(fwd.x, fwd.z, 0, 0));
+            }
+
+            var trailComp = FindFirstObjectByType<GrassTrailRenderer>();
+            if (trailComp != null)
+            {
+                trailComp.SyncRecoveryTime();
             }
         }
 
@@ -158,9 +173,38 @@ namespace Unity.FantasyKingdom
             if (Camera.main != null) playerTransform = Camera.main.transform;
         }
 
+        public void SyncRecoveryTime()
+        {
+            if (targetGrassMaterial == null)
+            {
+                var renderers = FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+                foreach (var r in renderers)
+                {
+                    if (r.sharedMaterial != null && r.sharedMaterial.shader != null)
+                    {
+                        if (r.sharedMaterial.HasProperty("_RecoveryTime"))
+                        {
+                            targetGrassMaterial = r.sharedMaterial;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (targetGrassMaterial != null && targetGrassMaterial.HasProperty("_RecoveryTime"))
+            {
+                float matTime = targetGrassMaterial.GetFloat("_RecoveryTime");
+                if (matTime > 0.05f)
+                {
+                    trailRecoveryTime = matTime;
+                }
+            }
+        }
+
         private void Initialize()
         {
             EnsurePlayerReference();
+            SyncRecoveryTime();
 
             Shader trailShader = Shader.Find("Hidden/FantasyKingdom/GrassTrailSystem");
             if (trailShader == null)
@@ -190,7 +234,10 @@ namespace Unity.FantasyKingdom
 
         private RenderTexture CreateRT()
         {
-            var rt = new RenderTexture(textureResolution, textureResolution, 0, RenderTextureFormat.R8);
+            // ARGB32: R = trail intensity, G = dirX (0-1 encoded), B = dirZ (0-1 encoded)
+            // Arah forward player di-bake saat stamp agar rumput yang sudah terinjak
+            // TIDAK ikut berputar saat player memutar badan.
+            var rt = new RenderTexture(textureResolution, textureResolution, 0, RenderTextureFormat.ARGB32);
             rt.filterMode = FilterMode.Bilinear;
             rt.wrapMode = TextureWrapMode.Clamp;
             rt.name = "GrassTrailRT";
@@ -227,12 +274,13 @@ namespace Unity.FantasyKingdom
         {
             if (playerTransform == null) return false;
 
-            // 1. Raycast ke bawah: jika tanah/terrain berada dalam jarak 0.75m di bawah kaki, player dianggap MENAPAK
-            bool nearGround = Physics.Raycast(playerTransform.position + Vector3.up * 0.25f, Vector3.down, 0.75f);
+            var cc = playerTransform.GetComponent<CharacterController>();
+            if (cc != null && cc.isGrounded) return false;
+
+            // 1. Raycast ke bawah: jika tanah/terrain berada dalam jarak 1.2m di bawah kaki, player dianggap MENAPAK
+            bool nearGround = Physics.Raycast(playerTransform.position + Vector3.up * 0.5f, Vector3.down, 1.2f, ~0, QueryTriggerInteraction.Ignore);
             if (nearGround) return false;
 
-            // 2. Jika raycast tidak kena apa pun di bawahnya, cek apakah ada CharacterController dan memang tidak grounded
-            var cc = playerTransform.GetComponent<CharacterController>();
             if (cc != null && !cc.isGrounded)
             {
                 return true;
@@ -265,6 +313,7 @@ namespace Unity.FantasyKingdom
             }
 
             EnsurePlayerReference();
+            SyncRecoveryTime();
             if (playerTransform == null || trailRT_A == null || trailRT_B == null) return;
 
             Vector3 playerPos = playerTransform.position;
@@ -292,6 +341,14 @@ namespace Unity.FantasyKingdom
                 stampMat.SetVector(StampUV_ID, playerUV);
                 stampMat.SetFloat(StampRadius_ID, stampRadius);
                 stampMat.SetFloat(StampStrength_ID, stampStrength);
+
+                // Bake arah langkah player ke G/B channel RT:
+                // dirX/dirZ di-encode dari [-1,1] ke [0,1] agar bisa disimpan di texture.
+                Vector3 fwd = playerTransform.forward;
+                float encodedDirX = fwd.x * 0.5f + 0.5f; // -1..1 -> 0..1
+                float encodedDirZ = fwd.z * 0.5f + 0.5f; // -1..1 -> 0..1
+                stampMat.SetVector(StampDir_ID, new Vector4(encodedDirX, encodedDirZ, 0, 0));
+
                 Graphics.Blit(trailRT_B, trailRT_A, stampMat, 1);
             }
             else
