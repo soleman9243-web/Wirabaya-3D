@@ -1954,3 +1954,39 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
      - `New Material 1.mat`: Tipe 1 (Metal) — Refleksi logam berkilau tinggi, glint tajam, dan kontras cool shadow.
      - `New Material 2.mat`: Tipe 2 (Skin) — Kulit bernada hangat dengan pendaran SSS fringe oranye-kemerahan.
      - `New Material 3.mat`: Tipe 3 (Hair) — Kilau Angel Ring rambut dinamis "tuing-tuing" dengan serat helai alami.
+
+
+127. WuWa Toon v2.6: Perbaikan Tuntas Siluet Hitam Pekat (Pitch-Black Shadow Fix), Rekonstruksi Ambient Fill SH, Penonjolan Lekukan & Rekahan 3D ("Lengkungan Keliatan"), serta Restriksi Arah Angel Ring
+- Lokasi File:
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Core.hlsl`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Universal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Standard.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Metal.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Skin.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/WuWaToon_Hair.shader`
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material.mat` (Standard / Cloth / Stone)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 1.mat` (Metal)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 2.mat` (Skin)
+  * `Assets/8-12-2026/BISMILLAHWUWA/New Material 3.mat` (Hair)
+- Analisis Akar Masalah (Why The Scene Looked "Masih Jelek Banget" / Pitch Black Rocks):
+  1. **The Pitch-Black Shadow Bug**: Pada v2.5, terdapat guard pemaksa kontras yang memotong luminance bayangan `s1` hingga `0.42` dan `s2` hingga `0.22`, sementara kontribusi ambient lighting dikalikan `0.04` (hampir 0). Ketika permukaan batu menghadap membelakangi matahari di Scene View (menghadap kamera), tekstur batu `stone-albedo.001.png` yang berwarna abu-abu gelap terkalikan menjadi 5% luminance, menghasilkan siluet hitam pekat (blackout silhouette) di mana detail tekstur dan cel shading hilang total.
+  2. **Normal Map Tidak Aktif Pada Ramp**: Properti `_EnableNormalMap` di material bernilai 0 dan `_NormalToonInfluence` bernilai 0, sehingga lekukan dan permukaan relief normal map tidak mempengaruhi batas cel shading sama sekali.
+  3. **Angel Ring Bocor ke Sisi Gelap**: Pada material tipe Hair, kalkulasi halo melengkung view-space tidak memiliki pembatas sudut arah cahaya (`ringMask`), memicu munculnya coretan garis oranye di atas batu hitam yang sedang membelakangi matahari.
+- Solusi & Kalibrasi Komprehensif:
+  1. **Rekonstruksi Warna Bayangan Anime (Vibrant & Clear Cel Shading — Anti-Blackout)**:
+     - Mengubah rentang dasar bayangan cel menjadi tingkat terang anime sehat: `_1stShadowColor` (0.74, 0.74, 0.80) (~75% kecerahan albedo) dan `_2ndShadowColor` (0.48, 0.48, 0.56) (~50% kecerahan albedo untuk lekukan dalam).
+     - Menghapus pembatas potong gelap (0.42/0.22) dan menggantinya dengan auto-floor guard yang menjamin tekstur di sisi bayangan tetap cerah, kaya warna, dan terbaca jelas.
+  2. **Pencahayaan Ambient SH Alami di Sisi Bayangan**:
+     - Menambahkan formula `albedoColor.rgb * ambient * (0.45 * (1.0 - litFactor * 0.6))`. Di sisi bayangan yang membelakangi matahari, objek menerima pantulan cahaya langit ambient secara proporsional, persis seperti karakter player dan pohon di scene.
+  3. **Penonjolan Lekukan & Rekahan 3D ("Lengkungan Keliatan Jelas")**:
+     - Nilai kelengkungan model (`curvature`) otomatis menggeser threshold cel Tier 2 (`offset2 = offset1 * (0.55 - creviceFactor * 0.30)`).
+     - Rekahan, retakan, cekungan, dan lekukan geometri secara otomatis terpetakan ke dalam bayangan cel tingkat kedua (deep cel shadow), membuat bentuk 3D batu dan lekukan model langsung muncul tegas dan memiliki dimensi patung anime yang kaya.
+     - Mengaktifkan `_EnableNormalMap: 1` dan `_NormalToonInfluence: 0.35 - 0.45` pada seluruh material batu dengan `stone-normal.001.png`, sehingga tekstur bump normal map menyatu mulus ke garis cel shading tanpa patah-patah (*anti-aliased smooth stepping*).
+  4. **Restriksi Arah Cahaya pada Angel Ring Rambut ("Tuing-Tuing")**:
+     - Menambahkan masker cone pantulan `ringMask = litFactor * smoothstep(0.12, 0.50, NdotH * NdotL)` pada `CalculateWuWaHair`.
+     - Angel Ring kini hanya berpendar ketika permukaan menghadap ke arah pantulan cahaya/kamera, dan tidak akan pernah bocor menjadi coretan aneh di sisi bayangan gelap.
+  5. **Penyempurnaan 4 Tipe Material Spesifik**:
+     - **Tipe 0 (Standard/Stone/Cloth)**: Tekstur batu utuh, 2 tingkat cel shading anime kontras bersih, lekukan tampak tajam.
+     - **Tipe 1 (Metal)**: Refleksi horizon glint multi-band, kilau blinding specular, dan di sisi bayangan tetap memperlihatkan sheen metalik (tidak gelap).
+     - **Tipe 2 (Skin)**: Kulit bernada hangat dengan pendaran SSS fringe oranye-kemerahan terang di terminator bayangan, bersih dari noda kusam.
+     - **Tipe 3 (Hair)**: Angel Ring anisotropic dinamis yang berkilau seiring rotasi sudut pandang ("tuing-tuing") dengan tekstur helai alami.
