@@ -1,9 +1,19 @@
 fileFormatVersion: 2
-guid: dd3e9e52d1f62464cb24048b86ab4a79
+guid: 6b8de7b7c6a3f3f42a3389b1b038c6c8
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: cosmos
+    second: {fileID: 2100000, guid: 7773f51590a776c4dbc7899a88e61922, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: daisy
+    second: {fileID: 2100000, guid: dad35f1841f82324e863f73088908098, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
