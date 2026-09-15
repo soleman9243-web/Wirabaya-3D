@@ -1990,3 +1990,33 @@ D. Perbaikan Bug WASD Turn Looping dan Dynamic Arc Rotation System
      - **Tipe 1 (Metal)**: Refleksi horizon glint multi-band, kilau blinding specular, dan di sisi bayangan tetap memperlihatkan sheen metalik (tidak gelap).
      - **Tipe 2 (Skin)**: Kulit bernada hangat dengan pendaran SSS fringe oranye-kemerahan terang di terminator bayangan, bersih dari noda kusam.
      - **Tipe 3 (Hair)**: Angel Ring anisotropic dinamis yang berkilau seiring rotasi sudut pandang ("tuing-tuing") dengan tekstur helai alami.
+
+
+15 SEPTEMBER 2026
+
+128. Region Discovery Text Animation (God of War Style — Aksara Jawa → Latin Decode)
+
+A. Deskripsi
+   Sistem animasi teks cinematic saat player memasuki region baru, terinspirasi God of War Ragnarök "REGION: DISCOVERED". Menggunakan aksara Jawa yang di-decode per-karakter menjadi huruf Latin dengan efek scramble.
+
+B. File Baru
+   1. Assets/Scripts/UI/RegionData.cs — ScriptableObject untuk data region (nama aksara Jawa, nama Latin, subtitle).
+   2. Assets/Scripts/UI/RegionDiscoveryUI.cs — Komponen utama animasi 5 fase:
+      - Fase 1: Aksara Jawa fade in + letter spacing expand → contract (1.5s)
+      - Fase 2: Hold dengan subtle breathing effect (1.5s)
+      - Fase 3: Decode per-karakter — setiap huruf aksara Jawa di-scramble melalui simbol random, lalu settle ke huruf Latin dengan flash putih (staggered ~0.12s antar karakter)
+      - Fase 4: Latin hold + subtitle slide in dari bawah (2.5s)
+      - Fase 5: Fade out + spacing melebar kembali (1.5s)
+   3. Assets/Scripts/UI/RegionTrigger.cs — Trigger zone (BoxCollider/SphereCollider) yang memanggil RegionDiscoveryUI.Show() saat player masuk area.
+
+C. Fitur Teknis
+   - Per-character vertex color manipulation via TMP_TextInfo untuk efek flash/tint
+   - Proporsional character mapping saat jumlah aksara Jawa dan Latin berbeda
+   - Singleton pattern dengan fallback manual reference
+   - Gizmo visualisasi trigger zone di editor dengan label nama region
+   - Semua timing dan styling adjustable via Inspector
+
+D. Catatan
+   - Membutuhkan import font aksara Jawa (.ttf) manual, misalnya Noto Sans Javanese dari Google Fonts
+   - Font harus di-generate sebagai TMP Font Asset via Window → TextMeshPro → Font Asset Creator
+   - Seluruh WuWaToon shader (BISMILLAHWUWA folder) dihapus pada tanggal yang sama karena hasil visual tidak memuaskan
