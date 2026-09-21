@@ -46,7 +46,7 @@ Material:
     - _CubemapMultiplier: 0.003
     - _CuemapRotation: 180
     - _DepthPower: -3.3
-    - _FogAlphaMultiplier: 0.6
+    - _FogAlphaMultiplier: 0.25
     - _LOD: 6.72
     - _Power: 1e-13
     - _Rotation: 180

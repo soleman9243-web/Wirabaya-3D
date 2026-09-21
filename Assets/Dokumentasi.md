@@ -2020,3 +2020,136 @@ D. Catatan
    - Membutuhkan import font aksara Jawa (.ttf) manual, misalnya Noto Sans Javanese dari Google Fonts
    - Font harus di-generate sebagai TMP Font Asset via Window → TextMeshPro → Font Asset Creator
    - Seluruh WuWaToon shader (BISMILLAHWUWA folder) dihapus pada tanggal yang sama karena hasil visual tidak memuaskan
+
+
+17 SEPTEMBER 2026
+
+129. Kalibrasi Palet Warna & Dinamika Rumput Stylized (GrassMat - Warm Meadow Toon)
+
+A. Deskripsi & Latar Belakang
+   Melakukan penyesuaian parameter visual dan fisika ayunan angin pada material rumput aktif di scene (GrassMat.mat yang menggunakan shader FantasyKingdom/StylizedGrass_Mesh). Perubahan ini bertujuan mengalihkan corak visual rumput dari warna hijau neon/stabilo yang menyilaukan menjadi palet warna padang rumput alami (warm meadow toon ala Ghibli/Zelda), meredam pantulan kilau plastik di bawah sinar matahari, serta memperhalus gelombang ayunan angin agar suasana padang rumput terasa tenang dan asri.
+
+B. File yang Diperbarui
+   - Assets/8-12-2026/GrassBissmillah/GrassMat.mat
+
+C. Rincian Perubahan Parameter Material
+   1. Kalibrasi Palet Warna:
+      - NearColor (Dekat Kamera): Diubah dari neon hijau (0.41, 0.86, 0.26) menjadi olive-lime hangat (0.45, 0.62, 0.18) untuk menghilangkan efek stabilo tajam di foreground.
+      - FarColor (Jauh Kamera): Diubah dari hijau terang (0.14, 0.64, 0.20) menjadi hijau hutan pekat (0.18, 0.42, 0.12) agar menyatu secara harmonis dengan perbukitan dan kabut jarak jauh.
+      - BottomColor (Pangkal Rumput): Diubah ke hijau lumut gelap (0.07, 0.14, 0.06) sebagai Ambient Occlusion (AO) tanah sehingga rumpun rumput terlihat menancap kuat dan tidak melayang.
+      - BaseColor & Color: Disesuaikan ke hijau alami (0.22, 0.38, 0.10) dan (0.08, 0.20, 0.05).
+      - RecoveryColor: Diubah ke kuning jerami/tanah kering (0.28, 0.22, 0.08) untuk memberi variasi organik batang rumput.
+      - EmissionColor & EmissionIntensity: Diturunkan dari 1.0 ke 0.35 dengan pendaran sangat redup (0.03, 0.035, 0.025) agar rumput tidak menyala seperti lampu LED saat berada di area teduh.
+   2. Shading & Blending:
+      - Smoothness: Diturunkan dari 0.4 ke 0.15 agar permukaan daun rumput doff/matte alami dan bebas dari kilau plastik sintetis saat terkena direct light.
+      - HighBlend: Diturunkan dari 1.0 ke 0.35 untuk menghasilkan gradasi transisi warna pangkal ke pucuk daun yang lebih halus.
+      - NearFarRange / Dist: Disesuaikan dari rentang (3.1 - 17.79 m) menjadi (4.0 - 22.0 m) agar transisi gradasi jarak kamera lebih luas dan tidak patah mendadak.
+   3. Dinamika Gelombang Angin:
+      - WindSpeed: Diperlambat dari 0.1 ke 0.08 untuk gerak melambai yang santai.
+      - WindIntensity: Diredam dari 0.48 ke 0.30 agar rumput melambai lembut tertiup angin sepoi-sepoi tanpa terlihat seperti terhempas badai.
+      - WindNoiseSpeed: Disesuaikan ke 0.8.
+
+
+130. Rekalibrasi Post-Processing Global Volume (Level 0) untuk Palet Toon Natural
+
+A. Deskripsi & Latar Belakang
+   Melakukan penyesuaian parameter post-processing pada aset profil volume utama (Global Volume Profile_Level0.asset). Mengeliminasi rona bayangan kebiruan (cyan shadow tint) yang sebelumnya mengotori tone rumput dan model di Game View, menormalkan kompensasi eksposur (postExposure) agar pemandangan tidak redup/tertekan, melembutkan kontras agar tidak memicu bayangan hitam pekat (pitch-black), serta menaikkan saturasi agar visual padang rumput tampak cerah, hidup, dan berkarakter anime/Ghibli/Zelda sesuai referensi.
+
+B. File yang Diperbarui
+   - Assets/URP/VolumeProfiles/Global Volume Profile_Level0.asset
+
+C. Rincian Perubahan Parameter Post-Processing
+   1. ShadowsMidtonesHighlights:
+      - active: Dinonaktifkan (dari 1 ke 0) dan nilai overrides dinetralkan.
+      - shadows: Dihapus tint cyan (0.64, 0.78, 1.0) menjadi netral (1.0, 1.0, 1.0) dengan overrideState 0. Mengembalikan warna bayangan alami tanpa filter dingin kebiruan yang merusak warna tanah dan rumput.
+      - highlights: Dinetralkan dari rona biru muda (0.89, 0.96, 1.0) ke (1.0, 1.0, 1.0).
+   2. ColorAdjustments:
+      - postExposure: Disesuaikan dari -1.2 EV ke -0.2 EV. Mengembalikan kecerahan alami adegan tanpa meremukkan (crushing) area bayangan dan dedaunan.
+      - contrast: Diturunkan dari 25 ke 12. Menghasilkan gradasi pencahayaan yang lembut, menghindari kontras ekstrem yang membuat objek terlihat hangus/gelap gulita di sisi teduh.
+      - saturation: Ditingkatkan dari 15 ke 20 untuk memberikan kejernihan warna padang rumput, bunga, dan langit yang asri dan memikat.
+   3. Bloom:
+      - intensity: Disesuaikan dari 0.5 ke 0.35 dan clamp dari 1.1 ke 1.0. Mencegah efek silau berkabut putih berlebihan (white glare explosion) di area langit dan highlight, sembari mempertahankan kilau lembut matahari.
+
+
+131. Stabilisasi Post-Exposure Global Volume Profile (Level 0) Anti-Overexposure
+
+A. Deskripsi & Latar Belakang
+   Mengembalikan parameter postExposure pada Global Volume Profile_Level0.asset ke nilai aman -1.2 EV dan mengunci kontras di 18. Hal ini dilakukan karena sistem pencahayaan bawaan scene memiliki intensitas Directional Light dan Sun Scattering fog yang sangat tinggi (intensitas 5.0), sehingga menaikkan eksposur volume memicu terjadinya white blowout (layar memutih total karena overexposure). Penguncian di -1.2 EV menjaga tingkat kecerahan seimbang sembari tetap mempertahankan bayangan bersih bebas rona biru.
+
+B. File yang Diperbarui
+   - Assets/URP/VolumeProfiles/Global Volume Profile_Level0.asset
+
+C. Rincian Perubahan Parameter
+   1. ColorAdjustments:
+      - postExposure: Dikembalikan ke -1.2 EV untuk mencegah blowout/layar memutih total.
+      - contrast: Diatur ke 18 untuk menjaga ketegasan bentuk tanpa memicu kegelapan ekstrem.
+
+
+132. Kalibrasi Kabut Atmosferik HeightFog & CubeFog (Menghilangkan Silau Sun Scattering & Memundurkan Jarak Pandang)
+
+A. Deskripsi & Latar Belakang
+   Melakukan kalibrasi pada material kabut utama (HeightFogOriginal_FreeCam.mat, HeightFogLevel1.mat, dan CubeFogOriginal_FreeCam.mat). Perubahan ini bertujuan untuk menghilangkan bola cahaya putih raksasa yang menyilaukan mata tepat di belakang karakter (efek hamburan cahaya matahari / Sun Scattering), memundurkan titik awal kemunculan kabut (Start Distance) dari 15 meter menjadi 55 meter agar area bermain/gubuk/pohon tampak jernih dan tajam, meredam kerapatan kabut (Density), serta menyelaraskan rona warna kabut ke nuansa langit alami (Soft Sky Haze).
+   Catatan Cadangan: Seluruh nilai parameter sebelum perubahan dicatat secara lengkap di bawah ini agar sewaktu-waktu dapat dikembalikan (revert) jika pengguna merasa tidak cocok.
+
+B. File yang Diperbarui
+   - Assets/Art/Fog/Materials/HeightFogOriginal_FreeCam.mat
+   - Assets/Art/Fog/Materials/HeightFogLevel1.mat
+   - Assets/Art/Fog/Materials/CubeFogOriginal_FreeCam.mat
+
+C. Tabel Riwayat Nilai Parameter (Sebelum vs Sesudah)
+   1. HeightFogOriginal_FreeCam.mat:
+      - _SunScatteringIntensity: 0.3 (Sebelum) → 0.0 (Sesudah) [Menghilangkan bola silau matahari di belakang player]
+      - _StartDistance: 15.0 (Sebelum) → 55.0 (Sesudah) [Kabut mundur 55m agar area gameplay bersih]
+      - _Density: 0.002 (Sebelum) → 0.0006 (Sesudah) [Kabut menjadi tipis lembut, bukan asap tebal]
+      - _Tint: (0.363, 0.579, 1.0) (Sebelum) → (0.72, 0.82, 0.95) (Sesudah) [Soft Sky Haze menyatu dengan langit]
+   2. HeightFogLevel1.mat:
+      - _SunScatteringIntensity: 0.3 (Sebelum) → 0.0 (Sesudah)
+      - _Density: 0.002 (Sebelum) → 0.0006 (Sesudah)
+      - _Tint: (6.155, 9.814, 16.948) (Sebelum) → (0.72, 0.82, 0.95) (Sesudah) [Menghapus nilai HDR ekstrim]
+   3. CubeFogOriginal_FreeCam.mat:
+      - _FogAlphaMultiplier: 0.6 (Sebelum) → 0.25 (Sesudah) [Meredam ketebalan kabut cubemap]
+
+
+133. Penerapan Pencahayaan Toon Anime (Sudut Matahari & Ambient Gradient Warm Glow)
+
+A. Deskripsi & Latar Belakang
+   Melakukan kalibrasi sudut rotasi Directional Light (matahari) dan konfigurasi Environment Ambient Lighting pada scene aktif (#1- 1.unity) serta membuat utilitas editor otomatis (ToonLightingSetup.cs). Perubahan ini mengatasi masalah tampilan karakter dan lanskap depan yang sebelumnya tampak gelap/redup (backlit) akibat matahari berada di posisi sangat rendah di belakang karakter (X: 8°). Matahari dinaikkan ke sudut siang/sore atas (X: 42°, Y: 135°) agar menyinari wajah, badan, atap gubuk, dan padang rumput dari arah depan-samping dengan bayangan cel-shading yang proporsional. Selain itu, Ambient Mode diubah dari Skybox ke Gradient (Trilight) dengan perpaduan warna biru langit sejuk (Sky), warm peach glow (Equator), dan warm meadow green (Ground) untuk menghilangkan rona bayangan kusam/hitam pekat dan menghasilkan visual segar khas anime/Ghibli/Zelda BotW.
+   Catatan Cadangan & Revert: Seluruh nilai parameter sebelum perubahan dicatat secara lengkap di bawah ini dan dapat dikembalikan kapan saja via menu Unity: "Tools > Wirabaya > 2. Kembalikan Lighting Semula (Backup)".
+
+B. File yang Diperbarui & Ditambahkan
+   - Assets/8-13-2026/#1- 1.unity (Scene File)
+   - Assets/Editor/ToonLightingSetup.cs (Script Otomasi & Revert Menu)
+
+C. Tabel Riwayat Nilai Parameter (Sebelum vs Sesudah)
+   1. Directional Light Transform:
+      - Rotation Euler: (8, -68, -17) (Sebelum) → (42, 135, 0) (Sesudah) [Matahari naik dari cakrawala dan menyorot dari depan-samping]
+      - Quaternion: {x: 0.22632211, y: -0.29748902, z: -0.07377763, w: 0.9245731} (Sebelum) → {x: 0.13714148, y: 0.86251585, z: -0.33108881, w: 0.35726576} (Sesudah)
+   2. RenderSettings (Environment Lighting):
+      - m_AmbientMode: 0 [Skybox] (Sebelum) → 1 [Gradient / Trilight] (Sesudah)
+      - m_AmbientSkyColor: (0.212, 0.227, 0.259) [Gelap] (Sebelum) → (0.627, 0.824, 1.0) [#A0D2FF - Soft Sky Blue] (Sesudah)
+      - m_AmbientEquatorColor: (0.114, 0.125, 0.133) [Gelap] (Sebelum) → (1.0, 0.882, 0.745) [#FFE1BE - Warm Peach Anime Glow] (Sesudah)
+      - m_AmbientGroundColor: (0.047, 0.043, 0.035) [Gelap] (Sebelum) → (0.431, 0.529, 0.314) [#6E8750 - Fresh Meadow Green] (Sesudah)
+      - m_SubtractiveShadowColor: (0.42, 0.478, 0.627) [Dingin/Biru Tua] (Sebelum) → (0.65, 0.62, 0.60) [Warm Neutral] (Sesudah)
+
+
+134. Pengembalian Rotasi Matahari Asli (Backlight) & Diagnosis Visual Karakter Gelap
+
+A. Deskripsi & Status Pengembalian
+   Atas permintaan user agar posisi matahari tetap berasal dari arah semula (latar belakang langit di balik pepohonan / cakrawala, rotasi Euler: 8, -68, -17), sudut Directional Light dan Ambient Mode di scene [#1- 1.unity] telah 100% dikembalikan ke kondisi semula.
+   - Rotasi Directional Light: Dikembalikan ke Euler (8, -68, -17) [Quaternion: (0.22632211, -0.29748902, -0.07377763, 0.9245731)].
+   - Ambient Mode: Dikembalikan ke 0 (Skybox Asli).
+   - Skrip Otomasi: Menonaktifkan [InitializeOnLoad] pada ToonLightingSetup.cs agar tidak menimpa rotasi matahari secara otomatis.
+
+B. Analisis Mengapa Adegan Menjadi "Dark Banget dan Jelek" Saat Matahari di Belakang
+   1. Sisi Depan Menghadap Kamera Membelakangi Sumber Cahaya:
+      Saat matahari di belakang karakter (backlight), bagian depan tubuh/wajah berada 100% di area bayangan (cel shade calculation: toonRampMain = 0).
+   2. Warna Shading Material Kulit (kulit.mat) Terlalu Gelap & Kusam:
+      Shader CelShaderV2 pada kulit.mat menyetel _Shading_Color ke warna cokelat lumpur kusam (RGB 0.42, 0.32, 0.18 / #6B522E). Akibatnya, saat membelakangi matahari, kulit tampak kusam, gelap, dan mati.
+   3. Material Celana & Rambut Menggunakan Shading Abu-Abu 0.49 & Ambient 0:
+      cloth (yellowish green).mat dan hair (brown).mat menyetel _Ambient_Self_Lighting ke 0, sehingga saat berada di bayangan tidak mendapat penerangan mandiri.
+   4. Rim Light (Efek Kilau Emas Tepi Siluet) Belum Aktif:
+      _Rim_Lighting pada kulit.mat bernilai -1 (nonaktif). Di visual anime (Genshin/Zelda), matahari dari belakang seharusnya memunculkan kilau emas indah di tepian rambut dan siluet bahu karakter.
+   5. Solusi yang Direkomendasikan:
+      - Menyesuaikan _Shading_Color pada material karakter menjadi warna bayangan anime yang cerah/hangat (warm peach/apricot).
+      - Menghidupkan _Rim_Lighting dan _Rim_Brightness agar matahari dari belakang menghasilkan kilau siluet khas anime.
+      - Memberikan sedikit _Ambient_Self_Lighting atau menambahkan soft Fill Light dari arah kamera agar bagian depan tetap terang benderang dan enak dipandang.
