@@ -69,6 +69,8 @@ GameObject:
   - component: {fileID: 5941211846195365920}
   - component: {fileID: 8785472438376946293}
   - component: {fileID: 7140743143850040797}
+  - component: {fileID: 4553689667700678590}
+  - component: {fileID: 1471350956926952274}
   m_Layer: 8
   m_Name: PlayerArmature
   m_TagString: Player
@@ -148,9 +150,9 @@ CharacterController:
   serializedVersion: 3
   m_Height: 1.8
   m_Radius: 0.28
-  m_SlopeLimit: 45
-  m_StepOffset: 0.25
-  m_SkinWidth: 0.02
+  m_SlopeLimit: 55
+  m_StepOffset: 0.45
+  m_SkinWidth: 0.06
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 0.93, z: 0}
 --- !u!114 &5681157925182464232
@@ -40892,3 +40894,58 @@ Transform:
   - {fileID: 8341056074680649946}
   m_Father: {fileID: 4377585256298278529}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4553689667700678590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22648217249824622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 043e4e854762b3d4eb42ff8020ebf52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Unity.FantasyKingdom.PlayerFootIK
+  enableFootIK: 1
+  ikWeight: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 14337
+  raycastDistance: 1
+  footHeightOffset: 0.11
+  adjustPelvis: 1
+  maxPelvisDrop: 0.35
+  footPosSmoothTime: 0.08
+  footRotSmoothTime: 0.12
+  pelvisSmoothTime: 0.15
+  maxSlopeAngle: 55
+  fadeStartSpeed: 1.5
+  fadeEndSpeed: 4
+  minRunningWeight: 0.15
+  thirdPersonController: {fileID: 2857168891362218608}
+  showGizmos: 1
+--- !u!114 &1471350956926952274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22648217249824622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b88e9cfe036f461a8eea27fc878f7a69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Unity.FantasyKingdom.PlayerLocomotionLeaning
+  enableLeaning: 1
+  maxTurnLeanAngle: 7.5
+  turnLeanSensitivity: 0.05
+  turnLeanSmoothTime: 0.12
+  maxSlopePitchAngle: 8
+  slopePitchSensitivity: 8
+  slopePitchSmoothTime: 0.15
+  maxAccelPitchAngle: 3.5
+  maxBrakePitchAngle: 3
+  accelPitchSmoothTime: 0.15
+  spineDistribution: 0.5
+  animator: {fileID: 6098076095785562579}
+  controller: {fileID: 2857168891362218608}

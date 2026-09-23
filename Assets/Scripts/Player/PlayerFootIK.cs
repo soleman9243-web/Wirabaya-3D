@@ -51,6 +51,10 @@ namespace Unity.FantasyKingdom
         [Range(0.01f, 0.5f)]
         public float pelvisSmoothTime = 0.15f;
 
+        [Tooltip("Batas kemiringan lereng maksimum (derajat) agar telapak kaki tidak terpuntir di tebing curam.")]
+        [Range(20f, 65f)]
+        public float maxSlopeAngle = 55f;
+
         [Header("Pengaturan Saat Bergerak / Berlari")]
         [Tooltip("Kecepatan animator di mana IK mulai memudar (biasanya kecepatan jalan).")]
         public float fadeStartSpeed = 1.5f;
@@ -106,6 +110,14 @@ namespace Unity.FantasyKingdom
 
             if (thirdPersonController == null)
                 thirdPersonController = GetComponent<StarterAssets.ThirdPersonController>();
+
+            // Pastikan groundLayer mendeteksi Default (0), Ground (11), Obstacle (12), NoJump (13)
+            if (groundLayer.value == 0 || (groundLayer.value & (1 << 0)) == 0)
+            {
+                groundLayer |= (1 << 0) | (1 << 11) | (1 << 12) | (1 << 13);
+            }
+            // Abaikan layer non-lingkungan agar tidak salah deteksi collider karakter/UI
+            groundLayer &= ~LayerMask.GetMask("Player", "Ignore Raycast", "TransparentFX", "UI");
         }
 
         private void OnAnimatorIK(int layerIndex)
@@ -219,9 +231,16 @@ namespace Unity.FantasyKingdom
                 // SmoothDamp untuk transisi sangat halus (anti patah-patah)
                 yOffset = Mathf.SmoothDamp(yOffset, desiredOffset, ref yVelocity, footPosSmoothTime);
 
-                // Rotasi kaki mengikuti kemiringan permukaan tanah
-                Quaternion surfaceRot = Quaternion.FromToRotation(Vector3.up, hit.normal);
-                targetRot = surfaceRot;
+                // Rotasi kaki mengikuti kemiringan permukaan tanah (dibatasi oleh maxSlopeAngle)
+                float slopeAngle = Vector3.Angle(Vector3.up, hit.normal);
+                if (slopeAngle <= maxSlopeAngle)
+                {
+                    targetRot = Quaternion.FromToRotation(Vector3.up, hit.normal);
+                }
+                else
+                {
+                    targetRot = Quaternion.identity;
+                }
 
                 // Slerp rotasi dengan smooth time
                 float rotLerp = 1f - Mathf.Exp(-10f / Mathf.Max(footRotSmoothTime * 60f, 1f));

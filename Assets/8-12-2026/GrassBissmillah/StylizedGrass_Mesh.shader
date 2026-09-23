@@ -56,8 +56,8 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
 
         [Header(Adjustable Emission Glow)]
         [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)
-        _EmissionIntensity ("Emission Intensity", Range(0.0, 10.0)) = 1.0
-        _EmissionTipBoost ("Emission on Tips Only", Range(0.0, 1.0)) = 0.0
+        _EmissionIntensity ("Emission Intensity", Range(0.0, 10.0)) = 1.5
+        _EmissionTipBoost ("Emission on Tips Only", Range(0.0, 1.0)) = 0.7
     }
 
     SubShader
@@ -151,12 +151,17 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
                 float distFactor = saturate((camDist - _NearDist) / distRange);
                 half3 distColor = lerp(_NearColor.rgb, _FarColor.rgb, distFactor);
 
-                // Height blend (Bottom color di pangkal rumput)
-                float bottomMask = 1.0 - saturate(input.heightFactor / max(_HighBlend, 0.001));
+                // Height blend (Bottom gelap di pangkal, tip cerah di ujung — smoothstep agar gradien natural)
+                float bottomMask = 1.0 - smoothstep(0.0, _HighBlend, input.heightFactor);
                 half3 baseColor = lerp(distColor, _BottomColor.rgb, bottomMask);
 
-                // Warna albedo rumput alami dan bersih (tanpa garis zebra buatan)
-                half3 albedo = baseColor * (texCol.rgb * 0.6 + 0.4);
+                // Tip highlight: ujung blade lebih cerah & sedikit lebih kuning-hijau (Zelda-like)
+                float tipMask = smoothstep(0.45, 1.0, input.heightFactor);
+                half3 tipTint = distColor * half3(1.15, 1.25, 1.05); // sedikit lebih warm & bright
+                baseColor = lerp(baseColor, tipTint, tipMask * 0.55);
+
+                // Albedo — tekstur dikombinasi dengan warna (0.5/0.5 lebih natural dari 0.6/0.4)
+                half3 albedo = baseColor * (texCol.rgb * 0.5 + 0.5);
 
                 // ── Trail & Real-Time Footprint Color Shift (Warna bekas injakan & recovery dapat diatur di Inspector) ──
                 float2 trailUV = (input.positionWS.xz - _GrassTrailCenter.xy) / max(_GrassTrailSize, 1.0) + 0.5;
@@ -181,33 +186,53 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
                 half3 trampleTint = lerp(albedo, _RecoveryColor.rgb, 0.80);
                 albedo = lerp(albedo, trampleTint, totalTrample * saturate(_RecoveryColorStrength));
 
-                // ── Soft Stylized Lighting & Shading (Merespon Liukan Angin & Bayangan Halus) ──
+                // ── Toon / WuWa / Zelda Stylized Lighting ────────────────────────────────
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord, input.positionWS, half4(1, 1, 1, 1));
                 half shadowAtten = mainLight.shadowAttenuation;
 
-                // Remap shadow agar bayangan karakter tetap terlihat jelas namun sangat halus (soft shadow)
-                half softShadow = lerp(0.72, 1.0, shadowAtten);
+                // Shadow remap: bayangan terlihat tapi tidak terlalu gelap (ala WuWa)
+                half softShadow = lerp(0.62, 1.0, shadowAtten);
 
                 float3 N = NormalizeNormalPerPixel(input.normalWS);
-                N = normalize(lerp(float3(0.0, 1.0, 0.0), N, 0.60));
+                N = normalize(lerp(float3(0.0, 1.0, 0.0), N, 0.55));
 
                 float3 V = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 float3 L = mainLight.direction;
                 float3 H = normalize(L + V);
 
-                // Diffuse dinamis yang berubah saat rumput meliuk ditiup angin
-                half NdotL = saturate(dot(N, L) * 0.35 + 0.65);
+                // --- Diffuse WuWa-style: kontras lebih dramatis antara shadow dan lit
+                half rawNdotL = dot(N, L);
+                half toonBand = smoothstep(-0.2, 0.5, rawNdotL);
+                half NdotL = lerp(0.45, 1.0, toonBand) * softShadow;
 
-                // Specular sheen halus saat helai rumput meliuk memantulkan cahaya matahari (seperti di video Infinite Grass)
+                // --- Subsurface: halus, tidak terlalu hijau neon
+                half backLight = saturate(dot(-L, V));
+                half sss = pow(backLight, 3.5) * input.heightFactor * 0.25;
+                half3 sssColor = albedo * half3(0.4, 0.7, 0.3) * sss;
+
+                // --- Tip Brightening: lebih subtle (bukan neon)
+                half tipBright = input.heightFactor * input.heightFactor;
+                albedo = lerp(albedo, albedo * 1.20, tipBright * 0.40);
+
+                // --- Ambient: medium cool green (WuWa mood tapi tidak terlalu gelap)
+                half3 ambient = half3(0.28, 0.40, 0.22);
+
+                // --- Direct lighting
+                half3 direct = mainLight.color * NdotL;
+                half3 litColor = albedo * (direct + ambient) + sssColor;
+
+                // --- Fresnel Rim: sangat halus, hampir tidak kelihatan
+                half fresnel = pow(1.0 - saturate(dot(N, V)), 4.5);
+                half3 rimLight = half3(0.25, 0.55, 0.20) * fresnel * input.heightFactor * 0.18;
+                litColor += rimLight;
+
+                // --- Specular putih tajam (sun glint di ujung blade, khas WuWa)
                 float NdotH = saturate(dot(N, H));
-                float specular = pow(NdotH, 16.0) * (input.heightFactor * 0.35);
+                float specular = pow(NdotH, 96.0) * (input.heightFactor * 0.90);
+                litColor += half3(1.0, 1.0, 0.95) * specular * 1.2;
 
-                half3 direct = mainLight.color * ((NdotL * softShadow) + specular);
-                half3 ambient = half3(0.32, 0.38, 0.28);
-                half3 litColor = albedo * (direct + ambient);
-
-                // ── Adjustable Emission Glow (Murni Warna & Intensitas, Tanpa Perlu Tekstur) ──
+                // ── Emission (dari Material Inspector) ──
                 float tipFactor = lerp(1.0, input.heightFactor, _EmissionTipBoost);
                 half3 emission = _EmissionColor.rgb * (_EmissionIntensity * tipFactor);
                 litColor += emission;

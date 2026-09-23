@@ -248,6 +248,13 @@ namespace StarterAssets
         [Tooltip("Jumlah stamina yang berkurang per detik saat berlari")]
         public float SprintStaminaCost = 15f;
 
+        // ===== SISTEM ADVANCED LOCOMOTION & TERRAIN SLOPES =====
+        private bool _wasGroundedLastFrame = true;
+        private Vector3 _currentSlopeNormal = Vector3.up;
+
+        public float GetSpeed() => _speed;
+        public Vector3 GetSlopeNormal() => _currentSlopeNormal;
+
 
         private bool IsCurrentDeviceMouse
 
@@ -412,31 +419,40 @@ namespace StarterAssets
 
 
         private void GroundedCheck()
-
         {
-
             // set sphere position, with offset
-
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset,
-
                 transform.position.z);
-
             Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers,
-
                 QueryTriggerInteraction.Ignore);
 
-
-
-            // update animator if using character
-
-            if (_hasAnimator)
-
+            // --- DOWNHILL STICKING (Anti-Bouncing saat berlari menuruni lereng bukit) ---
+            // Jika CheckSphere false tetapi karakter baru saja berada di tanah, tidak sedang melompat, dan ada lereng tepat di bawah kaki:
+            if (!Grounded && _wasGroundedLastFrame && _verticalVelocity <= 0.0f && _jumpTimeoutDelta <= 0.0f)
             {
+                Vector3 rayOrigin = transform.position + Vector3.up * 0.2f;
+                int layerMask = GroundLayers.value != 0 ? (int)GroundLayers : ~LayerMask.GetMask("Player", "Ignore Raycast", "TransparentFX");
 
-                _animator.SetBool(_animIDGrounded, Grounded);
-
+                float checkDist = _controller.stepOffset + 0.2f;
+                if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit downHit, checkDist + 0.2f, layerMask, QueryTriggerInteraction.Ignore))
+                {
+                    float slopeAngle = Vector3.Angle(Vector3.up, downHit.normal);
+                    if (slopeAngle <= _controller.slopeLimit)
+                    {
+                        // Karakter tetap dipertahankan grounded
+                        Grounded = true;
+                        _currentSlopeNormal = downHit.normal;
+                    }
+                }
             }
 
+            _wasGroundedLastFrame = Grounded;
+
+            // update animator if using character
+            if (_hasAnimator)
+            {
+                _animator.SetBool(_animIDGrounded, Grounded);
+            }
         }
 
 
@@ -536,48 +552,19 @@ namespace StarterAssets
 
 
 
-            // a reference to the players current horizontal velocity
-
-            float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
-
-
-
             float speedOffset = 0.1f;
-
             float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
 
-
-
-            // accelerate or decelerate to target speed
-
-            if (currentHorizontalSpeed < targetSpeed - speedOffset ||
-
-                currentHorizontalSpeed > targetSpeed + speedOffset)
-
+            // Percepatan dan perlambatan langsung ke targetSpeed secara mandiri (tidak mengambil dari _controller.velocity)
+            // Solusi tuntas masalah "nggeret" / lari di tempat saat menyenggol dinding, sudut lantai kayu, atau rintangan.
+            if (_speed < targetSpeed - speedOffset || _speed > targetSpeed + speedOffset)
             {
-
-                // creates curved result rather than a linear one giving a more organic speed change
-
-                // note T in Lerp is clamped, so we don't need to clamp our speed
-
-                _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude,
-
-                    Time.deltaTime * SpeedChangeRate);
-
-
-
-                // round speed to 3 decimal places
-
+                _speed = Mathf.Lerp(_speed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
                 _speed = Mathf.Round(_speed * 1000f) / 1000f;
-
             }
-
             else
-
             {
-
                 _speed = targetSpeed;
-
             }
 
 
@@ -621,13 +608,55 @@ namespace StarterAssets
 
 
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
+            Vector3 moveDirection = targetDirection.normalized;
 
+            // --- SISTEM ADAPTASI LERENG GUNUNG / TERRAIN (Slope Projection & Anti-Stuck) ---
+            if (Grounded && _speed > 0.01f && _verticalVelocity <= 0.0f)
+            {
+                Vector3 rayOrigin = transform.position + Vector3.up * 0.3f;
+                int layerMask = GroundLayers.value != 0 ? (int)GroundLayers : ~LayerMask.GetMask("Player", "Ignore Raycast", "TransparentFX");
 
+                if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit slopeHit, 0.9f, layerMask, QueryTriggerInteraction.Ignore))
+                {
+                    _currentSlopeNormal = slopeHit.normal;
+                    float slopeAngle = Vector3.Angle(Vector3.up, slopeHit.normal);
+                    // Hanya proyeksikan jika berada di lereng bukit curam nyata (>= 8 derajat) dan sedang mendaki ke atas (projected.y > 0)
+                    // Mencegah vektor gerak terdorong menancap ke lantai kayu, undakan datar, atau dinding
+                    if (slopeAngle >= 8.0f && slopeAngle <= _controller.slopeLimit)
+                    {
+                        Vector3 projected = Vector3.ProjectOnPlane(targetDirection, slopeHit.normal);
+                        if (projected.y > 0.0f)
+                        {
+                            moveDirection = projected.normalized;
+                        }
+                    }
+                }
+                else
+                {
+                    _currentSlopeNormal = Vector3.up;
+                }
+            }
+            else if (Grounded)
+            {
+                // Tetap simpan normal tanah saat berdiri diam
+                Vector3 rayOrigin = transform.position + Vector3.up * 0.3f;
+                int layerMask = GroundLayers.value != 0 ? (int)GroundLayers : ~LayerMask.GetMask("Player", "Ignore Raycast", "TransparentFX");
+                if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit idleHit, 0.9f, layerMask, QueryTriggerInteraction.Ignore))
+                {
+                    _currentSlopeNormal = idleHit.normal;
+                }
+                else
+                {
+                    _currentSlopeNormal = Vector3.up;
+                }
+            }
+            else
+            {
+                _currentSlopeNormal = Vector3.up;
+            }
 
             // move the player
-
-            _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
-
+            _controller.Move(moveDirection * (_speed * Time.deltaTime) +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
 
 
@@ -683,14 +712,10 @@ namespace StarterAssets
 
 
 
-                // stop our velocity dropping infinitely when grounded
-
+                // Menekan karakter dengan lembut (-5f) agar tetap menempel alami saat menuruni lereng tanpa terpental
                 if (_verticalVelocity < 0.0f)
-
                 {
-
-                    _verticalVelocity = -2f;
-
+                    _verticalVelocity = -5.0f;
                 }
 
 
