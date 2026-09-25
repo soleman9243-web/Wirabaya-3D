@@ -63,6 +63,22 @@ namespace StarterAssets.Prototype
         [Tooltip("Nama state animasi putar balik saat lari")]
         public string StateRunningTurn180 = "Running Turn 180";
 
+        [Header("Random Idle System")]
+        [Tooltip("Aktifkan/Nonaktifkan sistem idle random")]
+        public bool enableRandomIdle = false;
+        
+        [Tooltip("Waktu minimum (detik) sebelum ganti animasi idle")]
+        public float idleMinTime = 1f;
+        
+        [Tooltip("Waktu maksimum (detik) sebelum ganti animasi idle")]
+        public float idleMaxTime = 4f;
+        
+        [Tooltip("Durasi CrossFade transisi antar animasi idle (detik)")]
+        public float idleCrossFadeDuration = 0.25f;
+        
+        [Tooltip("Nama-nama state animasi idle di Sub-State Machine V2 Locomotion.\nPastikan nama PERSIS sama dengan nama state di Animator.")]
+        public string[] randomIdleStates = new string[] { "Random Idle 1", "Random Idle 2", "Random Idle 3" };
+
         private Animator _animator;
         private StarterAssetsInputs _input;
         private CharacterController _controller;
@@ -105,6 +121,13 @@ namespace StarterAssets.Prototype
         private float _postTurnBlendStartYaw;
         private float _postTurnBlendTargetYaw;
         private float _postTurnClockwiseDelta; // Selalu positif = selalu clockwise
+
+        // Random Idle internal state
+        private float _idleTimer;
+        private float _nextIdleTime;
+        private bool _isRandomIdlePlaying;
+        private bool _isIdle;
+        private int _lastIdleIndex = -1;
 
         private void Start()
         {
@@ -220,6 +243,9 @@ namespace StarterAssets.Prototype
                     // Animasi selesai secara natural
                     SetMovementLock(false);
                     _isInRunToStop = false;
+
+                    // Langsung trigger Random Idle variant setelah RunToStop selesai
+                    TriggerPostWalkIdle();
                 }
             }
 
@@ -421,8 +447,126 @@ namespace StarterAssets.Prototype
                 _stopCooldownTimer -= Time.deltaTime;
             }
 
+            // --- 6. RANDOM IDLE SYSTEM ---
+            HandleRandomIdle(isMoving, currentSpeed);
+
             // Simpan data untuk frame berikutnya
             _previousYaw = currentYaw;
+        }
+
+        // ================================================================
+        // RANDOM IDLE SYSTEM
+        // Alur: Stop → Idle Variant (beda) → [jeda random] → Idle Normal
+        //       → [jeda random] → Idle Variant lagi → ... (bergantian)
+        // Aktifkan/nonaktifkan via toggle 'enableRandomIdle' di Inspector.
+        // ================================================================
+        private void HandleRandomIdle(bool isMoving, float currentSpeed)
+        {
+            // Jika fitur dimatikan, kembalikan ke idle normal jika perlu
+            if (!enableRandomIdle)
+            {
+                if (_isRandomIdlePlaying)
+                {
+                    _animator.CrossFade(StateIdleWalkRun, idleCrossFadeDuration);
+                    _isRandomIdlePlaying = false;
+                }
+                _isIdle = false;
+                return;
+            }
+
+            // Kondisi "benar-benar idle": tidak bergerak, tidak ada animasi V2 lain aktif, tidak sedang combat
+            bool isCurrentlyIdle = !isMoving
+                                && currentSpeed < 0.1f
+                                && !_isTurnPlaying
+                                && !_isInRunToStop
+                                && !_isInV2Animation
+                                && !_isPostTurnBlend
+                                && (_tpc == null || !_tpc.DisableMovement);
+
+            if (isCurrentlyIdle)
+            {
+                if (!_isIdle)
+                {
+                    // ============================================
+                    // BARU SAJA BERHENTI dari jalan/lari
+                    // → LANGSUNG mainkan idle variant (beda dari normal)
+                    // ============================================
+                    _isIdle = true;
+                    _idleTimer = 0f;
+                    _nextIdleTime = Random.Range(idleMinTime, idleMaxTime);
+
+                    if (randomIdleStates.Length > 0)
+                    {
+                        int index = PickRandomIdleIndex();
+                        _lastIdleIndex = index;
+                        CrossFadeV2(randomIdleStates[index], idleCrossFadeDuration);
+                        _isRandomIdlePlaying = true;
+
+                        Debug.Log($"[AnimV2] Post-Walk Idle → {randomIdleStates[index]} (back to normal in {_nextIdleTime:F1}s)");
+                    }
+                }
+
+                _idleTimer += Time.deltaTime;
+
+                if (_idleTimer >= _nextIdleTime && _isRandomIdlePlaying)
+                {
+                    // ============================================
+                    // Variant selesai → kembali ke IDLE NORMAL
+                    // Setelah ini BERHENTI, tidak cycle lagi.
+                    // ============================================
+                    _animator.CrossFade(StateIdleWalkRun, idleCrossFadeDuration);
+                    _isRandomIdlePlaying = false;
+                    _idleTimer = 0f;
+                    Debug.Log("[AnimV2] Idle Variant selesai → Normal Idle");
+                }
+            }
+            else if (_isIdle)
+            {
+                // Player mulai bergerak atau state lain aktif → kembalikan ke locomotion
+                _isIdle = false;
+                _idleTimer = 0f;
+
+                if (_isRandomIdlePlaying)
+                {
+                    _animator.CrossFade(StateIdleWalkRun, idleCrossFadeDuration);
+                    _isRandomIdlePlaying = false;
+                    Debug.Log("[AnimV2] Random Idle interrupted → back to locomotion");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Langsung trigger idle variant (post-walk/post-run idle).
+        /// Dipanggil setelah RunToStop selesai atau saat pertama kali berhenti.
+        /// </summary>
+        private void TriggerPostWalkIdle()
+        {
+            if (!enableRandomIdle || randomIdleStates.Length == 0) return;
+            if (_isIdle) return; // Sudah idle, jangan double trigger
+
+            _isIdle = true;
+            _idleTimer = 0f;
+            _nextIdleTime = Random.Range(idleMinTime, idleMaxTime);
+
+            int index = PickRandomIdleIndex();
+            _lastIdleIndex = index;
+            CrossFadeV2(randomIdleStates[index], idleCrossFadeDuration);
+            _isRandomIdlePlaying = true;
+
+            Debug.Log($"[AnimV2] Post-Walk Idle → {randomIdleStates[index]} (back to normal in {_nextIdleTime:F1}s)");
+        }
+
+        /// <summary>
+        /// Pilih index idle random dari array, hindari yang sama berturut-turut.
+        /// </summary>
+        private int PickRandomIdleIndex()
+        {
+            if (randomIdleStates.Length <= 1) return 0;
+
+            int index;
+            do { index = Random.Range(0, randomIdleStates.Length); }
+            while (index == _lastIdleIndex);
+            return index;
         }
     }
 }
