@@ -7,6 +7,7 @@
 TEXTURE2D(_BaseMap);        SAMPLER(sampler_BaseMap);
 TEXTURE2D(_WindTex);        SAMPLER(sampler_WindTex);
 TEXTURE2D(_GrassTrailRT);   SAMPLER(sampler_GrassTrailRT);
+TEXTURE2D(_TerrainColor);   SAMPLER(sampler_TerrainColor);
 
 // ── Per-Material Constant Buffer (Strict 16-Byte Aligned for SRP Batcher) ──
 CBUFFER_START(UnityPerMaterial)
@@ -34,13 +35,43 @@ CBUFFER_START(UnityPerMaterial)
     float  _RecoveryColorStrength;
     float  _RecoveryTime;
     float  _TrampleBendAmount;
-    float  _Pad0;
+    float  _TerrainBlend;
 
     float4 _EmissionColor;
     float  _EmissionIntensity;
     float  _EmissionTipBoost;
-    float2 _Pad1;
+    float  _TerrainOffset;
+    float  _TerrainSize;
+
+    float4 _SSSColor;
+    float  _SSSStrength;
+    float  _SSSPower;
+    float  _SpecularStrength;
+    float  _WindColorStrength;
+
+    float  _BladeWidth;
+    float  _BladePad0;
+    float  _BladePad1;
+    float  _BladePad2;
 CBUFFER_END
+
+// ── Sample Grass Alpha with Dilation (Thick / Chunky Cartoon Blades) ──
+half SampleGrassAlpha(float2 uv)
+{
+    half a = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv).a;
+    if (_BladeWidth > 0.0005)
+    {
+        float w1 = _BladeWidth;
+        float w2 = _BladeWidth * 2.0;
+        half a1 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv + float2(w1, 0.0)).a;
+        half a2 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv - float2(w1, 0.0)).a;
+        half a3 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv + float2(w2, 0.0)).a;
+        half a4 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv - float2(w2, 0.0)).a;
+        half a5 = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv + float2(0.0, -w1 * 0.5)).a;
+        a = max(a, max(max(a1, a2), max(max(a3, a4), a5)));
+    }
+    return a;
+}
 
 // ── Global Variables ──
 float4 _PlayerPosition;
@@ -50,8 +81,9 @@ float4 _GrassTrailCenter;
 float  _GrassTrailSize;
 
 // ── Safe Displacement (100% Anti-NaN) ──
-float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
+float3 ApplyGrassDisplacement(float3 posWS, float heightFactor, out float windWave)
 {
+    windWave = 0.0;
     // Bagian pangkal tetap di tanah, makin ke ujung makin bebas meliuk
     float windMask = pow(saturate(heightFactor), 1.35);
 
@@ -82,6 +114,7 @@ float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
 
         // Kontras hembusan: zona tenang vs zona gelombang angin bergulung
         float gustPush = smoothstep(0.20, 0.85, gustWave);
+        windWave = gustPush;
 
         // Kekuatan dorongan fisik saat gelombang hembusan lewat
         float pushAmount = gustPush * (_WindIntensity * 1.5) * windMask;
@@ -161,6 +194,12 @@ float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
     }
 
     return posWS;
+}
+
+float3 ApplyGrassDisplacement(float3 posWS, float heightFactor)
+{
+    float dummy;
+    return ApplyGrassDisplacement(posWS, heightFactor, dummy);
 }
 
 #endif

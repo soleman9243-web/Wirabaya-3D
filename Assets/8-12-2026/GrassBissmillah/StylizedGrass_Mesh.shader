@@ -20,6 +20,7 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
         [Header(Texture)]
         _BaseMap ("Main Texture (Albedo)", 2D) = "white" {}
         _Cutoff ("Alpha Cutoff", Range(0.0, 0.95)) = 0.35
+        _BladeWidth ("Blade Chunky Width (Kartun)", Range(0.0, 0.025)) = 0.010
 
         [Header(Color Near Far Blend)]
         _NearColor ("Near Color (Dekat Kamera)", Color) = (0.76, 1.0, 0.46, 1)
@@ -31,6 +32,12 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
         _BottomColor ("Bottom Color (Warna Pangkal)", Color) = (0.20, 0.54, 0.41, 1)
         _HighBlend ("Height Blend", Range(0.01, 1.0)) = 0.3
 
+        [Header(Terrain Color Blending)]
+        _TerrainColor ("Terrain Color Map", 2D) = "black" {}
+        _TerrainOffset ("Terrain Offset", Float) = 0.0
+        _TerrainSize ("Terrain Size", Float) = 1228.8
+        _TerrainBlend ("Terrain Blend Strength", Range(0.0, 1.0)) = 0.75
+
         [Header(Wind)]
         _WindTex ("Wind Pattern Texture", 2D) = "gray" {}
         _WindSpeed ("Wind Speed", Float) = 1.0
@@ -38,6 +45,7 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
         _WindDirX ("Wind Direction X", Float) = 1.0
         _WindDirZ ("Wind Direction Z", Float) = 0.5
         _WindTiling ("Wind Tiling", Float) = 0.08
+        _WindColorStrength ("Wind Wave Color Ripple", Range(0.0, 1.0)) = 0.35
 
         [Header(Grass Mesh)]
         _GrassHeight ("Grass Height", Float) = 1.0
@@ -53,6 +61,12 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
         [Header(Trample Grass Recovery)]
         _RecoveryTime ("Recovery Duration (Detik)", Range(0.5, 20.0)) = 4.0
         _TrampleBendAmount ("Trample Bend Amount", Range(0.0, 2.0)) = 1.0
+
+        [Header(Toon Lighting and Translucency)]
+        [HDR] _SSSColor ("Translucent SSS Color", Color) = (0.95, 0.90, 0.35, 1.0)
+        _SSSStrength ("Translucent SSS Intensity", Range(0.0, 2.0)) = 0.55
+        _SSSPower ("Translucent Sharpness", Range(1.0, 10.0)) = 3.5
+        _SpecularStrength ("Blade Tip Glint", Range(0.0, 1.0)) = 0.0
 
         [Header(Adjustable Emission Glow)]
         [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)
@@ -110,6 +124,7 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
                 float3 positionWS   : TEXCOORD1;
                 float  heightFactor : TEXCOORD2;
                 float3 normalWS     : TEXCOORD3;
+                float  windWave     : TEXCOORD4;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -122,8 +137,10 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
                 float heightFactor = max(saturate(input.color.a), saturate(input.uv.y));
                 output.heightFactor = heightFactor;
 
+                float windWave = 0.0;
                 float3 originalPosWS = TransformObjectToWorld(input.positionOS.xyz);
-                float3 posWS = ApplyGrassDisplacement(originalPosWS, heightFactor);
+                float3 posWS = ApplyGrassDisplacement(originalPosWS, heightFactor, windWave);
+                output.windWave = windWave;
 
                 output.positionWS = posWS;
                 output.positionCS = TransformWorldToHClip(posWS);
@@ -142,8 +159,8 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                half4 texCol = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                clip(texCol.a - _Cutoff);
+                half grassAlpha = SampleGrassAlpha(input.uv);
+                clip(grassAlpha - _Cutoff);
 
                 // Near/Far distance color blend
                 float camDist = distance(input.positionWS, GetCameraPositionWS());
@@ -151,17 +168,28 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
                 float distFactor = saturate((camDist - _NearDist) / distRange);
                 half3 distColor = lerp(_NearColor.rgb, _FarColor.rgb, distFactor);
 
-                // Height blend (Bottom gelap di pangkal, tip cerah di ujung — smoothstep agar gradien natural)
+                // ── Height Blend: Pangkal gelap menyatu ke tanah & tip cerah ──
                 float bottomMask = 1.0 - smoothstep(0.0, _HighBlend, input.heightFactor);
-                half3 baseColor = lerp(distColor, _BottomColor.rgb, bottomMask);
 
-                // Tip highlight: ujung blade lebih cerah & sedikit lebih kuning-hijau (Zelda-like)
-                float tipMask = smoothstep(0.45, 1.0, input.heightFactor);
-                half3 tipTint = distColor * half3(1.15, 1.25, 1.05); // sedikit lebih warm & bright
-                baseColor = lerp(baseColor, tipTint, tipMask * 0.55);
+                // Jika Terrain Color valid dan diaktifkan, modulasikan warna pangkal dengan warna terrain
+                float2 terrainUV = saturate((input.positionWS.xz - _TerrainOffset) / max(_TerrainSize, 1.0) + 0.5);
+                half4 terrainCol = SAMPLE_TEXTURE2D(_TerrainColor, sampler_TerrainColor, terrainUV);
+                half terrainLuma = max(terrainCol.r, max(terrainCol.g, terrainCol.b));
+                half3 rootTarget = (terrainLuma > 0.02 && _TerrainBlend > 0.01) ? lerp(_BottomColor.rgb, terrainCol.rgb, _TerrainBlend) : _BottomColor.rgb;
 
-                // Albedo — tekstur dikombinasi dengan warna (0.5/0.5 lebih natural dari 0.6/0.4)
-                half3 albedo = baseColor * (texCol.rgb * 0.5 + 0.5);
+                half3 baseColor = lerp(distColor, rootTarget, bottomMask);
+
+                // ── Wind Waves: Gelombang sapuan hembusan angin segar pada albedo ──
+                half3 windColorTint = baseColor * half3(1.10, 1.18, 1.05);
+                baseColor = lerp(baseColor, windColorTint, input.windWave * _WindColorStrength);
+
+                // Tip highlight: ujung blade lebih segar & cerah terkena sinar
+                float tipMask = smoothstep(0.40, 1.0, input.heightFactor);
+                half3 tipTint = baseColor * half3(1.10, 1.20, 1.06);
+                baseColor = lerp(baseColor, tipTint, tipMask * 0.35);
+
+                // Albedo — warna bersih kartun (flat painterly, bebas dari noise garis serat fotorealistis)
+                half3 albedo = baseColor;
 
                 // ── Trail & Real-Time Footprint Color Shift (Warna bekas injakan & recovery dapat diatur di Inspector) ──
                 float2 trailUV = (input.positionWS.xz - _GrassTrailCenter.xy) / max(_GrassTrailSize, 1.0) + 0.5;
@@ -186,51 +214,57 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
                 half3 trampleTint = lerp(albedo, _RecoveryColor.rgb, 0.80);
                 albedo = lerp(albedo, trampleTint, totalTrample * saturate(_RecoveryColorStrength));
 
-                // ── Toon / WuWa / Zelda Stylized Lighting ────────────────────────────────
+                // ── Crisp 2-Tone Cel-Shading (Ghibli / Anime Nature Style) ────────────────
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord, input.positionWS, half4(1, 1, 1, 1));
                 half shadowAtten = mainLight.shadowAttenuation;
 
-                // Shadow remap: bayangan terlihat tapi tidak terlalu gelap (ala WuWa)
-                half softShadow = lerp(0.62, 1.0, shadowAtten);
+                // Bayangan cel tajam & bersih
+                half shadowCel = smoothstep(0.15, 0.40, shadowAtten);
 
                 float3 N = NormalizeNormalPerPixel(input.normalWS);
-                N = normalize(lerp(float3(0.0, 1.0, 0.0), N, 0.55));
+                // Normal blend kuat ke Up vector (0.72) agar seluruh rumpun menyatu menjadi volume awan bulat (Puffy Cel-Shaded Clumps)
+                N = normalize(lerp(N, float3(0.0, 1.0, 0.0), 0.72));
 
                 float3 V = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 float3 L = mainLight.direction;
-                float3 H = normalize(L + V);
 
-                // --- Diffuse WuWa-style: kontras lebih dramatis antara shadow dan lit
+                // --- 2-Tone Crisp Cel Banding (Garis batas kartun yang tegas dan bersih)
                 half rawNdotL = dot(N, L);
-                half toonBand = smoothstep(-0.2, 0.5, rawNdotL);
-                half NdotL = lerp(0.45, 1.0, toonBand) * softShadow;
+                half toonBand = smoothstep(0.02, 0.09, rawNdotL) * shadowCel;
 
-                // --- Subsurface: halus, tidak terlalu hijau neon
-                half backLight = saturate(dot(-L, V));
-                half sss = pow(backLight, 3.5) * input.heightFactor * 0.25;
-                half3 sssColor = albedo * half3(0.4, 0.7, 0.3) * sss;
+                // Sisi bayangan: terang, segar, dan luminous (70% brightness, khas anime/Ghibli)
+                half3 shadowAmbient = half3(0.65, 0.78, 0.68);
+                // Sisi terang: cahaya matahari hangat bersinar terang (110% brightness)
+                half3 litLight = mainLight.color * half3(1.08, 1.10, 0.98);
+                half3 diffuseLight = lerp(shadowAmbient, litLight, toonBand);
 
-                // --- Tip Brightening: lebih subtle (bukan neon)
+                // --- Subsurface Scattering / Translucency (Ghibli & WuWa sun-through-blade glow)
+                float3 backLightDir = normalize(L + N * 0.3);
+                half backDot = saturate(dot(-V, backLightDir));
+                half sss = pow(backDot, _SSSPower) * (_SSSStrength * 0.6) * input.heightFactor;
+                half3 sssColor = _SSSColor.rgb * sss * mainLight.color;
+
+                // --- Tip Sunlit Boost (Subtle)
                 half tipBright = input.heightFactor * input.heightFactor;
-                albedo = lerp(albedo, albedo * 1.20, tipBright * 0.40);
+                albedo = lerp(albedo, albedo * 1.12, tipBright * 0.25);
 
-                // --- Ambient: medium cool green (WuWa mood tapi tidak terlalu gelap)
-                half3 ambient = half3(0.28, 0.40, 0.22);
+                // --- Final Lighting Composition
+                half3 litColor = albedo * diffuseLight + sssColor;
 
-                // --- Direct lighting
-                half3 direct = mainLight.color * NdotL;
-                half3 litColor = albedo * (direct + ambient) + sssColor;
-
-                // --- Fresnel Rim: sangat halus, hampir tidak kelihatan
-                half fresnel = pow(1.0 - saturate(dot(N, V)), 4.5);
-                half3 rimLight = half3(0.25, 0.55, 0.20) * fresnel * input.heightFactor * 0.18;
+                // --- Fresnel Rim halus
+                half fresnel = pow(1.0 - saturate(dot(N, V)), 4.0);
+                half3 rimLight = mainLight.color * fresnel * (input.heightFactor * 0.20);
                 litColor += rimLight;
 
-                // --- Specular putih tajam (sun glint di ujung blade, khas WuWa)
-                float NdotH = saturate(dot(N, H));
-                float specular = pow(NdotH, 96.0) * (input.heightFactor * 0.90);
-                litColor += half3(1.0, 1.0, 0.95) * specular * 1.2;
+                // --- Micro-glint tip specular (hanya jika diaktifkan, tidak membelah rumput)
+                if (_SpecularStrength > 0.01)
+                {
+                    float3 H = normalize(L + V);
+                    float NdotH = saturate(dot(N, H));
+                    float spec = pow(NdotH, 120.0) * pow(input.heightFactor, 3.0) * _SpecularStrength;
+                    litColor += mainLight.color * spec;
+                }
 
                 // ── Emission (dari Material Inspector) ──
                 float tipFactor = lerp(1.0, input.heightFactor, _EmissionTipBoost);
@@ -298,8 +332,8 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                half4 texCol = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                clip(texCol.a - _Cutoff);
+                half grassAlpha = SampleGrassAlpha(input.uv);
+                clip(grassAlpha - _Cutoff);
 
                 return input.positionCS.z;
             }
@@ -364,8 +398,8 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                half4 texCol = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                clip(texCol.a - _Cutoff);
+                half grassAlpha = SampleGrassAlpha(input.uv);
+                clip(grassAlpha - _Cutoff);
 
                 outNormalWS = half4(NormalizeNormalPerPixel(input.normalWS), 0.0);
             }
@@ -438,8 +472,8 @@ Shader "FantasyKingdom/StylizedGrass_Mesh"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                half4 texCol = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                clip(texCol.a - _Cutoff);
+                half grassAlpha = SampleGrassAlpha(input.uv);
+                clip(grassAlpha - _Cutoff);
 
                 return 0;
             }

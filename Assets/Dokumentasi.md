@@ -4091,3 +4091,133 @@ result += _SSSColor * sss * light.color;
   4. GenshinGrassFoliage.shader dipulihkan kembali.
   5. Seluruh shader berhasil di-compile ulang oleh Unity Engine dengan status 0 error.
 
+---
+
+## Point 144 – Perbaikan Estetika Visual Rumput Stylized (WuWa / Binary Lunar / Ghibli Style)
+
+### A. Masalah & Temuan Systematic Debugging
+1. **Harsh Specular Streak**: Garis putih terik yang membelah padang rumput akibat kalkulasi specular Blinn-Phong pada normal yang di-bend 55% tegak lurus ke atas.
+2. **Hard Cutout di Pangkal Rumput**: Rumput tampak mengambang seperti karpet tempel karena tidak menyatu dengan warna tanah di bawahnya.
+3. **Visual Flatness**: Angin hanya menggerakkan vertex fisik tanpa adanya sapuan gelombang warna (*Wind Color Wave*) pada albedo.
+
+### B. Implementasi Perbaikan
+1. **Pembersihan Specular & Toon Normal**:
+   - Menghapus specular putih terik buatan. Menambahkan slider `_SpecularStrength` (default 0) untuk mikro-glint opsional di ujung daun saja.
+   - Normal blending dilunakkan (0.35) agar setiap helai dan rumpun rumput tetap memiliki lekukan dan volume 3D.
+2. **Terrain Color Blending (Inspirasi Binary Lunar)**:
+   - Menghubungkan sampling `_TerrainColor` (menggunakan `TerrainColor.renderTexture` dan parameter `_TerrainSize` / `_TerrainOffset`).
+   - Pangkal rumput kini menyatu mulus ke warna tanah di bawahnya dengan kontrol `_TerrainBlend`.
+3. **Wind Waves Color Ripples**:
+   - Fungsi `ApplyGrassDisplacement` kini mengekspor `windWave` faktor dorongan hembusan angin.
+   - Hembusan angin memunculkan sapuan gelombang warna hangat keemasan (`_WindColorStrength`) di atas albedo sehingga padang rumput tampak hidup dan dinamis saat tertiup angin.
+4. **Translucent Subsurface Scattering (Backlit SSS)**:
+   - Menambahkan efek pencahayaan tembus pandang bilah rumput saat menghadap arah matahari dengan parameter `_SSSColor`, `_SSSStrength`, dan `_SSSPower`.
+5. **Penyesuaian Material GrassMat.mat**:
+   - Mengaktifkan `_WindTiling` (0.06) agar pola hembusan angin memiliki skala organik yang proporsional.
+   - Menyesuaikan palet warna dasar agar lebih kaya kontras dan selaras dengan suasana anime/fantasy.
+
+### C. Fine-Tuning Harmonisasi Lingkungan (Lush Forest & Dark Moss Root)
+- **Eliminasi Warna Kuning Pucat / Kering**: Palet `_NearColor` diperbarui menjadi hijau daun segar alami (`0.18, 0.54, 0.20`) dan `_FarColor` (`0.08, 0.28, 0.10`) agar senada dengan lebatnya pepohonan di scene.
+- **Penyelarasan Pangkal Rumput ke Tanah Lumut**: Nilai `_BottomColor` disetel ke hijau lumut gelap pekat (`0.02, 0.06, 0.02`) dan radius `_HighBlend` dirapatkan ke `0.28`, sehingga pangkal helai rumput langsung menyatu mulus ke tanah tanpa garis potong ataupun warna tanah kering/kuning yang tidak serasi.
+- **Translucency SSS Seimbang**: Warna tembus pandang sinar matahari (`_SSSColor`) diganti dari kuning pekat ke *chartreuse emerald* segar (`0.55, 0.90, 0.30`).
+
+### D. Kalibrasi Palet Stylized Ghibli / The Illustrated Nature (Berdasarkan Sampel Presisi Gambar Referensi)
+- **Color Temperature Split**:
+  - Sisi bayangan (*shadow*) diberi pencahayaan *cool emerald-teal* (`0.20, 0.42, 0.30`) sehingga area bayangan tampak kaya warna, sejuk, dan tidak kelam.
+  - Sisi terang (*lit*) menangkap sinar matahari hangat menghasilkan warna hijau limau musim semi (*spring lime green*: sRGB `133, 197, 105`, identik dengan sampel referensi).
+- **Puffy Clumping Normal**: Normal rumput di-bend dengan bobot `0.40` ke arah Up vector untuk menciptakan ilusi rumpun rumput yang membulat dan bervolume lembut layaknya lukisan cat minyak Ghibli.
+- **Nilai Material GrassMat.mat**:
+  - `_NearColor`: `(0.24, 0.58, 0.16)`
+  - `_FarColor`: `(0.10, 0.32, 0.14)`
+  - `_BottomColor`: `(0.015, 0.065, 0.025)`
+  - `_SSSColor`: `(0.45, 0.85, 0.25)`
+
+### E. Transformasi ke Crisp 2-Tone Cel-Shading (Look Kartun / Anime Tegas)
+- **Eliminasi Noise Serat Tekstur**: Nilai albedo kini murni menggunakan warna bersih kartun (`albedo = baseColor`), menyingkirkan garis-garis serat fotorealistis semi-realistis sehingga permukaan bilah rumput terlihat bersih dan *painterly*.
+- **Crisp 2-Tone Cel-Banding**: Mengganti gradasi pencahayaan kabur dengan batas bayangan cel kartun yang tegas (`smoothstep(0.02, 0.09, rawNdotL)`), menghasilkan garis bayangan anime yang jelas antara sisi terang dan sisi teduh.
+- **Puffy Clump Normal (0.72 Upward Normal)**: Memperkuat arah normal ke atas hingga bobot 0.72 agar bilah-bilah dalam satu rumpun menangkap cahaya bersamaan sebagai satu kesatuan awan/gumpalan rumput (*puffy cartoon volume*), bukan serabut kawat terpisah.
+
+### F. Peningkatan Kecerahan & Vibransi Anime Luminous (Anti-Dark Ambient)
+- **Shadow Floor Boost (70% Minimum Ambient)**: Nilai bayangan ambient dinaikkan dari `0.20` ke `0.65 - 0.78` agar sisi bayangan rumput tetap terang, segar, dan bersinar seperti di film animasi Ghibli (tidak tenggelam gelap pekat).
+- **Sunlit Boost (110% Direct Sunlight)**: Area yang terkena cahaya matahari langsung diperkuat hingga 110% dengan rona hangat keemasan lembut.
+- **Ekspansi Radius Jarak (`_FarDist: 80`)**: Mencegah rumput di depan kamera menggelap sebelum waktunya akibat transisi jarak dekat, serta menjaga `_FarColor` tetap hijau cerah (`0.22, 0.55, 0.18`).
+- **Penyempurnaan Pangkal (`_HighBlend: 0.18`)**: Membatasi area gelap akar hanya pada 18% dasar bilah, sehingga 82% permukaan badan dan ujung rumput bebas menyala terang.
+
+### G. Transformasi Siluet Bilah Daun Kartun (Chunky Leaf Dilation & Soft Cutoff)
+- **Akar Masalah "Kurang Kartun" / "Apa Bedanya"**: Tekstur `IL3DN_Grass_02` secara default memiliki 772 bilah jarum mikro yang sangat tipis dan rapat. Tanpa bidang daun yang lebar, efek cel-shading tidak dapat terlihat jelas dari jarak kamera.
+- **Implementasi Dynamic Blade Dilation**:
+  1. Menambahkan parameter `_BladeWidth ("Blade Chunky Width (Kartun)", Range(0.0, 0.025))` pada [StylizedGrass_Mesh.shader](file:///c:/Users/USER/Documents/GitHub/Wirabaya-3D/Assets/8-12-2026/GrassBissmillah/StylizedGrass_Mesh.shader) dan [StylizedGrass_Common.hlsl](file:///c:/Users/USER/Documents/GitHub/Wirabaya-3D/Assets/8-12-2026/GrassBissmillah/StylizedGrass_Common.hlsl) (16-byte aligned untuk SRP Batcher).
+  2. Fungsi `SampleGrassAlpha(input.uv)` melakukan pelebaran horizontal multi-sample sehingga bilah-bilah jarum mikro menyatu menjadi daun kelopak kartun yang tebal dan berisi (meningkatkan cakupan siluet daun dari 25% menjadi ~48%).
+  3. Diterapkan secara konsisten di semua render pass: `UniversalForward`, `DepthOnly`, `DepthNormals`, dan `ShadowCaster`.
+- **Penyesuaian Material GrassMat.mat**:
+  - `_BladeWidth`: `0.010` (daun menjadi gemuk/tebal layaknya daun kartun).
+  - `_Cutoff`: diturunkan dari `0.476` ke `0.22` agar siluet bilah rumput penuh, solid, dan tidak bergerigi tipis.
+  - Slider `Blade Chunky Width` kini tersedia langsung di Inspector [GrassMat.mat](file:///c:/Users/USER/Documents/GitHub/Wirabaya-3D/Assets/8-12-2026/GrassBissmillah/GrassMat.mat) sehingga ketebalan daun kartun dapat diatur secara interaktif secara langsung.
+
+---
+
+## Point 145 – Pemulihan Scene & Restorasi Terrain Texture & Grass Detail (Unity 6 URP)
+
+### A. Latar Belakang Masalah
+- Proses Unity sempat tidak merespons (freeze) dan berada dalam Play Mode di latar belakang (`PID 9888`), mengunci `Temp/UnityLockfile`.
+- Pengguna khawatir kehilangan pekerjaan. Setelah proses dihentikan paksa via Task Manager (`End Task`), scene terbuka dengan terrain kosong tanpa layer tekstur tanah maupun tanaman rumput detail.
+
+### B. Penyebab Teknis
+1. Objek di hierarki tersimpan di file `.unity`, namun pengecatan tekstur (*splatmap*) dan rumput detail disimpan di dalam `TerrainData.asset`.
+2. Selama Play Mode, Unity tidak menulis perubahan terrain ke disk, dan mengembalikan perubahan saat keluar dari Play Mode.
+3. Cadangan pre-playmode tersimpan di `Temp/__Backupscenes/0.backup` (17.1 MB) dan berhasil diamankan ke `Assets/_Recovery/SceneBackup_BeforePlay_1042.unity`.
+
+### C. Solusi & Otomasi Pemulihan
+1. **Pembuatan Script Restorasi Otomatis**:
+   - Dibuat `Assets/Editor/RestoreTerrainGrassAndTexture.cs`.
+   - Menu: `Wirabaya/🌿 Pulihkan Terrain (Rumput & Tekstur Otomatis)`.
+   - Menautkan kembali 4 TerrainLayer (`Blockout_Grass_A`, `Blockout_Dirt_A`, `Blockout_Rock_A`, `Blockout_Sand_A`) ke `TerrainData`.
+   - Mengonfigurasi `GrassPrefabb.prefab` ke `detailPrototypes` lengkap dengan pengaturan cel-shading dan `alignToGround = 1.0f` agar rumput miring menempel lereng.
+   - Menanamkan kembali rumput detail secara terarah di sekitar pemain dan area rumah nenek, lalu mengeksekusi `AssetDatabase.SaveAssets()`.
+
+---
+
+## Point 146 – Pembuatan Shader Khusus Bush Foliage Anime (StylizedBush_Foliage.shader)
+
+### A. Analisis Kebutuhan & Esensi Aset Bush
+- **Aset**: `Assets/ENV TDD/bush-20260625T013808Z-3-001/bush/` (`bush_simplified.mat`).
+- **Tekstur Asli**: `bush_simplified.png` berukuran 2048x2048 merupakan karya lukisan tangan (*hand-painted*) bergaya Ghibli/anime dengan kluster daun yang kaya detail dan sapuan kuas artistik.
+- **Masalah Shader Sebelumnya**:
+  1. *Neko Legends Anime Shader v2*: Menggunakan pengali warna neon kuning-hijau ekstrem (`0.55, 1.0, 0`) yang melenyapkan seluruh rona alami lukisan daun, menjadikannya warna hijau stabilo tajam dan pecah.
+  2. *Grass Mesh Shader*: Dirancang untuk bilah rumput tunggal tegak lurus dengan parameter pelebaran `_BladeWidth` dan deformasi `uv.y` yang merusak dan mengacak-acak mesh bush 3D.
+
+### B. Arsitektur Shader StylizedBush_Foliage
+Dibuat shader baru [StylizedBush_Foliage.shader](file:///c:/Users/USER/Documents/GitHub/Wirabaya-3D/Assets/Shaders/StylizedBush_Foliage.shader) di folder `Assets/Shaders/` yang dirancang khusus untuk vegetasi bush:
+1. **Preservasi 100% Esensi Lukisan Asli**:
+   - Albedo murni membaca `_BaseMap` asli (`bush_simplified.png`) dengan `_BaseColor = (1, 1, 1, 1)`.
+   - Siluet daun dipotong presisi menggunakan `_Cutoff` tanpa distorsi atau pelebaran blade yang mengaburkan bentuk daun aslinya.
+2. **Harmonisasi Pencahayaan Cel Anime Bersama Rumput**:
+   - **Spherical Volume Normal**: Normal permukaan quad diblend ke arah luar dari titik pusat bush (`_SphericalNormalBlend: 0.65`, `_UpNormalBlend: 0.40`). Ini mengubah pencahayaan kumpulan quad datar menjadi volume kanopi 3D bulat lembut layaknya film animasi Studio Ghibli.
+   - **2-Tone Crisp Cel Banding**: Batas terang-bayang anime bersih yang selaras dengan padang rumput di sekitarnya.
+   - **Serasi Warna Bayangan**: Area bayangan diberi rona hijau teduh alami (`_ShadowColor: (0.58, 0.76, 0.62)`) sehingga tidak gelap pekat, tetap hidup dan luminous.
+   - **Subsurface Scattering (SSS)**: Translusensi daun saat membelakangi matahari dengan pendar keemasan hangat (`_SSSColor: (0.90, 0.95, 0.40)`).
+   - **Fresnel Rim**: Pendar siluet tipis pada kontur terluar semak.
+3. **Animasi Angin Alami Bush (Object-Space Foliage Wind)**:
+   - Gerakan angin dihitung berdasarkan ketinggian lokal objek (`positionOS.y`), bukan `uv.y`, sehingga pangkal semak tetap menancap kokoh di tanah sedangkan kanopi atas meliuk lembut.
+   - Sapuan gelombang angin selaras dengan arah dan kecepatan rumput di terrain (`posWS.xz`).
+   - Dilengkapi *micro-flutter* getaran halus helai daun individual serta respon senggolan pemain saat melintas.
+### C. Refinement: Solusi Tuntas "Kok Tetap Jelek" (Color Grading & Normal Geometry)
+1. **Penyebab Tampilan Awal Kusam / Jelek**:
+   - **Mismatched Palette Tekstur Asli**: Tekstur asli `bush_simplified.png` memiliki rata-rata warna sRGB `[42, 101, 72]` (sangat gelap, dingin, kebiruan/teal tua). Ketika dimasukkan langsung tanpa color grading, ia tampak seperti semak lumut abu-abu kusam yang mati di samping rumput yang bersinar hangat (`#5DB332`).
+   - **Skala Geometri FBX Centimeter**: FBX diekspor dalam skala centimeter (sumbu Y berkisar `-78 cm` s/d `+299 cm`). Pengaturan awal `_CenterYOffset: 0.8` dan `_BushHeight: 1.8` berada pada skala meter (milimeter), sehingga normal sferis terpancar dari permukaan tanah dan menciptakan bayangan hitam pekat masif di pucuk kanopi semak.
+   - **Batang Kayu Gelap Menusuk**: Material `wud.mat` memiliki warna bayangan abu-abu gelap dingin (`0.49`) sehingga dahan diagonal menusuk tampak seperti balok hitam pekat yang mengganggu pandangan.
+
+2. **Penyempurnaan Arsitektur Shader**:
+   - **Painterly Grass Palette Matching (`_PaletteBlend: 0.85`)**: Mengekstrak nilai pencahayaan (*luma*) dari sapuan kuas asli pelukis, lalu memetakannya secara artistik ke 3 palet warna rumput:
+     - `_TopColor`: Hijau limau keemasan musim semi (`#8CE03D`) untuk helai daun atas yang disinari matahari.
+     - `_MidColor`: Hijau rumput segar (`#47A62E`) untuk badan dedaunan utama.
+     - `_DarkColor`: Hijau zamrud pekat (`#116B38`) untuk sela-sela dalam semak.
+   - **Koreksi Pusat Sferis Kanopi (`_CenterYOffset: 100.0 cm`, `_BushBaseY: -75.0 cm`, `_BushTopY: 280.0 cm`)**: Titik pusat pembulatan normal kini tepat berada di tengah kanopi bush (Y = 1 meter), melenyapkan bayangan hitam datar di bagian atas dan memberikan efek pencahayaan bulat lembut nan bervolume ala Studio Ghibli.
+   - **Penyelarasan Batang Kayu (`wud.mat`)**: Mengubah warna kayu menjadi rona kayu oak hangat alami (`_Color: (0.68, 0.54, 0.40)` dan `_Shading_Color: (0.45, 0.35, 0.28)`) sehingga dahan menyatu serasi dengan pepohonan di latar belakang.
+
+
+
+
+
+
+
