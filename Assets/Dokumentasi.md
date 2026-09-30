@@ -4213,7 +4213,18 @@ Dibuat shader baru [StylizedBush_Foliage.shader](file:///c:/Users/USER/Documents
      - `_MidColor`: Hijau rumput segar (`#47A62E`) untuk badan dedaunan utama.
      - `_DarkColor`: Hijau zamrud pekat (`#116B38`) untuk sela-sela dalam semak.
    - **Koreksi Pusat Sferis Kanopi (`_CenterYOffset: 100.0 cm`, `_BushBaseY: -75.0 cm`, `_BushTopY: 280.0 cm`)**: Titik pusat pembulatan normal kini tepat berada di tengah kanopi bush (Y = 1 meter), melenyapkan bayangan hitam datar di bagian atas dan memberikan efek pencahayaan bulat lembut nan bervolume ala Studio Ghibli.
-   - **Penyelarasan Batang Kayu (`wud.mat`)**: Mengubah warna kayu menjadi rona kayu oak hangat alami (`_Color: (0.68, 0.54, 0.40)` dan `_Shading_Color: (0.45, 0.35, 0.28)`) sehingga dahan menyatu serasi dengan pepohonan di latar belakang.
+
+### D. Transformasi "Bunder & HighBlend" (Meniru Gambar Referensi Ghibli & Menghilangkan Efek Daun Duri)
+1. **Analisis Gambar Referensi & Masalah "Daun Duri"**:
+   - Gambar referensi memperlihatkan rumpun semak bervolume bulat padu (*puffy round canopy*) dengan pucuk atas bermandikan rona keemasan terang (*HighBlend*), bukan kartu daun yang terpisah-pisah.
+   - Efek "daun duri-duri" di Unity terjadi karena `Alpha Cutoff` sempat disetel ke `0.95`, yang memotong 90% permukaan daun dan menyisakan tulang/ujung daun runcing bergerigi.
+2. **Implementasi Fitur Macro Shading & HighBlend**:
+   - **Spherical Volume Normals Penuh (`_SphericalNormalBlend: 0.95`)**: Seluruh normal dedaunan diproyeksikan langsung keluar dari pusat bola semak. Hasilnya, bayangan dan pencahayaan matahari menyapu semak sebagai **satu bola 3D bervolume utuh (bunder)**, bukan per lembar daun.
+   - **HighBlend Crown System**:
+     - `_HighBlend (0.45)` & `_HighBlendSmoothness (0.30)`: Menghasilkan mahkota pucuk daun atas yang menyala terang keemasan (`_TopColor: 0.72, 0.96, 0.30`), persis seperti area sunlit pada gambar referensi.
+     - `_BottomBlend (0.30)`: Transisi mulus ke pangkal gelap (`_BottomColor: 0.067, 0.42, 0.22`) yang menyatu dengan tanah dan rumput.
+     - `_LeafDetailStrength (0.25)`: Menjaga bercak goresan daun pelukis asli (*dappled foliage*) di atas gradasi bola bundar sehingga semak tetap terlihat hidup dan artistik.
+   - **Normalisasi Cutoff Anti-Duri (`_Cutoff: 0.30`)**: Mengembalikan bentuk daun menjadi lebar, lebat, dan empuk dengan pembatas aman.
 
 
 
@@ -4221,3 +4232,21 @@ Dibuat shader baru [StylizedBush_Foliage.shader](file:///c:/Users/USER/Documents
 
 
 
+
+### F. Point 147 - Kalibrasi Rumput Terinjak & Penyesuaian Warna Material Atlas_Mat
+
+1. **Perbaikan Rumput Terinjak Amblas ke Bawah Tanah**:
+   - **Akar Masalah**: Nilai `_TrampleBendAmount` (1.68) yang dikalikan faktor penurunan sebelumnya mendorong posisi vertikal ujung rumput ke bawah tanah hingga sedalam 1 meter. Akibatnya, rumput 0.6m tenggelam seluruhnya ke bawah permukaan terrain dan jalur injakan tampak botak seperti parit tanah gundul.
+   - **Solusi**:
+     - Di `StylizedGrass_Common.hlsl`: Mengubah formulasi pembengkokan vertikal menjadi `bendDown = min(trailFactor * 0.14, heightFactor * 0.18)` dan dorongan mendatar `bendFwd = trailFactor * (0.60 * _TrampleBendAmount)`.
+     - Rumput kini melipat mendatar (rebah horizontal) di atas permukaan tanah tanpa menembus ke bawah poligon terrain.
+     - Di `GrassMat.mat`: Mengganti `_RecoveryColor` menjadi rona hijau rebah segar `(r: 0.20, g: 0.52, b: 0.16)` dengan intensitas `0.25` agar helai rumput yang terinjak tetap tampak hijau dan jelas terlihat terbaring di atas tanah.
+
+2. **Penyesuaian Warna Material Atlas_Mat (Tanpa Mengubah File Shader)**:
+   - Sesuai instruksi ketat user, file shader sama sekali tidak disentuh/diubah agar tidak mempengaruhi model pepohonan lain.
+   - Penyesuaian hanya dilakukan langsung pada material `Assets/Art/Materials/Foliage/Trees and Bushes/Atlas_Mat.mat` yang digunakan oleh semak `Bush_02`:
+     - `_TopColor`: `(r: 0.38, g: 0.62, b: 0.22)` (pucuk limau keemasan lembut, meredam rona neon kuning tajam agar serasi dengan pucuk rumput).
+     - `_MidColor`: `(r: 0.24, g: 0.50, b: 0.18)` (hijau dedaunan alami anime, selaras dengan rona badan rumput sekitarnya).
+     - `_BottomColor`: `(r: 0.068, g: 0.38, b: 0.20)` (hijau lumut alami pangkal bawah yang menyatu ke tanah).
+     - `_SSSColor`: `(r: 0.38, g: 0.65, b: 0.20)` (translusensi pendar hangat daun yang lembut).
+     - `_SunlightColor`: `(r: 1.08, g: 1.10, b: 0.98)` (cahaya mentari hangat).
