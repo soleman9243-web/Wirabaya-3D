@@ -19,7 +19,8 @@ Material:
   m_CustomRenderQueue: 2450
   stringTagMap:
     RenderType: TransparentCutout
-  disabledShaderPasses: []
+  disabledShaderPasses:
+  - ShadowCaster
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -43,7 +44,7 @@ Material:
     - _UpNormalBlend: 0.35
     - _WindDirX: 1
     - _WindDirZ: 0.5
-    - _WindIntensity: 0.35
+    - _WindIntensity: 0.15
     - _WindSpeed: 1.38
     - _WindTiling: 0.1
     m_Colors:

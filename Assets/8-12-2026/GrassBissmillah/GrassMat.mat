@@ -116,14 +116,14 @@ Material:
     - _AlphaThreshold: 0.5
     - _AlphaToMask: 1
     - _BendStrength: 1.26
-    - _BladeWidth: 0.01
+    - _BladeWidth: 0.00767
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 0
-    - _Cutoff: 0.22
+    - _Cutoff: 0.754
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0

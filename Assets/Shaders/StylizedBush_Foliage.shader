@@ -8,12 +8,17 @@ Shader "FantasyKingdom/StylizedBush_Foliage"
         _Cutoff ("Alpha Cutoff", Range(0.01, 0.95)) = 0.45
 
         [Header(Painterly Grass Palette Matching)]
+        [Toggle(_USE_PALETTE)] _UsePalette ("Enable Stylized Palette Tint (Warna Tambahan)", Float) = 0
         _PaletteBlend ("Grass Palette Harmony (Blend)", Range(0.0, 1.0)) = 0.85
         _TopColor ("Top Sunlit Color (Serasi Rumput Cerah)", Color) = (0.55, 0.88, 0.24, 1.0)
         _MidColor ("Mid Foliage Color (Serasi Badan Rumput)", Color) = (0.28, 0.65, 0.18, 1.0)
         _DarkColor ("Dark Under Color (Serasi Pangkal Rumput)", Color) = (0.067, 0.42, 0.22, 1.0)
         _LumaMin ("Texture Luma Min", Range(0.0, 0.5)) = 0.10
         _LumaMax ("Texture Luma Max", Range(0.3, 1.0)) = 0.52
+
+        [Header(Emission)]
+        [Toggle(_EMISSION_ON)] _UseEmission ("Enable Emission", Float) = 0
+        [HDR] _EmissionColor ("Emission Color", Color) = (0.0, 0.0, 0.0, 1.0)
 
         [Header(Stylized Cel Lighting)]
         _ShadowColor ("Shadow Ambient Tint (Luminous Anime)", Color) = (0.65, 0.78, 0.68, 1.0)
@@ -78,6 +83,7 @@ Shader "FantasyKingdom/StylizedBush_Foliage"
             float4 _SunlightColor;
             float4 _SSSColor;
             float4 _RimColor;
+            float4 _EmissionColor;
 
             float  _Cutoff;
             float  _PaletteBlend;
@@ -106,67 +112,96 @@ Shader "FantasyKingdom/StylizedBush_Foliage"
 
             float  _FlutterAmount;
             float  _PlayerPushStrength;
-            float2 _PadMaterial;
+            float  _UseEmission;
+            float  _UsePalette;
         CBUFFER_END
 
         float4 _PlayerPosition;
         float4 _PlayerTramplePos;
 
-        // Perhitungan deformasi angin dan interaksi player pada bush foliage
+        // Perhitungan deformasi angin Variatif & Alami (Multi-Tier Organic Wind)
         float3 ApplyBushFoliageDisplacement(float3 posOS, float3 posWS, float heightFactor)
         {
-            float windMask = heightFactor * heightFactor;
+            // Menjamin daun dan dahan memiliki ayunan alami proporsional dari pangkal ke pucuk
+            float effectiveHeight = max(heightFactor, 0.35);
+            float bendWeight = pow(effectiveHeight, 1.25);
 
-            // 1. Sapuan angin makro (selaras dengan gelombang rumput di terrain)
             if (_WindIntensity > 0.001)
             {
+                // Arah angin yang dinormalisasi
                 float2 rawDir = float2(_WindDirX, _WindDirZ);
                 float dirLen = length(rawDir);
                 float2 windDir = (dirLen > 0.001) ? (rawDir / dirLen) : float2(1.0, 0.0);
                 float2 perpDir = float2(-windDir.y, windDir.x);
 
-                float speed = _WindSpeed * 0.50;
-                float tiling = max(_WindTiling, 0.005);
+                float freq = max(_WindTiling, 0.005);
+                float speed = _WindSpeed * 1.5;
 
-                float2 waveUV = posWS.xz * (tiling * 0.8) - windDir * (_Time.y * speed);
-                float wave = sin(waveUV.x + waveUV.y) * 0.5 + 0.5;
-                float push = smoothstep(0.2, 0.8, wave) * (_WindIntensity * 0.25) * windMask;
+                // 1. Variasi per-objek (Setiap semak memiliki fase acak unik agar tidak berayun serempak seperti klon)
+                float3 rootWS = TransformObjectToWorld(float3(0.0, 0.0, 0.0));
+                float objectSeed = sin(dot(rootWS.xz, float2(12.9898, 78.233))) * 43758.5453;
+                float objOffset = frac(objectSeed) * 6.28318;
 
-                // Micro flutter daun individual (skala centimeter posOS disesuaikan)
-                float flutter = sin(_Time.y * _FlutterSpeed + posOS.x * 0.05 + posOS.z * 0.05) * (_FlutterAmount * windMask);
+                // 2. Siklus Hembusan Angin Dinamis (Gusting / Breathing: angin kadang kencang, kadang sepoi mereda)
+                float gustEnvelope = sin(_Time.y * (speed * 0.35) + dot(posWS.xz, windDir * (freq * 0.4)) + objOffset) * 0.35 + 0.75;
 
-                posWS.xz += windDir * push + perpDir * flutter;
-                posWS.y  -= push * 0.15;
+                // 3. Ombak Utama Kanopi (Main Canopy Sway - Ayunan anggun batang & semak utama)
+                float mainPhase = dot(posWS.xz, windDir * freq) - _Time.y * speed + objOffset;
+                float mainSway = sin(mainPhase);
+
+                // 4. Dinamika Dahan Sekunder (Sub-Branch Sway - Gerakan dahan dengan rasio frekuensi emas non-repetitif)
+                float branchPhase = dot(posWS.xz, perpDir * (freq * 1.618)) - _Time.y * (speed * 1.42) + (posOS.y * 0.03) + objOffset;
+                float branchSway = sin(branchPhase) * 0.35;
+
+                // 5. Getaran Mikro Daun Hidup (Turbulent Leaf Flutter - Daun berdesir bervariasi mengikuti posisi daun)
+                float leafNoise = sin(posOS.x * 0.15 + posOS.z * 0.15 + posOS.y * 0.10);
+                float leafPhase = _Time.y * max(_FlutterSpeed, 2.0) + (posWS.x * 2.2 + posWS.z * 2.2) + leafNoise * 3.1415;
+                float leafFlutter = sin(leafPhase) * (max(_FlutterAmount, 0.02) * 1.8);
+
+                // 6. Penggabungan Gerakan 3D Bergelombang Alami
+                float totalForward = (mainSway * 0.75 + branchSway * 0.35) * gustEnvelope * (_WindIntensity * 0.48) * bendWeight;
+                float totalSide    = (branchSway * 0.65 + leafFlutter) * gustEnvelope * (_WindIntensity * 0.28) * bendWeight;
+
+                posWS.xz += windDir * totalForward + perpDir * totalSide;
+                // Fisika lentur dahan: merunduk anggun saat di puncak ayunan
+                posWS.y  -= (totalForward * totalForward) * 0.08;
             }
 
             // 2. Interaksi senggolan pemain
-            float4 pPos = (_PlayerTramplePos.w > 0.05) ? _PlayerTramplePos : _PlayerPosition;
-            if (pPos.w > 0.05 && _PlayerPushStrength > 0.01)
+            float3 playerDist = posWS - _PlayerPosition.xyz;
+            float distXZ = length(playerDist.xz);
+            float pushRadius = 1.35;
+            if (distXZ < pushRadius && abs(playerDist.y) < 2.0)
             {
-                float3 diff = posWS - pPos.xyz;
-                float distXZ = length(diff.xz);
-                if (distXZ < pPos.w && abs(diff.y) < 2.0)
-                {
-                    float pushFactor = (1.0 - (distXZ / pPos.w)) * heightFactor * _PlayerPushStrength;
-                    float2 pushDir = (distXZ > 0.01) ? normalize(diff.xz) : float2(0.0, 1.0);
-                    posWS.xz += pushDir * (pushFactor * 0.5);
-                }
+                float pushFactor = (1.0 - (distXZ / pushRadius)) * _PlayerPushStrength * heightFactor;
+                float2 pushDir = (distXZ > 0.001) ? (playerDist.xz / distXZ) : float2(0, 1);
+                posWS.xz += pushDir * pushFactor;
+                posWS.y -= pushFactor * 0.35;
+            }
+
+            // 3. Efek injakan kaki pemain
+            float3 trampleDist = posWS - _PlayerTramplePos.xyz;
+            float trampleLen = length(trampleDist.xz);
+            if (trampleLen < 1.0 && abs(trampleDist.y) < 1.2)
+            {
+                float trampleFactor = (1.0 - (trampleLen / 1.0)) * 0.5 * heightFactor;
+                posWS.y -= trampleFactor * 0.4;
             }
 
             return posWS;
         }
 
-        // Normal volumetrik sferis terpusat pada kanopi bush (Y = 100 cm)
-        float3 CalculateBushNormalWS(float3 posOS, float3 rawNormalOS, float3 posWS)
+        // Rekonstruksi Normal Bulat (Spherical Normals) + Sky Bias
+        float3 CalculateBushNormalWS(float3 posOS, float3 rawNormalOS, float3 displacedPosWS)
         {
+            float3 origNormalWS = TransformObjectToWorldNormal(rawNormalOS);
             float3 centerOS = float3(0.0, _CenterYOffset, 0.0);
-            float3 centerWS = TransformObjectToWorld(centerOS);
-            float3 sphericalNormalWS = normalize(posWS - centerWS);
+            float3 sphereDirOS = normalize(posOS - centerOS + float3(0.0001, 0.0001, 0.0001));
+            float3 sphereNormalWS = TransformObjectToWorldNormal(sphereDirOS);
 
-            float3 rawNormalWS = TransformObjectToWorldNormal(rawNormalOS);
-            float3 normalWS = normalize(lerp(rawNormalWS, sphericalNormalWS, _SphericalNormalBlend));
-            normalWS = normalize(lerp(normalWS, float3(0.0, 1.0, 0.0), _UpNormalBlend));
-            return normalWS;
+            float3 blendedN = normalize(lerp(origNormalWS, sphereNormalWS, _SphericalNormalBlend));
+            blendedN = normalize(lerp(blendedN, float3(0.0, 1.0, 0.0), _UpNormalBlend));
+            return blendedN;
         }
         ENDHLSL
 
@@ -189,6 +224,8 @@ Shader "FantasyKingdom/StylizedBush_Foliage"
             #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+            #pragma shader_feature_local _USE_PALETTE
+            #pragma shader_feature_local _EMISSION_ON
 
             struct Attributes
             {
@@ -254,7 +291,13 @@ Shader "FantasyKingdom/StylizedBush_Foliage"
                 mappedCol = lerp(mappedCol, mappedCol * 1.15, input.heightFactor * 0.35);
 
                 // 4. Blend harmonis warna rumput dengan tekstur asli
-                half3 albedo = lerp(texCol.rgb * _BaseColor.rgb, mappedCol, _PaletteBlend);
+                half3 pureBase = texCol.rgb * _BaseColor.rgb;
+                #if defined(_USE_PALETTE)
+                    half effectivePaletteBlend = (_UsePalette > 0.5) ? _PaletteBlend : 0.0;
+                #else
+                    half effectivePaletteBlend = 0.0;
+                #endif
+                half3 albedo = lerp(pureBase, mappedCol, effectivePaletteBlend);
 
                 // URP Main Light & Soft Shadow Attenuation
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
@@ -270,26 +313,36 @@ Shader "FantasyKingdom/StylizedBush_Foliage"
                 half rawNdotL = dot(N, L);
                 half toonBand = smoothstep(_ToonThreshold - _ToonSmoothness, _ToonThreshold + _ToonSmoothness, rawNdotL) * shadowCel;
 
-                // Sisi bayangan: segar, terang, luminous (sama dengan StylizedGrass_Mesh: 65% - 78% brightness)
-                half3 shadowAmbient = albedo * _ShadowColor.rgb;
+                // Sisi bayangan: segar dan luminous (mengikuti mode palet aktif vs natural)
+                half3 shadowTint = lerp(half3(0.72, 0.72, 0.72), _ShadowColor.rgb, effectivePaletteBlend);
+                half3 shadowAmbient = albedo * shadowTint;
                 // Sisi terang: hangat tersorot sinar mentari
                 half3 litSunlight = albedo * mainLight.color * _SunlightColor.rgb;
                 half3 diffuseLight = lerp(shadowAmbient, litSunlight, toonBand);
 
-                // Subsurface Scattering (SSS / Efek daun tembus cahaya saat membelakangi matahari)
+                // Subsurface Scattering (SSS / Efek daun tembus cahaya alami mengikuti warna daun albedo)
                 float3 backLightDir = normalize(L + N * 0.35);
                 half backDot = saturate(dot(-V, backLightDir));
                 half sss = pow(backDot, _SSSPower) * _SSSStrength * input.heightFactor;
-                half3 sssColor = _SSSColor.rgb * sss * mainLight.color;
+                half3 sssColor = albedo * _SSSColor.rgb * sss * mainLight.color;
 
                 // Fresnel Rim halus di siluet tepi dedaunan
                 half fresnel = pow(1.0 - saturate(dot(N, V)), 3.5);
-                half3 rimLight = mainLight.color * _RimColor.rgb * (fresnel * _RimStrength * input.heightFactor);
+                half3 rimLight = albedo * mainLight.color * _RimColor.rgb * (fresnel * _RimStrength * input.heightFactor);
 
                 // Ambient Spherical Harmonics untuk beradaptasi dengan pencahayaan langit & scene
                 half3 ambientSH = SampleSH(N) * albedo * 0.25;
 
                 half3 finalColor = diffuseLight + sssColor + rimLight + ambientSH;
+
+                // 5. Fitur Emission (Toggleable On / Off)
+                #if defined(_EMISSION_ON)
+                if (_UseEmission > 0.5)
+                {
+                    finalColor += _EmissionColor.rgb;
+                }
+                #endif
+
                 return half4(finalColor, 1.0);
             }
             ENDHLSL

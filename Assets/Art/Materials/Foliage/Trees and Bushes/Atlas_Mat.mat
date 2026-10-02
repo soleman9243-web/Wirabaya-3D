@@ -26,6 +26,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _EMISSION
+  - _USE_PALETTE
   m_InvalidKeywords:
   - _BACKFACE_NORMAL_MODE_MIRROR
   - _WIND_SHARED
@@ -41,6 +42,10 @@ Material:
     m_TexEnvs:
     - _BaseMap:
         m_Texture: {fileID: 2800000, guid: ef707d9bb2181bd4ab2f696c87c673c9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ExtraTex:
@@ -82,37 +87,46 @@ Material:
     - _AlphaClipThreshold: 0.1
     - _Alpha_Clip_Threshold: 0.1
     - _BACKFACE_NORMAL_MODE: 1
+    - _BendStrength: 0
     - _BillboardKwToggle: 0
     - _BottomBlend: 0.35
     - _BushBaseY: -0.5
     - _BushTopY: 2.5
     - _CenterYOffset: 1
     - _Cutoff: 0.121
-    - _FlutterAmount: 0.035
-    - _FlutterSpeed: 3.5
+    - _EmissionIntensity: 0
+    - _EmissionTipBoost: 0
+    - _FlutterAmount: 0.2
+    - _FlutterSpeed: 11.3
     - _Glossiness: 0
+    - _GrassHeight: 1
     - _HighBlend: 0.5
     - _HighBlendSmoothness: 0.3
     - _HueVariationKwToggle: 0
     - _IsBillboard: 0
     - _LeafDetailStrength: 0.2
-    - _LumaMax: 0.52
-    - _LumaMin: 0.1
+    - _LumaMax: 0.616
+    - _LumaMin: 0.361
     - _Metallic: 0
     - _NormalMapKwToggle: 1
-    - _PaletteBlend: 0.85
-    - _PlayerPushStrength: 0.4
+    - _PaletteBlend: 1
+    - _PlayerPushStrength: 0
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _RecoveryTime: 0.5
     - _RimStrength: 0.076
-    - _SSSPower: 3.5
+    - _SSSPower: 10
     - _SSSStrength: 0.361
-    - _SphericalNormalBlend: 0.95
+    - _Smoothness: 0.018
+    - _SphericalNormalBlend: 1
     - _SubsurfaceIndirect: 0
     - _SubsurfaceKwToggle: 0
-    - _ToonSmoothness: 0.15
-    - _ToonThreshold: -0.052
-    - _UpNormalBlend: 0.3
+    - _ToonSmoothness: 0.19
+    - _ToonThreshold: 0.361
+    - _TrampleBendAmount: 0
+    - _UpNormalBlend: 0
+    - _UseEmission: 0
+    - _UsePalette: 1
     - _WIND_BRANCH1: 0
     - _WIND_BRANCH2: 0
     - _WIND_RIPPLE: 0
@@ -120,14 +134,15 @@ Material:
     - _WIND_SHIMMER: 0
     - _WindDirX: 1
     - _WindDirZ: 0.5
-    - _WindIntensity: 1.257
-    - _WindSpeed: 2
+    - _WindIntensity: 0.289
+    - _WindSpeed: 1
     - _WindTiling: 0.08
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _BottomColor: {r: 0.08, g: 0.38, b: 0.18, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DarkColor: {r: 0.08, g: 0.38, b: 0.18, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HueVariationColor: {r: 1, g: 0.5, b: 0, a: 0.1}
     - _MidColor: {r: 0.24, g: 0.5, b: 0.18, a: 1}
     - _RimColor: {r: 1, g: 1, b: 0.8, a: 1}
