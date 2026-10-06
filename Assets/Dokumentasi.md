@@ -4250,3 +4250,41 @@ Dibuat shader baru [StylizedBush_Foliage.shader](file:///c:/Users/USER/Documents
      - `_BottomColor`: `(r: 0.068, g: 0.38, b: 0.20)` (hijau lumut alami pangkal bawah yang menyatu ke tanah).
      - `_SSSColor`: `(r: 0.38, g: 0.65, b: 0.20)` (translusensi pendar hangat daun yang lembut).
      - `_SunlightColor`: `(r: 1.08, g: 1.10, b: 0.98)` (cahaya mentari hangat).
+
+---
+
+### G. Point 148 - Implementasi AAA Smooth Motion Blur & Eliminasi Ghosting Siluet Karakter
+
+1. **Akar Masalah "Masih Kurang Smooth & Ada Bayangan Kabur"**:
+   - **Foreground-to-Background Bleed (Disocclusion Smear)**: Saat kamera berputar, piksel latar belakang (tanah/rumput) memiliki vektor kecepatan kamera. Shader sebelumnya menggeser sampel warna tanpa batas kedalaman, sehingga menyedot warna kulit, rambut, dan celana kuning Wirabaya lalu mencetaknya berulang kali ke permukaan tanah di belakang karakter.
+   - **Banded / Stepped Artifacts**: Distribusi sampel yang seragam (*uniform step*) menimbulkan 4–5 salinan siluet bertingkat yang terlihat patah-patah/kasar.
+   - **Mask Kurang Efektif**: Bit rendering layer `1 << 30` berada di luar kapasitas 8-bit layer URP proyek.
+
+2. **Solusi & Perubahan Arsitektur**:
+   - **Depth-Aware Bilateral Rejection (`SmoothMotionBlur.shader`)**:
+     - Membandingkan kedalaman kamera linear (`LinearEyeDepth`) antara titik pusat latar belakang dan titik sampel.
+     - Ambang batas (*depth threshold*) adaptif: `max(0.08, centerEye * 0.02)`.
+     - Jika titik sampel terdeteksi berada di depan latar belakang (tubuh Wirabaya), sampel **langsung dibuang (`continue;`)**.
+     - **Hasil**: Siluet kuning celana dan warna kulit yang tercecer di tanah **100% lenyap**.
+   - **Golden-Ratio Interleaved Dithering & Gaussian Falloff**:
+     - Menerapkan jitter acak berbasis *Golden Ratio* (`0.61803398875`) per-sampel dengan kurva bobot Gaussian `exp(-4.5 * t * t)`.
+     - **Hasil**: Blur melebur menjadi sapuan super halus (*silky smooth*) khas game AAA tanpa garis-garis bertingkat.
+   - **Karakter 100% Tajam (Zero Motion Blur)**:
+     - Di `CharacterMotionBlurMarker.cs`: Mengatur `motionVectorGenerationMode = ForceNoMotion` untuk seluruh renderer karakter pemain.
+     - URP secara otomatis memberikan vektor gerak `0` pada Wirabaya, sehingga karakter beserta pakaiannya selalu 100% tajam dan bebas blur.
+   - **Optimasi Single-Pass URP RenderGraph (`SmoothMotionBlurFeature.cs`)**:
+     - Memanfaatkan buffer kedalaman native URP (`cameraDepthTexture`) langsung dalam satu pass efisien tanpa perlu alokasi render texture mask terpisah. Beban memori dan GPU draw call jauh lebih ringan.
+
+---
+
+### H. Point 149 - Perbaikan Material Ungu (Magenta) pada Procedural Fire (Magic fire 0)
+
+1. **Akar Masalah**:
+   - Objek `Magic fire 0` (Hovl Studio) dan partikel turunannya menggunakan material `FireSphere1.mat`, `FireSphere2.mat`, `SparkSphere.mat`, `Trail67.mat`, dan `Smoke26.mat`.
+   - Material-material tersebut awalnya memakai shader bawaan Built-in Render Pipeline (`EGA/Particles/FireSphere` bertipe Surface Shader lama).
+   - Di Unity URP, shader Built-in Render Pipeline tidak didukung sehingga otomatis dirender berwarna ungu pekat (*magenta / missing shader error*).
+
+2. **Solusi & Perubahan**:
+   - Mengalihkan kelima material di `Assets/Hovl Studio/Procedural fire/Materials/` ke shader resmi URP yang telah disediakan pembuat aset: `FireSphere.shadergraph` (`guid: 97ae18f56456e864badd6796dec2d5a7`, sub-asset `fileID: -6465566751694194690`).
+   - Seluruh properti tekstur, warna api, dan emisi tetap terjaga 100%.
+   - **Hasil**: Api, percikan bara (*sparks*), dan asap pada `Magic fire 0` kini langsung menyala normal dan indah di URP tanpa warna ungu.
