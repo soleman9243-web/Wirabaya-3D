@@ -11035,6 +11035,7 @@ GameObject:
   - component: {fileID: 2320518917276186857}
   - component: {fileID: 1680897417022962464}
   - component: {fileID: 337252454451403870}
+  - component: {fileID: 8508830541706062078}
   m_Layer: 10
   m_Name: BossBoar
   m_TagString: Untagged
@@ -11109,7 +11110,7 @@ MonoBehaviour:
   meleeHitRadius: 1.5
   rockSpawnPoint: {fileID: 3784738226737351168}
   rockPrefab: {fileID: 6922701421143238687, guid: 14e8e96e8d6085c4490675b80fd8c337, type: 3}
-  telegraphPrefab: {fileID: 5383250674106728000, guid: 4671b6bcb5f950745905d82e9666b068, type: 3}
+  telegraphPrefab: {fileID: 5383250674106728000, guid: dddca9b76309ad54a9cc2fe63142d269, type: 3}
   wallLayer:
     serializedVersion: 2
     m_Bits: 4224
@@ -11118,6 +11119,7 @@ MonoBehaviour:
   activeTargetObject: {fileID: 2972423556879352446}
   hitVfx: {fileID: 1760992571876156, guid: a2fb9b0b61d53f84fa1ad79391935742, type: 3}
   chargeVfx: {fileID: 1840170968027002, guid: bb3def3c8eddef843babd3278a794c4b, type: 3}
+  chargeBurstVfx: {fileID: 0}
   autoStart: 1
   OnBossHealthChanged:
     m_PersistentCalls:
@@ -11173,6 +11175,21 @@ NavMeshAgent:
   m_BaseOffset: -0.1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &8508830541706062078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4483988404040677840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88595c55f881bbb4fbe93b608a7ba9ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UniversalDissolveController
+  fallbackDissolveMaterial: {fileID: -876546973899608171, guid: da69f22ff7b010148b112fb386ab0d44, type: 3}
+  dissolveDuration: 2
+  destroyOnComplete: 1
 --- !u!1 &4508435667971445531
 GameObject:
   m_ObjectHideFlags: 0

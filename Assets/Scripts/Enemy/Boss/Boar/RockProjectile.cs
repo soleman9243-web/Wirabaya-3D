@@ -103,7 +103,11 @@ public class RockProjectile : MonoBehaviour
         // Rotasi batu supaya kelihatan natural saat jatuh
         transform.Rotate(Vector3.right, 720f * Time.deltaTime, Space.Self);
         
-        // CATATAN: Pengecekan pendaratan sekarang pindah ke OnTriggerEnter!
+        // CATATAN: Pengecekan pendaratan manual berdasarkan ketinggian target
+        if (transform.position.y <= targetPos.y)
+        {
+            OnImpact(targetPos);
+        }
     }
 
     private void ToggleMesh(bool show)
@@ -112,24 +116,6 @@ public class RockProjectile : MonoBehaviour
         foreach (var rend in renderers)
         {
             rend.enabled = show;
-        }
-    }
-
-    // ==========================================
-    // IMPACT (DETEKSI FUNGSI COLLISION TRIGGER)
-    // ==========================================
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!isLaunched || hasLanded) return;
-        
-        // Hanya cek jika batu sedang dalam fase JATUH (mesh sudah muncul)
-        if (elapsed < duration) return;
-
-        // Jika object yang disentuh batunya masuk dalam LayerMask yang kita set di Inspector (Ground / Player)
-        if ((explodeLayers.value & (1 << other.gameObject.layer)) > 0)
-        {
-            OnImpact(transform.position);
         }
     }
 

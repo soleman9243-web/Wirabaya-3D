@@ -476,6 +476,9 @@ public class TreeCuttingMinigame : MonoBehaviour
             
             OnMinigameFailedRound?.Invoke();
 
+            // Panggil impulse kamera (getaran) saat gagal menebang
+            if (shakeImpulse != null) shakeImpulse.GenerateImpulse();
+
             // Animasi UI Bergetar saat gagal
             RectTransform uiRect = minigameUI.GetComponent<RectTransform>();
             Vector2 originalPos = Vector2.zero;

@@ -864,6 +864,25 @@ public class BoarBossAI : MonoBehaviour
 
         if (rb != null) rb.isKinematic = true;
 
+        // --- DISSOLVE SEQUENCE ---
+        StartCoroutine(DieAndDissolveRoutine());
+    }
+
+    private IEnumerator DieAndDissolveRoutine()
+    {
+        // Tunggu 3 detik agar animasi mati selesai diputar
+        yield return new WaitForSeconds(3f);
+
+        // Picu efek dissolve jika komponen UniversalDissolveController terpasang di parent atau child
+        UniversalDissolveController dissolve = GetComponentInChildren<UniversalDissolveController>();
+        if (dissolve != null)
+        {
+            dissolve.TriggerDissolve();
+            // Tunggu sampai efek dissolve selesai (opsional)
+            yield return new WaitForSeconds(dissolve.dissolveDuration);
+        }
+
+        // Matikan script agar benar-benar berhenti
         this.enabled = false;
     }
 
