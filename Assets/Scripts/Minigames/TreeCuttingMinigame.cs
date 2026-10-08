@@ -79,9 +79,10 @@ public class TreeCuttingMinigame : MonoBehaviour
             Instance = this;
         }
         else
-        {
             Destroy(gameObject);
+            return;
         }
+        if (minigameUI != null) minigameUI.SetActive(false);
     }
 
     private void Start()
