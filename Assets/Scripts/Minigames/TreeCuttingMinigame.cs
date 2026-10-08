@@ -79,6 +79,7 @@ public class TreeCuttingMinigame : MonoBehaviour
             Instance = this;
         }
         else
+        {
             Destroy(gameObject);
             return;
         }
