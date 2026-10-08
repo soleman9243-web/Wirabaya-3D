@@ -184,46 +184,108 @@ public class TreeCuttingMinigame : MonoBehaviour
             }
         }
 
-        // Pindah posisi mendekati pohon tanpa mengubah sudut asal pemain
+        // Pindah posisi mendekati pohon ke titik yang selalu tetap di depan luka tebangan
+        Vector3 newPos;
+        if (currentTree.choppingPoint != null)
+        {
+            // Gunakan posisi dari titik potong (Game Object kosong)
+            newPos = currentTree.choppingPoint.position;
+        }
+        else
+        {
+            // Fallback: Tentukan arah tetap dari pohon ke pemain
+            Vector3 fixedDirToPlayer = -currentTree.transform.forward;
+            fixedDirToPlayer.y = 0; // Abaikan perbedaan tinggi
+            if (fixedDirToPlayer == Vector3.zero) fixedDirToPlayer = -Vector3.forward;
+            fixedDirToPlayer.Normalize();
+
+            // Hitung posisi baru
+            newPos = currentTree.transform.position + (fixedDirToPlayer * choppingDistance);
+        }
+
+        // Dapatkan referensi movement controller
         if (playerTransform != null)
         {
-            // 1. Hitung arah dari pohon ke pemain
-            Vector3 dirToPlayer = playerTransform.position - currentTree.transform.position;
-            dirToPlayer.y = 0; // Abaikan perbedaan tinggi
-            dirToPlayer.Normalize();
-
-            // 2. Hitung posisi baru (sejauh 'choppingDistance' dari tengah pohon ke arah pemain)
-            Vector3 newPos = currentTree.transform.position + (dirToPlayer * choppingDistance);
-            newPos.y = playerTransform.position.y; // Pertahankan tinggi asli pijakan pemain
-            
-            playerTransform.position = newPos;
-
-            // 4. Putar badan pemain menghadap persis ke tengah pohon
-            Vector3 lookPos = currentTree.transform.position;
-            lookPos.y = playerTransform.position.y;
-            playerTransform.LookAt(lookPos);
-
-            // Tambahkan offset rotasi jika animasi melenceng
-            if (playerRotationOffset != 0f)
-            {
-                playerTransform.Rotate(0, playerRotationOffset, 0);
-            }
-
-            // Kunci pergerakan pemain (Cari script ThirdPersonController dari StarterAssets)
             playerMovement = playerTransform.GetComponent("ThirdPersonController") as MonoBehaviour;
             if (playerMovement == null) playerMovement = playerTransform.GetComponent("StarterAssets.ThirdPersonController") as MonoBehaviour;
-            
-            if (playerMovement != null) playerMovement.enabled = false;
+        }
 
-            // 4. Putar pohon agar bagian depannya (tempat luka tebangan 3D) selalu menghadap pemain
-            if (dirToPlayer != Vector3.zero)
+        // Mulai rutin jalan otomatis ke titik tebang
+        if (walkCoroutine != null) StopCoroutine(walkCoroutine);
+        walkCoroutine = StartCoroutine(WalkToTreeRoutine(newPos, currentTree.transform.position));
+    }
+
+    private Coroutine walkCoroutine;
+    public float autoWalkSpeed = 2f;
+
+    private System.Collections.IEnumerator WalkToTreeRoutine(Vector3 targetPos, Vector3 lookPos)
+    {
+        isPlaying = true; // Kunci supaya pemain nggak gerak manual & minigame nggak ke-trigger dobel
+
+        if (playerMovement != null) playerMovement.enabled = false;
+        SetTpcDisableMovement(playerMovement, true);
+
+        CharacterController cc = playerTransform.GetComponent<CharacterController>();
+        
+        targetPos.y = playerTransform.position.y;
+        float distance = Vector3.Distance(new Vector3(playerTransform.position.x, 0, playerTransform.position.z), new Vector3(targetPos.x, 0, targetPos.z));
+
+        // Kalau jaraknya lebih dari 0.15 meter, jalan ke titik tersebut
+        if (distance > 0.15f)
+        {
+            if (playerAnimator != null)
             {
-                // Karena posisinya terbalik, kita memutar rotasinya 180 derajat (atau menggunakan -dirToPlayer)
-                // agar bagian luka yang ada di belakang berputar ke depan menghadap player.
-                currentTree.transform.rotation = Quaternion.LookRotation(-dirToPlayer);
+                playerAnimator.SetFloat("Speed", autoWalkSpeed);
+                playerAnimator.SetFloat("MotionSpeed", 1f);
+            }
+
+            float timeout = 4f; // Failsafe kalau nyangkut (maksimal 4 detik jalan)
+            while (distance > 0.15f && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+
+                Vector3 dir = (targetPos - playerTransform.position);
+                dir.y = 0;
+                dir.Normalize();
+
+                if (dir != Vector3.zero)
+                {
+                    playerTransform.rotation = Quaternion.Slerp(playerTransform.rotation, Quaternion.LookRotation(dir), Time.deltaTime * 10f);
+                }
+
+                if (cc != null)
+                {
+                    cc.SimpleMove(dir * autoWalkSpeed); // SimpleMove otomatis menempel di terrain
+                }
+                else
+                {
+                    playerTransform.position = Vector3.MoveTowards(playerTransform.position, targetPos, autoWalkSpeed * Time.deltaTime);
+                }
+
+                distance = Vector3.Distance(new Vector3(playerTransform.position.x, 0, playerTransform.position.z), new Vector3(targetPos.x, 0, targetPos.z));
+                yield return null;
             }
         }
 
+        // PASTIKAN animasi jalan dan lari benar-benar dimatikan (reset ke 0)
+        // Ini mengatasi bug karakter masih berlari/jalan saat minigame karena input terakhir tertahan.
+        if (playerAnimator != null)
+        {
+            playerAnimator.SetFloat("Speed", 0f);
+            playerAnimator.SetFloat("MotionSpeed", 0f);
+        }
+
+        // Putar badan menghadap persis ke tengah pohon (koreksi akhir)
+        lookPos.y = playerTransform.position.y;
+        playerTransform.LookAt(lookPos);
+        if (playerRotationOffset != 0f) playerTransform.Rotate(0, playerRotationOffset, 0);
+
+        // Setelah sampai di titik, mulai UI dan gamenya!
+        StartMinigameCore();
+    }
+
+    private void StartMinigameCore()
+    {
         // Reset state
         isStriking = false;
         if (strikeCoroutine != null) StopCoroutine(strikeCoroutine);
@@ -240,16 +302,15 @@ public class TreeCuttingMinigame : MonoBehaviour
         if (minigameUI != null) minigameUI.SetActive(true);
         isPlaying = true;
 
-        // Arahkan kamera player ke pohon ini dan nyalakan kamera
+        // Nyalakan kamera khusus tebang (tanpa mengubah LookAt secara otomatis)
         if (treeCamera != null)
         {
-            treeCamera.LookAt = currentTree.GetFocusPoint();
             treeCamera.gameObject.SetActive(true);
         }
         
         UpdateTargetSize();
         
-        // Kalkulasi kecepatan saat ini berdasarkan hit dan fail (dengan batas fail)
+        // Kalkulasi kecepatan saat ini berdasarkan hit dan fail
         int countedFails = Mathf.Min(currentTree.currentFails, maxFailPenaltyCount);
         currentLineSpeed = baseLineSpeed * Mathf.Pow(speedMultiplierPerHit, currentTree.currentHits) * Mathf.Pow(speedMultiplierPerFail, countedFails);
         
@@ -354,19 +415,19 @@ public class TreeCuttingMinigame : MonoBehaviour
     {
         isStriking = true;
 
+        // Panggil trigger animasi ayun kapak KAPANPUN player klik (baik sukses maupun gagal)
+        if (playerAnimator != null)
+        {
+            if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.ResetTrigger(chopStrikeTrigger);
+            if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.SetTrigger(chopStrikeTrigger);
+        }
+
+        // Tunggu animasi ayunan kapak sampai kapak seolah-olah menyentuh pohon
+        yield return new WaitForSeconds(strikeHitDelay);
+
         if (isHit)
         {
-            // SUKSES MENEBANG
-            // Panggil trigger animasi ayun kapak HANYA saat sukses
-            if (playerAnimator != null)
-            {
-                if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.ResetTrigger(chopStrikeTrigger);
-                if (!string.IsNullOrEmpty(chopStrikeTrigger)) playerAnimator.SetTrigger(chopStrikeTrigger);
-            }
-
-            // Tunggu ayunan kapak sampai menyentuh pohon
-            yield return new WaitForSeconds(strikeHitDelay);
-
+            // SUKSES MENEBANG (Dapatkan impact, efek partikel, dan lanjut progress)
             currentTree.currentHits++;
             UpdateTreeVisuals();
 
@@ -451,6 +512,7 @@ public class TreeCuttingMinigame : MonoBehaviour
         isStriking = false;
         if (minigameUI != null) minigameUI.SetActive(false);
         if (treeCamera != null) treeCamera.gameObject.SetActive(false);
+        if (walkCoroutine != null) StopCoroutine(walkCoroutine);
         
         // Panggil animasi berhenti dan bersihkan sisa trigger
         if (playerAnimator != null)
@@ -462,6 +524,8 @@ public class TreeCuttingMinigame : MonoBehaviour
 
         // Buka kunci pergerakan
         if (playerMovement != null) playerMovement.enabled = true;
+        // FIX B: Lepas DisableMovement agar WeightAnimationScript kembali normal
+        SetTpcDisableMovement(playerMovement, false);
 
         // Picu animasi jatuh dan dissolve
         if (currentTree != null)
@@ -476,11 +540,36 @@ public class TreeCuttingMinigame : MonoBehaviour
         OnMinigameComplete?.Invoke();
     }
 
+    /// <summary>
+    /// FIX B Helper: Set DisableMovement pada ThirdPersonController via reflection.
+    /// Tanpa ini, WeightAnimationScript tidak tahu bahwa movement sedang dikunci.
+    /// </summary>
+    private void SetTpcDisableMovement(MonoBehaviour tpc, bool value)
+    {
+        if (tpc == null) return;
+        
+        // Coba cari sebagai Field (karena di StarterAssets biasanya public bool DisableMovement;)
+        System.Reflection.FieldInfo field = tpc.GetType().GetField("DisableMovement");
+        if (field != null)
+        {
+            field.SetValue(tpc, value);
+            return;
+        }
+
+        // Fallback coba cari sebagai Property
+        System.Reflection.PropertyInfo prop = tpc.GetType().GetProperty("DisableMovement");
+        if (prop != null && prop.CanWrite)
+        {
+            prop.SetValue(tpc, value);
+        }
+    }
+
     private void QuitMinigame()
     {
         isPlaying = false;
         isStriking = false;
         if (strikeCoroutine != null) StopCoroutine(strikeCoroutine);
+        if (walkCoroutine != null) StopCoroutine(walkCoroutine);
 
         if (minigameUI != null) minigameUI.SetActive(false);
         if (treeCamera != null) treeCamera.gameObject.SetActive(false);
@@ -494,6 +583,8 @@ public class TreeCuttingMinigame : MonoBehaviour
         }
 
         if (playerMovement != null) playerMovement.enabled = true;
+        // FIX B: Lepas DisableMovement agar WeightAnimationScript kembali normal
+        SetTpcDisableMovement(playerMovement, false);
         currentTree = null;
     }
 

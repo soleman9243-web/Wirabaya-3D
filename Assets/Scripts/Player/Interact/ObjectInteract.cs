@@ -25,7 +25,7 @@ public class InteractObject : MonoBehaviour
     public bool disableQuestProgressUntilMinigameComplete = true;
 
     private void Awake()
-    {
+    {             
         // Otomatis matikan efek Outline di awal agar tidak perlu repot uncheck manual di Inspector
         Outline outline = GetComponent<Outline>();
         if (outline == null) outline = GetComponentInChildren<Outline>();
@@ -89,4 +89,4 @@ public class InteractObject : MonoBehaviour
             QuestManager.Instance.AddProgress(objectiveId, questAmount);
         }
     }
-}
+}    

@@ -98,6 +98,7 @@ Transform:
   - {fileID: 8990449208196238288}
   - {fileID: 5000054289243310082}
   - {fileID: 8929170610028539357}
+  - {fileID: 9215306416846508462}
   - {fileID: 632368214648575576}
   - {fileID: 1911953698279909019}
   - {fileID: 6450744695939185257}
@@ -362,6 +363,14 @@ MonoBehaviour:
   StateLeftTurn: Left Turn
   StateRightTurn: Right Turn
   StateRunningTurn180: Running Turn 180
+  enableRandomIdle: 0
+  idleMinTime: 1
+  idleMaxTime: 4
+  idleCrossFadeDuration: 0.25
+  randomIdleStates:
+  - Random Idle 1
+  - Random Idle 2
+  - Random Idle 3
 --- !u!114 &3782649021619342649
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -590,6 +599,7 @@ MonoBehaviour:
   normalTrailMat: {fileID: 0}
   animeTrailMat: {fileID: 2100000, guid: 43b0dc7b3b291e64eb8b00dffc69d2da, type: 2}
   isHoldingItem: 0
+  minAttackCooldown: 0.4
   debug: 0
 --- !u!114 &5914696884341250975
 MonoBehaviour:
@@ -930,6 +940,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c024b0e7b04a7b243929cd69ceae83fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemSaveProvider
+--- !u!114 &4553689667700678590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22648217249824622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 043e4e854762b3d4eb42ff8020ebf52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Unity.FantasyKingdom.PlayerFootIK
+  enableFootIK: 1
+  ikWeight: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 14337
+  raycastDistance: 1
+  footHeightOffset: 0.11
+  adjustPelvis: 1
+  maxPelvisDrop: 0.35
+  footPosSmoothTime: 0.08
+  footRotSmoothTime: 0.12
+  pelvisSmoothTime: 0.15
+  maxSlopeAngle: 55
+  fadeStartSpeed: 1.5
+  fadeEndSpeed: 4
+  minRunningWeight: 0.15
+  thirdPersonController: {fileID: 0}
+  showGizmos: 1
+--- !u!114 &1471350956926952274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 22648217249824622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b88e9cfe036f461a8eea27fc878f7a69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Unity.FantasyKingdom.PlayerLocomotionLeaning
+  enableLeaning: 1
+  maxTurnLeanAngle: 7.5
+  turnLeanSensitivity: 0.05
+  turnLeanSmoothTime: 0.12
+  maxSlopePitchAngle: 8
+  slopePitchSensitivity: 8
+  slopePitchSmoothTime: 0.15
+  maxAccelPitchAngle: 3.5
+  maxBrakePitchAngle: 3
+  accelPitchSmoothTime: 0.15
+  spineDistribution: 0.5
+  animator: {fileID: 6098076095785562579}
+  controller: {fileID: 0}
 --- !u!1 &111486527310685636
 GameObject:
   m_ObjectHideFlags: 0
@@ -32066,13 +32131,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6811619469321572118}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.095853694, y: 0.51442605, z: -0.057998728, w: -0.85018474}
-  m_LocalPosition: {x: -76.35724, y: 5.5076923, z: 6.892193}
-  m_LocalScale: {x: 3.076923, y: 3.0769231, z: 3.0769234}
+  m_LocalRotation: {x: 3.935074e-12, y: -1, z: -0.00000006155256, w: -0.000063940875}
+  m_LocalPosition: {x: 0, y: 0.63, z: 2.27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 642372429808242785}
-  m_Father: {fileID: 6606577441888753231}
+  m_Father: {fileID: 4085776678335301750}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7150004665364720786
 MonoBehaviour:
@@ -32092,7 +32157,7 @@ MonoBehaviour:
   m_StreamingVersion: 20170927
   m_Priority: 0
   m_StandbyUpdate: 2
-  m_LookAt: {fileID: 0}
+  m_LookAt: {fileID: 8779980950653829736}
   m_Follow: {fileID: 0}
   m_Lens:
     FieldOfView: 40
@@ -32586,7 +32651,6 @@ Transform:
   - {fileID: 8735195891200052248}
   - {fileID: 3139164064596331337}
   - {fileID: 4748703126290646892}
-  - {fileID: 9215306416846508462}
   m_Father: {fileID: 8785772265879552317}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!95 &8795936536892345596
@@ -40894,58 +40958,3 @@ Transform:
   - {fileID: 8341056074680649946}
   m_Father: {fileID: 4377585256298278529}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4553689667700678590
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22648217249824622}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 043e4e854762b3d4eb42ff8020ebf52a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Unity.FantasyKingdom.PlayerFootIK
-  enableFootIK: 1
-  ikWeight: 1
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 14337
-  raycastDistance: 1
-  footHeightOffset: 0.11
-  adjustPelvis: 1
-  maxPelvisDrop: 0.35
-  footPosSmoothTime: 0.08
-  footRotSmoothTime: 0.12
-  pelvisSmoothTime: 0.15
-  maxSlopeAngle: 55
-  fadeStartSpeed: 1.5
-  fadeEndSpeed: 4
-  minRunningWeight: 0.15
-  thirdPersonController: {fileID: 2857168891362218608}
-  showGizmos: 1
---- !u!114 &1471350956926952274
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22648217249824622}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b88e9cfe036f461a8eea27fc878f7a69, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Unity.FantasyKingdom.PlayerLocomotionLeaning
-  enableLeaning: 1
-  maxTurnLeanAngle: 7.5
-  turnLeanSensitivity: 0.05
-  turnLeanSmoothTime: 0.12
-  maxSlopePitchAngle: 8
-  slopePitchSensitivity: 8
-  slopePitchSmoothTime: 0.15
-  maxAccelPitchAngle: 3.5
-  maxBrakePitchAngle: 3
-  accelPitchSmoothTime: 0.15
-  spineDistribution: 0.5
-  animator: {fileID: 6098076095785562579}
-  controller: {fileID: 2857168891362218608}

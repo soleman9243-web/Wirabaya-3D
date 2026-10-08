@@ -7,11 +7,11 @@ public class CuttableTree : MonoBehaviour
     [Tooltip("Daftar GameObject pohon dari utuh sampai tumbang. Index 0 = Utuh, Index 1 = Hit 1, dst.")]
     public GameObject[] treeStages;
 
+    [Tooltip("Titik tetap tempat player berdiri saat menebang (Opsional). Jika dikosongkan, akan otomatis menggunakan jarak di depan pohon.")]
+    public Transform choppingPoint;
+
     [Tooltip("Particle effect cipratan kayu khusus untuk pohon ini. Bebas mau ditaruh sebagai child objek ini.")]
     public ParticleSystem hitParticle;
-
-    [Tooltip("Titik yang akan difokuskan oleh kamera (Opsional). Jika kosong, kamera akan melihat ke tengah transform pohon.")]
-    public Transform cameraFocusPoint;
 
     [Header("Drop Settings")]
     [Tooltip("Prefab item yang akan di-drop saat pohon tumbang (misalnya WoodDrop)")]
@@ -65,14 +65,6 @@ public class CuttableTree : MonoBehaviour
     }
 
     /// <summary>
-    /// Mendapatkan titik untuk disorot kamera.
-    /// </summary>
-    public Transform GetFocusPoint()
-    {
-        return cameraFocusPoint != null ? cameraFocusPoint : transform;
-    }
-
-    /// <summary>
     /// Panggil fungsi ini (misal dari Unity Event OnInteract) untuk memulai minigame.
     /// </summary>
     public void InteractWithTree()
@@ -93,8 +85,23 @@ public class CuttableTree : MonoBehaviour
     /// </summary>
     public void TriggerFallAndDissolve(Transform playerTransform)
     {
-        if (fallingTrunk != null && fallingTrunk.gameObject.activeInHierarchy)
+        // BUG FIX: Sembunyikan semua fase pohon (termasuk Tebang 3) agar tidak double dengan falling trunk
+        if (treeStages != null)
         {
+            for (int i = 0; i < treeStages.Length; i++)
+            {
+                if (treeStages[i] != null && (fallingTrunk == null || treeStages[i] != fallingTrunk.gameObject))
+                {
+                    treeStages[i].SetActive(false);
+                }
+            }
+        }
+
+        // Pastikan fallingTrunk diaktifkan jika sebelumnya tersembunyi
+        if (fallingTrunk != null)
+        {
+            fallingTrunk.gameObject.SetActive(true);
+
             // Aktifkan sisa tunggul (stump) secara langsung saat pohon mulai tumbang
             if (cutStump != null)
             {

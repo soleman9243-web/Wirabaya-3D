@@ -52,13 +52,7 @@ public class ParkourController : MonoBehaviour
     /// Catatan: Rotasi TIDAK diterapkan di sini karena sudah di-handle oleh
     /// ThirdPersonController.OnAnimatorMove() dan RotateToObstacle di coroutine.
     /// </summary>
-    private void OnAnimatorMove()
-    {
-        if (inAction && animator != null)
-        {
-            transform.position += animator.deltaPosition;
-        }
-    }
+
 
     private void Update()
     {
@@ -85,7 +79,18 @@ public class ParkourController : MonoBehaviour
         inAction = true;
         _input.jump = false;
         thirdPersonController.SetControl(false);
+        
+        // SIMPAN UKURAN ASLI KAPSUL
+        float originalHeight = characterController.height;
+        float originalRadius = characterController.radius;
+        Vector3 originalCenter = characterController.center;
 
+        // PERKECIL KAPSUL (Tiny Capsule Mode)
+        // Kita tidak mematikan CharacterController agar Fisika Unity tetap mencegah karakter berguling masuk ke dalam pohon.
+        // Tapi kita perkecil ukurannya agar dia bisa menembus melewati tembok.
+        characterController.height = 0.1f;
+        characterController.radius = 0.1f;
+        characterController.center = new Vector3(0, 0.05f, 0);
         // Putar audio SFX parkour jika ada
         if (audioSource != null && action.ActionAudioClip != null)
         {
@@ -124,6 +129,14 @@ public class ParkourController : MonoBehaviour
         // 2. Setup Posisi Target Matching
         Vector3 matchPosition = hitData.heightHit.point;
 
+        // Panggil MatchTarget SEKALI SAJA sebelum loop (bukan setiap frame di dalam loop)
+        if (action.EnableTargetMatching)
+        {
+            animator.MatchTarget(matchPosition, transform.rotation, action.MatchBodyPart,
+                new MatchTargetWeightMask(action.MatchPositionWeight, 0),
+                action.MatchStartTime, action.MatchTargetTime);
+        }
+
         // Loop utama pengganti Lerp
         while (timer < animLength)
         {
@@ -141,22 +154,19 @@ public class ParkourController : MonoBehaviour
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
-            // Eksekusi Target Matching
-            if (action.EnableTargetMatching && !animator.isMatchingTarget && !animator.IsInTransition(0))
-            {
-                animator.MatchTarget(matchPosition, transform.rotation, action.MatchBodyPart,
-                    new MatchTargetWeightMask(action.MatchPositionWeight, 0),
-                    action.MatchStartTime, action.MatchTargetTime);
-            }
-
             yield return null;
         }
 
-        // 3. Post Action Delay (Misalnya menunggu animasi dari jongkok ke berdiri selesai)
+        // 3. Post Action Delay
         if (action.PostActionDelay > 0)
         {
             yield return new WaitForSeconds(action.PostActionDelay);
         }
+
+        // KEMBALIKAN UKURAN ASLI KAPSUL
+        characterController.height = originalHeight;
+        characterController.radius = originalRadius;
+        characterController.center = originalCenter;
 
         Physics.SyncTransforms(); // Update transform fisik sebelum mengembalikan kontrol
         yield return new WaitForEndOfFrame();

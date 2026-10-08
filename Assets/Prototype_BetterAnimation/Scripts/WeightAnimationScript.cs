@@ -364,8 +364,8 @@ namespace StarterAssets.Prototype
             _animator.SetBool(_animIDIsArmedRunning, isArmedRunning);
 
             // --- 3. ALL TURNS (IDLE TURN & 180 TURN) ---
-            // Sistem turn terpusat. Berlaku saat dari diam maupun lari.
-            if (!_isTurnPlaying && !_isInRunToStop && !_isInV2Animation && _mainCamera != null && _stopCooldownTimer <= 0f)
+            // Saat memegang pedang (Combat Mode), kita matikan semua turn agar sangat responsif!
+            if (!isHoldingSword && !_isTurnPlaying && !_isInRunToStop && !_isInV2Animation && _mainCamera != null && _stopCooldownTimer <= 0f)
             {
                 if (isMoving)
                 {
@@ -427,11 +427,12 @@ namespace StarterAssets.Prototype
             }
 
             // --- 5. RUN TO STOP ---
-            if (_stopCooldownTimer <= 0f && !_isInRunToStop && !_isInV2Animation)
+            // Saat memegang pedang (Combat Mode), kita matikan run-to-stop agar berhenti instan!
+            if (!isHoldingSword && _stopCooldownTimer <= 0f && !_isInRunToStop && !_isInV2Animation)
             {
                 bool isNowStopping = !isMoving && currentSpeed < 1.0f;
                 
-                if (_wasRunningRecently && isNowStopping)
+                if (_wasRunningRecently && isNowStopping && _tpc != null && _tpc.HasControl)
                 {
                     CrossFadeV2(StateRunToStop, 0.15f);
                     Debug.Log($"[AnimV2] RunToStop triggered! Speed={currentSpeed:F2}");
@@ -481,6 +482,7 @@ namespace StarterAssets.Prototype
                                 && !_isInRunToStop
                                 && !_isInV2Animation
                                 && !_isPostTurnBlend
+                                && (_tpc != null && _tpc.HasControl)
                                 && (_tpc == null || !_tpc.DisableMovement);
 
             if (isCurrentlyIdle)

@@ -81,6 +81,8 @@ public class PlayerControl : MonoBehaviour
 
     private bool isHitstopping = false;
     private bool isAttacking = false;
+    private float lastAttackEndTime = -999f;
+    [SerializeField] private float minAttackCooldown = 0.4f;
 
     [Header("Debug")]
     [SerializeField] private bool debug;
@@ -90,6 +92,9 @@ public class PlayerControl : MonoBehaviour
 
     private BossAI oldBossTarget;
     private BossAI currentBossTarget;
+
+    private BoarBossAI oldBoarTarget;
+    private BoarBossAI currentBoarTarget;
 
     private Coroutine moveRoutine;
     private Coroutine rotateRoutine;
@@ -161,11 +166,41 @@ public class PlayerControl : MonoBehaviour
         SheathSwordVisual();
     }
 
+    private float attackFailsafeTimer = 0f;
+
     void Update()
     {
         if (isHitstopping) return;
 
+        if (isAttacking)
+        {
+            attackFailsafeTimer += Time.deltaTime;
+            // Failsafe: Jika stuck di state menyerang lebih dari 3 detik (animasi terpotong/bug), paksa reset!
+            if (attackFailsafeTimer > 3f)
+            {
+                ResetAttack();
+            }
+        }
+        else
+        {
+            attackFailsafeTimer = 0f;
+        }
+
         HandleInput();
+
+        // FIX: Paksa locomotion param ke 0 selama menyerang agar tidak override
+        if (isAttacking && anim != null)
+        {
+            anim.SetFloat("Speed", 0f);
+            anim.SetFloat("MotionSpeed", 0f);
+            anim.SetFloat("Turn", 0f);
+            
+            // Matikan input ThirdPersonController murni selama serang
+            if (thirdPersonController != null)
+            {
+                thirdPersonController.DisableMovement = true;
+            }
+        }
 
         // Failsafe: Pastikan bayangan blur mati kalau lagi nggak nyerang
         if (!isAttacking && ghostTrail != null)
@@ -351,6 +386,8 @@ public class PlayerControl : MonoBehaviour
     {
         if (isAttacking) return;
         if (target == null) return;
+        // FIX: Cooldown antar serangan untuk mencegah spam
+        if (Time.time - lastAttackEndTime < minAttackCooldown) return;
 
         if (hasSwordEquipped && isSwordSheathed)
         {
@@ -389,9 +426,9 @@ public class PlayerControl : MonoBehaviour
 
         switch (attackIndex)
         {
-            case 1: MoveTowardsTarget(target.position, quickAttackDeltaDistance, "punch"); break;
-            case 2: MoveTowardsTarget(target.position, quickAttackDeltaDistance, "kick"); break;
-            case 3: MoveTowardsTarget(target.position, quickAttackDeltaDistance, "mmakick"); break;
+            case 1: MoveTowardsTarget(target.position, quickAttackDeltaDistance, "punch", "Uppercut"); break;
+            case 2: MoveTowardsTarget(target.position, quickAttackDeltaDistance, "kick", "Flying Kick"); break;
+            case 3: MoveTowardsTarget(target.position, quickAttackDeltaDistance, "mmakick", "Mma Kick"); break;
         }
     }
 
@@ -399,8 +436,8 @@ public class PlayerControl : MonoBehaviour
     {
         int attackIndex = Random.Range(1, 3);
 
-        if (attackIndex == 1) MoveTowardsTarget(target.position, heavyAttackDeltaDistance, "heavyAttack1");
-        else MoveTowardsTarget(target.position, heavyAttackDeltaDistance, "heavyAttack2");
+        if (attackIndex == 1) MoveTowardsTarget(target.position, heavyAttackDeltaDistance, "heavyAttack1", "Frank_RPG_2Hand_Combo05_1");
+        else MoveTowardsTarget(target.position, heavyAttackDeltaDistance, "heavyAttack2", "Frank_RPG_WhirlWind");
     }
 
     public void ResetAttack()
@@ -418,6 +455,7 @@ public class PlayerControl : MonoBehaviour
         HideTrailWithDelay();
 
         isAttacking = false;
+        lastAttackEndTime = Time.time;
     }
 
     // ─── Trail Methods ────────────────────────────────────────────────────────
@@ -480,8 +518,14 @@ public class PlayerControl : MonoBehaviour
             Rigidbody enemyRb = enemy.GetComponentInParent<Rigidbody>();
             EnemyAI enemyBase = enemy.GetComponentInParent<EnemyAI>();
             BossAI bossBase = enemy.GetComponentInParent<BossAI>();
+            BoarBossAI boarBase = enemy.GetComponentInParent<BoarBossAI>();
 
-            if (enemyRb != null || bossBase != null) // boss mungkin ditaruh collider di parent
+            if (boarBase != null)
+            {
+                Debug.Log($"[PlayerControl] OverlapSphere mengenai collider milik BoarBossAI: {enemy.name}");
+            }
+
+            if (enemyRb != null || bossBase != null || boarBase != null) // boss mungkin ditaruh collider di parent
             {
                 hasHitTarget = true;
 
@@ -491,7 +535,7 @@ public class PlayerControl : MonoBehaviour
                     knockDir.y = airknockbackForce;
 
                     // Bos biasanya tidak kena knockback kecil
-                    if (bossBase == null)
+                    if (bossBase == null && boarBase == null)
                     {
                         enemyRb.AddForce(knockDir.normalized * knockbackForce, ForceMode.Impulse);
                     }
@@ -514,6 +558,15 @@ public class PlayerControl : MonoBehaviour
                     float damageAmount = (currentAttackState == 0) ? PlayerStatus.Instance.damage1 : PlayerStatus.Instance.damage2;
                     if (isAwakened) damageAmount *= 2f;
                     bossBase.TakeDamage(damageAmount);
+                }
+                else if (boarBase != null)
+                {
+                    boarBase.SpawnHitVfx(boarBase.transform.position);
+
+                    // Hitung damage bos babi
+                    float damageAmount = (currentAttackState == 0) ? PlayerStatus.Instance.damage1 : PlayerStatus.Instance.damage2;
+                    if (isAwakened) damageAmount *= 2f;
+                    boarBase.TakeDamage(damageAmount);
                 }
             }
         }
@@ -554,16 +607,20 @@ public class PlayerControl : MonoBehaviour
 
         if (oldTarget != null) oldTarget.ActiveTarget(false);
         if (oldBossTarget != null) oldBossTarget.ActiveTarget(false);
+        if (oldBoarTarget != null) oldBoarTarget.ActiveTarget(false);
 
         target = target_;
         currentTarget = target_.GetComponent<EnemyAI>();
         currentBossTarget = target_.GetComponent<BossAI>();
+        currentBoarTarget = target_.GetComponent<BoarBossAI>();
         
         oldTarget = currentTarget;
         oldBossTarget = currentBossTarget;
+        oldBoarTarget = currentBoarTarget;
 
         if (currentTarget != null) currentTarget.ActiveTarget(true);
         if (currentBossTarget != null) currentBossTarget.ActiveTarget(true);
+        if (currentBoarTarget != null) currentBoarTarget.ActiveTarget(true);
     }
 
     public void NoTarget()
@@ -572,6 +629,7 @@ public class PlayerControl : MonoBehaviour
 
         if (currentTarget != null) currentTarget.ActiveTarget(false);
         if (currentBossTarget != null) currentBossTarget.ActiveTarget(false);
+        if (currentBoarTarget != null) currentBoarTarget.ActiveTarget(false);
 
         currentTarget = null;
         oldTarget = null;
@@ -579,12 +637,15 @@ public class PlayerControl : MonoBehaviour
         currentBossTarget = null;
         oldBossTarget = null;
         
+        currentBoarTarget = null;
+        oldBoarTarget = null;
+        
         target = null;
     }
 
-    public void MoveTowardsTarget(Vector3 targetPos, float deltaDistance, string animName)
+    public void MoveTowardsTarget(Vector3 targetPos, float deltaDistance, string paramName, string stateName)
     {
-        PerformAttackAnimation(animName);
+        PerformAttackAnimation(paramName, stateName);
         FaceThis(targetPos);
 
         Vector3 finalPos = TargetOffset(targetPos, deltaDistance);
@@ -650,9 +711,12 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
-    void PerformAttackAnimation(string animName)
+    void PerformAttackAnimation(string paramName, string stateName)
     {
-        anim.SetBool(animName, true);
+        anim.SetBool(paramName, true);
+        
+        // Paksa animator langsung ke state serangan tanpa menunggu transisi
+        anim.Play(stateName, 0, 0f);
     }
 
     public Vector3 TargetOffset(Vector3 targetPos, float delta)

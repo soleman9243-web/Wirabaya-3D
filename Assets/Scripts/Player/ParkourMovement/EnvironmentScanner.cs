@@ -16,7 +16,7 @@ public class EnvironmentScanner : MonoBehaviour
     [SerializeField] Vector3 forwardRayOffset = new Vector3(0, 0.25f, 0);
     [SerializeField] float forwardRayLength = 0.8f;
     [SerializeField] float heightRayLength = 5f;
-    [SerializeField] LayerMask obstacleLayer;
+    public LayerMask obstacleLayer;
 
     private void Update()
     {
@@ -33,7 +33,8 @@ public class EnvironmentScanner : MonoBehaviour
 
         if (hitData.forwardHitFound)
         {
-            Vector3 heightOrigin = hitData.forwardHit.point + Vector3.up * heightRayLength;
+            // Tambahkan sedikit offset maju (0.2f) agar raycast jatuh persis di atas objek (tidak meleset ke pinggiran)
+            Vector3 heightOrigin = hitData.forwardHit.point + (transform.forward * 0.2f) + (Vector3.up * heightRayLength);
             hitData.heightHitFound = Physics.Raycast(heightOrigin, Vector3.down, out hitData.heightHit, heightRayLength, obstacleLayer);
             Debug.DrawRay(heightOrigin, Vector3.down * heightRayLength, (hitData.heightHitFound) ? Color.red : Color.white);
         }

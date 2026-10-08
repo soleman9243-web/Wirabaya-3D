@@ -34,7 +34,7 @@ ModelImporter:
       name: boar_attack
       takeName: rig|attack.001
       internalID: -5308748615094783210
-      firstFrame: 0
+      firstFrame: 8.5
       lastFrame: 60
       wrapMode: 0
       orientationOffsetY: 0
@@ -129,7 +129,7 @@ ModelImporter:
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 0
+      loopTime: 1
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0

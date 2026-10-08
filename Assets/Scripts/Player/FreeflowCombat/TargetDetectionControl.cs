@@ -83,8 +83,9 @@ public class TargetDetectionControl : MonoBehaviour
             {
                 EnemyAI enemy = playerControl.target.GetComponent<EnemyAI>();
                 BossAI boss = playerControl.target.GetComponent<BossAI>();
+                BoarBossAI boarBoss = playerControl.target.GetComponent<BoarBossAI>();
                 
-                if ((enemy != null && enemy.isDead) || (boss != null && boss.CurrentHealth <= 0))
+                if ((enemy != null && enemy.isDead) || (boss != null && boss.CurrentHealth <= 0) || (boarBoss != null && boarBoss.CurrentHealth <= 0))
                 {
                     isHardLocked = false;
                     playerControl.NoTarget();
@@ -111,6 +112,14 @@ public class TargetDetectionControl : MonoBehaviour
                 if (boss != null)
                 {
                     targetTransform = boss.transform;
+                }
+                else
+                {
+                    BoarBossAI boarBoss = hit.collider.GetComponentInParent<BoarBossAI>();
+                    if (boarBoss != null)
+                    {
+                        targetTransform = boarBoss.transform;
+                    }
                 }
             }
 

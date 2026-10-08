@@ -36,6 +36,7 @@ public class PlayerParry : MonoBehaviour
     public bool isParrying { get; private set; }
     private EnemyAI currentAttacker;
     private BossAI currentBossAttacker;
+    private BoarBossAI currentBoarAttacker;
 
     private void Awake()
     {
@@ -59,6 +60,10 @@ public class PlayerParry : MonoBehaviour
             else if (currentBossAttacker != null)
             {
                 ExecuteBossParrySuccess(currentBossAttacker);
+            }
+            else if (currentBoarAttacker != null)
+            {
+                ExecuteBoarParrySuccess(currentBoarAttacker);
             }
             else if (!isParrying)
             {
@@ -87,10 +92,17 @@ public class PlayerParry : MonoBehaviour
         if (spiderSenseIndicator != null) spiderSenseIndicator.SetActive(true);
     }
 
+    public void EnableBoarSpiderSense(BoarBossAI boarAttacker)
+    {
+        currentBoarAttacker = boarAttacker;
+        if (spiderSenseIndicator != null) spiderSenseIndicator.SetActive(true);
+    }
+
     public void DisableSpiderSense()
     {
         currentAttacker = null;
         currentBossAttacker = null;
+        currentBoarAttacker = null;
         if (spiderSenseIndicator != null) spiderSenseIndicator.SetActive(false);
     }
 
@@ -108,7 +120,8 @@ public class PlayerParry : MonoBehaviour
 
         if (parryParticlePrefab != null && parryImpactPoint != null)
         {
-            Instantiate(parryParticlePrefab, parryImpactPoint.position, Quaternion.identity);
+            GameObject vfx = Instantiate(parryParticlePrefab, parryImpactPoint.position, Quaternion.identity);
+            vfx.SetActive(true);
         }
 
         StartCoroutine(HitStopAndCameraRoutine());
@@ -138,12 +151,50 @@ public class PlayerParry : MonoBehaviour
 
         if (parryParticlePrefab != null && parryImpactPoint != null)
         {
-            Instantiate(parryParticlePrefab, parryImpactPoint.position, Quaternion.identity);
+            GameObject vfx = Instantiate(parryParticlePrefab, parryImpactPoint.position, Quaternion.identity);
+            vfx.SetActive(true);
         }
 
         StartCoroutine(HitStopAndCameraRoutine());
 
         Debug.Log("Boss Parry Berhasil!");
+
+        if (QuestManager.Instance != null && !string.IsNullOrEmpty(parryObjectiveId))
+        {
+            if (QuestManager.Instance.IsObjectiveActive(parryObjectiveId))
+            {
+                QuestManager.Instance.AddProgress(parryObjectiveId, 1);
+            }
+        }
+    }
+
+    private void ExecuteBoarParrySuccess(BoarBossAI boss)
+    {
+        StarterAssets.ThirdPersonController tpc = GetComponent<StarterAssets.ThirdPersonController>();
+        if (tpc != null) tpc.IsInFinisher = true;
+
+        DisableSpiderSense();
+
+        // JANGAN SnapToEnemy (karena badan boss Babi sangat besar, nanti player tembus masuk ke perutnya dan efeknya tertutup badan boss)
+        // Cukup buat player menghadap ke boss secara instan
+        Vector3 dir = (boss.transform.position - transform.position).normalized;
+        dir.y = 0f;
+        if (dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
+
+        animator.SetTrigger("Parry");
+        
+        // Panggil fungsi stagger khusus boar boss
+        boss.TriggerParryStagger();
+
+        if (parryParticlePrefab != null && parryImpactPoint != null)
+        {
+            GameObject vfx = Instantiate(parryParticlePrefab, parryImpactPoint.position, Quaternion.identity);
+            vfx.SetActive(true);
+        }
+
+        StartCoroutine(HitStopAndCameraRoutine());
+
+        Debug.Log("Boar Boss Parry Berhasil!");
 
         if (QuestManager.Instance != null && !string.IsNullOrEmpty(parryObjectiveId))
         {

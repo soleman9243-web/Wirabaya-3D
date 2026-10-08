@@ -33,9 +33,8 @@ namespace StarterAssets
         [Header("Player")]
 
         [Tooltip("Move speed of the character in m/s")]
-
         public float MoveSpeed = 2.0f;
-
+        public bool HasControl => _hasControl;
 
 
         [Tooltip("Sprint speed of the character in m/s")]
@@ -516,6 +515,11 @@ namespace StarterAssets
         {
             if (DisableMovement)
             {
+                // Reset internal speed agar tidak drift/slide sesudah animasi serang selesai
+                _speed = 0f;
+                _animationBlend = 0f;
+                _currentTurnValue = 0f;
+
                 // Saat combat: tetap terapkan gravitasi vertikal agar player tidak melayang
                 // setelah traversal selesai. Hanya gerakan horizontal yang dimatikan.
                 _controller.Move(new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
@@ -671,9 +675,15 @@ namespace StarterAssets
 
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
 
-                // Perbaikan Bug: Animasi Turn (Left/Right) HANYA aktif saat berdiri diam (_input.move == Vector2.zero & _speed < 0.1f).
-                // Saat berjalan/lari dengan WASD, Turn dipaksa ke 0 agar animasi Walk_N / Run_N berjalan mulus tanpa looping turn!
-                float targetTurn = (_input.move == Vector2.zero && _speed < 0.1f) ? Mathf.Clamp(_rotationVelocity / 180f, -1f, 1f) : 0f;
+                // Jika sedang pegang senjata, matikan semua nilai Turn ke Animator agar tidak memicu animasi belok.
+                float targetTurn = 0f;
+                if (!isHoldingSword)
+                {
+                    // Perbaikan Bug: Animasi Turn (Left/Right) HANYA aktif saat berdiri diam (_input.move == Vector2.zero & _speed < 0.1f).
+                    // Saat berjalan/lari dengan WASD, Turn dipaksa ke 0 agar animasi Walk_N / Run_N berjalan mulus tanpa looping turn!
+                    targetTurn = (_input.move == Vector2.zero && _speed < 0.1f) ? Mathf.Clamp(_rotationVelocity / 180f, -1f, 1f) : 0f;
+                }
+                
                 _currentTurnValue = Mathf.Lerp(_currentTurnValue, targetTurn, Time.deltaTime * 10f);
 
                 _animator.SetFloat(_animIDTurn, _currentTurnValue);
@@ -970,15 +980,10 @@ namespace StarterAssets
 
             _hasControl = hasControl;
 
-
-
-            if (TryGetComponent<CharacterController>(out var characterController))
-
-            {
-
-                characterController.enabled = hasControl;
-
-            }
+            // KITA JANGAN MEMATIKAN CharacterController DI SINI!
+            // Kita ingin CharacterController tetap menyala saat parkour agar Fisika Unity
+            // mencegah karakter berguling menembus benda padat (seperti pohon).
+            // Ukuran kapsul sudah di-handle oleh Tiny Capsule di ParkourController.
 
 
 
@@ -1010,6 +1015,30 @@ namespace StarterAssets
 
         private void OnAnimatorMove()
         {
+            // PENTING: Saat Parkour (hasControl == false), kita harus menerapkan Root Motion secara manual.
+            // Kita TIDAK BISA menggunakan ApplyBuiltinRootMotion() karena animasi Mixamo sering memiliki BUG 
+            // di frame terakhirnya (akar/root kembali ke 0,0,0) yang membuat deltaPosition menjadi raksasa.
+            // Hal inilah yang membuat karaktermu "kepental" dengan sangat kencang ke belakang!
+            if (!_hasControl && _animator != null)
+            {
+                // ANTI-GLITCH: Jika perpindahan lebih dari 0.3 meter dalam 1 frame (tidak masuk akal secara fisik), abaikan!
+                if (_animator.deltaPosition.magnitude < 0.3f)
+                {
+                    // Gunakan _controller.Move() alih-alih transform.position.
+                    // Ini memungkinkan kapsul (yang sedang mode Tiny) untuk menabrak rintangan/pohon secara alami.
+                    if (_controller != null && _controller.enabled)
+                    {
+                        _controller.Move(_animator.deltaPosition);
+                    }
+                    else
+                    {
+                        transform.position += _animator.deltaPosition;
+                    }
+                }
+                transform.rotation *= _animator.deltaRotation;
+                return;
+            }
+
             if (_hasAnimator && _input != null && _input.move == Vector2.zero && _speed < 0.1f)
             {
                 // Terapkan rotasi murni dari animasi (Root Motion) saat diam/Idle Turn

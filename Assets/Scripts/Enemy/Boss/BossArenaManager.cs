@@ -5,7 +5,10 @@ using UnityEngine.SceneManagement;
 public class BossArenaManager : MonoBehaviour
 {
     [Header("References")]
+    [Tooltip("Untuk boss generik (Bear, dll)")]
     public BossAI bossAI;
+    [Tooltip("Untuk boss Babi")]
+    public BoarBossAI boarBossAI;
     public BossUI bossUI;
 
     [Header("Post-Boss Transition")]
@@ -21,7 +24,14 @@ public class BossArenaManager : MonoBehaviour
 
     private void Start()
     {
-        if (bossAI == null)
+        // Auto-find BoarBossAI jika belum di-set
+        if (boarBossAI == null)
+        {
+            boarBossAI = FindFirstObjectByType<BoarBossAI>();
+        }
+
+        // Auto-find BossAI jika belum di-set (dan tidak ada BoarBossAI)
+        if (bossAI == null && boarBossAI == null)
         {
             bossAI = FindFirstObjectByType<BossAI>();
         }
@@ -31,12 +41,24 @@ public class BossArenaManager : MonoBehaviour
             bossUI = FindFirstObjectByType<BossUI>();
         }
 
-        if (bossAI != null && bossUI != null)
+        // ===== SETUP: BoarBossAI (prioritas) =====
+        if (boarBossAI != null)
         {
-            // Set up Boss UI
+            // BoarBossAI mengelola intro + health UI sendiri secara internal.
+            // ArenaManager hanya subscribe ke event kematian untuk quest & scene transition.
+            boarBossAI.OnBossDied.AddListener(HandleBossDeath);
+
+            // Mulai boss fight jika belum auto-start
+            if (!boarBossAI.autoStart)
+            {
+                boarBossAI.StartBossFight();
+            }
+        }
+        // ===== SETUP: BossAI generik (fallback) =====
+        else if (bossAI != null && bossUI != null)
+        {
             bossUI.InitializeBossUI(bossAI.bossData != null ? bossAI.bossData.bossName : "Boss");
 
-            // Subscribe ke event
             bossAI.OnBossHealthChanged.AddListener(bossUI.UpdateHealth);
             bossAI.OnBossDied.AddListener(HandleBossDeath);
         }
@@ -91,10 +113,16 @@ public class BossArenaManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (bossAI != null)
+        if (boarBossAI != null)
+        {
+            boarBossAI.OnBossDied.RemoveListener(HandleBossDeath);
+        }
+
+        if (bossAI != null && bossUI != null)
         {
             bossAI.OnBossHealthChanged.RemoveListener(bossUI.UpdateHealth);
             bossAI.OnBossDied.RemoveListener(HandleBossDeath);
         }
     }
 }
+
