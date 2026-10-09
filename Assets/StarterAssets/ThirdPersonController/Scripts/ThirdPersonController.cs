@@ -344,6 +344,7 @@ namespace StarterAssets
         private void Update()
 
         {
+            if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen)) return;
 
             _hasAnimator = TryGetComponent(out _animator);
 
@@ -380,6 +381,7 @@ namespace StarterAssets
         private void LateUpdate()
 
         {
+            if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen)) return;
 
             if (IsInFinisher)
 
