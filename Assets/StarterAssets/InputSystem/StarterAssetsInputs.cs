@@ -23,25 +23,50 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM
 		public void OnMove(InputValue value)
 		{
-			MoveInput(value.Get<Vector2>());
+			if (cursorInputForLook)
+			{
+				MoveInput(value.Get<Vector2>());
+			}
+			else
+			{
+				move = Vector2.zero;
+			}
 		}
 
 		public void OnLook(InputValue value)
 		{
-			if(cursorInputForLook)
+			if (cursorInputForLook)
 			{
 				LookInput(value.Get<Vector2>());
+			}
+			else
+			{
+				look = Vector2.zero;
 			}
 		}
 
 		public void OnJump(InputValue value)
 		{
-			JumpInput(value.isPressed);
+			if (cursorInputForLook)
+			{
+				JumpInput(value.isPressed);
+			}
+			else
+			{
+				jump = false;
+			}
 		}
 
 		public void OnSprint(InputValue value)
 		{
-			SprintInput(value.isPressed);
+			if (cursorInputForLook)
+			{
+				SprintInput(value.isPressed);
+			}
+			else
+			{
+				sprint = false;
+			}
 		}
 #endif
 

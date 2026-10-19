@@ -30,6 +30,7 @@ public class TargetDetectionControl : MonoBehaviour
     // Ubah: Deteksi dipanggil setiap frame secara otomatis
     private void Update()
     {
+        if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen)) return;
         HandleHardLockInput();
         DetectTargetByMouse();
     }

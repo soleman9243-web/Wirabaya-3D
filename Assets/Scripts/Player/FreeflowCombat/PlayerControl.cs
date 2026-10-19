@@ -170,6 +170,7 @@ public class PlayerControl : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen)) return;
         if (isHitstopping) return;
 
         if (isAttacking)
@@ -223,6 +224,8 @@ public class PlayerControl : MonoBehaviour
 
     void HandleInput()
     {
+        if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen)) return;
+        if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
         if (isSheathingAnim) return;
 
         // Mulai hold input serangan (Klik Kiri / J)
