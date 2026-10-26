@@ -128,8 +128,8 @@ public class BoarBossAI : MonoBehaviour
 
     // Components
     private Rigidbody rb;
-    private Collider bossCollider;
-    private Collider playerCollider;
+    private Collider[] bossColliders;
+    private Collider[] playerColliders;
     private PlayerParry playerParry;
 
     // Coroutine tracking
@@ -142,7 +142,7 @@ public class BoarBossAI : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        bossCollider = GetComponent<Collider>();
+        bossColliders = GetComponentsInChildren<Collider>();
 
         // === FIX BUG: Pastikan gravitasi aktif ===
         if (rb != null)
@@ -172,7 +172,7 @@ public class BoarBossAI : MonoBehaviour
 
         if (player != null)
         {
-            playerCollider = player.GetComponent<Collider>();
+            playerColliders = player.GetComponentsInChildren<Collider>();
             playerParry = player.GetComponent<PlayerParry>();
         }
 
@@ -284,10 +284,7 @@ public class BoarBossAI : MonoBehaviour
         if (playerParry != null) playerParry.DisableSpiderSense();
 
         // Kembalikan collision dengan player jika tadi sempat dimatikan saat Charge
-        if (bossCollider != null && playerCollider != null)
-        {
-            Physics.IgnoreCollision(bossCollider, playerCollider, false);
-        }
+        IgnorePlayerCollision(false);
 
         // Mulai proses pemulihan (boss diam aja tanpa kepental)
         stateMachineCoroutine = StartCoroutine(ParryRecoveryRoutine());
@@ -472,6 +469,11 @@ public class BoarBossAI : MonoBehaviour
         chargeDirection.y = 0f;
         chargeDirection.Normalize();
 
+        if (rb != null) 
+        {
+            rb.constraints = RigidbodyConstraints.FreezeRotation; // Unfreeze X & Z agar bisa maju
+        }
+
         // Paksa animasi locomotion masuk ke mode lari (menggunakan Blend Tree)
         if (animator != null) 
         {
@@ -492,10 +494,7 @@ public class BoarBossAI : MonoBehaviour
         if (playerParry != null) playerParry.EnableBoarSpiderSense(this);
 
         // === FIX BUG: Ignore collision dengan player agar boss tidak tergeser ===
-        if (bossCollider != null && playerCollider != null)
-        {
-            Physics.IgnoreCollision(bossCollider, playerCollider, true);
-        }
+        IgnorePlayerCollision(true);
 
         float distanceCovered = 0f;
         bool hasHitPlayer = false;
@@ -554,10 +553,7 @@ public class BoarBossAI : MonoBehaviour
         if (playerParry != null) playerParry.DisableSpiderSense();
 
         // Kembalikan collision dengan player
-        if (bossCollider != null && playerCollider != null)
-        {
-            Physics.IgnoreCollision(bossCollider, playerCollider, false);
-        }
+        IgnorePlayerCollision(false);
 
         // Recovery singkat setelah charge (boss diam sebentar)
         yield return new WaitForSeconds(0.5f);
@@ -773,6 +769,20 @@ public class BoarBossAI : MonoBehaviour
     // INTERNAL HELPERS
     // ==========================================
 
+    private void IgnorePlayerCollision(bool ignore)
+    {
+        if (bossColliders == null || playerColliders == null) return;
+        foreach (var bc in bossColliders)
+        {
+            if (bc == null) continue;
+            foreach (var pc in playerColliders)
+            {
+                if (pc == null) continue;
+                Physics.IgnoreCollision(bc, pc, ignore);
+            }
+        }
+    }
+
     private void SetState(BossState newState)
     {
         CurrentState = newState;
@@ -800,10 +810,19 @@ public class BoarBossAI : MonoBehaviour
 
     private void MoveForward(float speed)
     {
-        if (rb != null && !rb.isKinematic)
+        if (rb != null)
         {
-            Vector3 moveVel = transform.forward * speed;
-            rb.linearVelocity = new Vector3(moveVel.x, rb.linearVelocity.y, moveVel.z);
+            rb.constraints = RigidbodyConstraints.FreezeRotation; // Unfreeze X & Z
+            
+            if (!rb.isKinematic)
+            {
+                Vector3 moveVel = transform.forward * speed;
+                rb.linearVelocity = new Vector3(moveVel.x, rb.linearVelocity.y, moveVel.z);
+            }
+            else
+            {
+                transform.position += transform.forward * speed * Time.deltaTime;
+            }
         }
         else
         {
@@ -813,9 +832,14 @@ public class BoarBossAI : MonoBehaviour
 
     private void StopMovement()
     {
-        if (rb != null && !rb.isKinematic)
+        if (rb != null)
         {
-            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            if (!rb.isKinematic)
+            {
+                rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            }
+            // Freeze X dan Z saat berhenti agar CharacterController player tidak bisa mendorong boss
+            rb.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
         }
 
         SetAnimSpeed(0f);
@@ -851,10 +875,7 @@ public class BoarBossAI : MonoBehaviour
         if (animator != null) animator.SetTrigger("Die");
 
         // Kembalikan collision jika masih di-ignore
-        if (bossCollider != null && playerCollider != null)
-        {
-            Physics.IgnoreCollision(bossCollider, playerCollider, false);
-        }
+        IgnorePlayerCollision(false);
 
         OnBossDied?.Invoke();
 
