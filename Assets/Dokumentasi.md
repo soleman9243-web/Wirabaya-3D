@@ -10,10 +10,9 @@ File ini berisi catatan rekam jejak changelog dari setiap pembaruan, modifikasi 
 
 ---
 
-# ⚠️ PROTOKOL & ATURAN KERJA ASISTEN AI (STRICT RULES & BEHAVIOR)
-
+# ⚠️ PROTOKOL & ATURAN KERJA ASISTEN AI (STRICT RULES & BEHAVIOR)      
 > [!IMPORTANT]
-> ### 🛑 ATURAN MUTLAK USER: DILARANG MENGAMBIL INISIATIF TANPA PERINTAH EKSPLISIT!
+> ### 🛑 ATURAN MUTLAK USER: DILARANG MENGAMBIL INISIATIF TANPA PERIsmb NTAH EKSPLISIT!
 > Asisten AI **TIDAK BOLEH** mengambil keputusan sendiri, memodifikasi kode/material/shader, atau mengubah struktur aset proyek sebelum mendapatkan instruksi atau persetujuan tegas dari User.
 
 ## 1. Perilaku AI yang Diwajibkan (Required AI Behavior)
