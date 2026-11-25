@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -85,11 +86,22 @@ public class AudioManager : MonoBehaviour
     [Tooltip("Durasi transisi (fade out lagu lama -> fade in lagu baru) dalam detik")]
     [SerializeField] private float crossfadeDuration = 1.5f;
 
+    [Header("=== Multi-BGM Settings ===")]
+    [Tooltip("Jika aktif, semua BGM di daftar (BGM_1, BGM_2, BGM_3) akan menyala bersamaan saat mulai.")]
+    [SerializeField] private bool playAllBGMSimultaneously = true;
+
+    [Tooltip("Daftar nama BGM yang otomatis mati (fade-out) saat Player masuk ke dalam rumah (layer NoJump).")]
+    [SerializeField] private string[] indoorMutedBGMs = new string[] { "BGM_2", "BGM_3" };
+
+    [Tooltip("Durasi fade-out / fade-in BGM saat masuk dan keluar rumah (detik).")]
+    [SerializeField] private float indoorFadeDuration = 1.0f;
+
     // ========================
     // PRIVATE STATE
     // ========================
     private Sound currentBGM;
     private Coroutine crossfadeCoroutine;
+    private readonly Dictionary<string, Coroutine> bgmZoneFadeCoroutines = new Dictionary<string, Coroutine>();
 
     // ========================
     // LIFECYCLE
@@ -108,14 +120,22 @@ public class AudioManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         // Inisialisasi: Buat AudioSource untuk setiap Sound di daftar BGM dan SFX
-        InitializeSounds(bgmSounds);
-        InitializeSounds(sfxSounds);
+        InitializeSounds(bgmSounds, false);
+        InitializeSounds(sfxSounds, true);
+    }
+
+    private void Start()
+    {
+        if (playAllBGMSimultaneously)
+        {
+            PlayAllBGM();
+        }
     }
 
     /// <summary>
     /// Membuat komponen AudioSource untuk setiap entry Sound dan mengatur propertinya sesuai data di Inspector.
     /// </summary>
-    private void InitializeSounds(Sound[] sounds)
+    private void InitializeSounds(Sound[] sounds, bool isUI = false)
     {
         if (sounds == null) return;
 
@@ -129,13 +149,20 @@ public class AudioManager : MonoBehaviour
 
             s.source = gameObject.AddComponent<AudioSource>();
             s.source.clip = s.clip;
-            s.source.volume = s.volume;
+            s.zoneVolumeMultiplier = 1f;
+            s.source.volume = s.volume * (isUI ? sfxMasterVolume : bgmMasterVolume * s.zoneVolumeMultiplier);
             s.source.pitch = s.pitch;
             s.source.loop = s.loop;
             s.source.playOnAwake = false;
 
             // Suara global (2D), tidak terpengaruh jarak/posisi
             s.source.spatialBlend = 0f;
+
+            // Suara UI tetap terdengar saat pause game (AudioListener.pause = true)
+            if (isUI)
+            {
+                s.source.ignoreListenerPause = true;
+            }
         }
     }
 
@@ -144,12 +171,112 @@ public class AudioManager : MonoBehaviour
     // ========================
 
     /// <summary>
+    /// Memainkan semua BGM yang memiliki AudioClip secara bersamaan.
+    /// </summary>
+    public void PlayAllBGM()
+    {
+        if (bgmSounds == null) return;
+
+        foreach (Sound s in bgmSounds)
+        {
+            if (s == null || s.source == null || s.clip == null) continue;
+
+            s.source.volume = s.volume * bgmMasterVolume * s.zoneVolumeMultiplier;
+            if (!s.source.isPlaying && s.zoneVolumeMultiplier > 0.001f)
+            {
+                s.source.Play();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Dipanggil otomatis saat Player masuk/keluar rumah (layer NoJump) untuk mematikan/menyalakan BGM tertentu.
+    /// </summary>
+    public void SetIndoorState(bool isIndoors)
+    {
+        if (indoorMutedBGMs == null) return;
+
+        for (int i = 0; i < indoorMutedBGMs.Length; i++)
+        {
+            string bgmName = indoorMutedBGMs[i];
+            if (!string.IsNullOrEmpty(bgmName))
+            {
+                SetBGMMuted(bgmName, isIndoors, indoorFadeDuration);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mematikan (fade-out) atau menyalakan kembali (fade-in) BGM tertentu berdasarkan nama (misal saat masuk/keluar rumah).
+    /// </summary>
+    public void SetBGMMuted(string bgmName, bool muted, float fadeDuration = 1.0f)
+    {
+        Sound s = FindSound(bgmSounds, bgmName);
+        if (s == null || s.source == null) return;
+
+        if (bgmZoneFadeCoroutines.TryGetValue(bgmName, out Coroutine running) && running != null)
+        {
+            StopCoroutine(running);
+        }
+
+        bgmZoneFadeCoroutines[bgmName] = StartCoroutine(FadeZoneBGMCoroutine(s, muted, fadeDuration, bgmName));
+    }
+
+    private IEnumerator FadeZoneBGMCoroutine(Sound s, bool muted, float duration, string bgmName)
+    {
+        float startMult = s.zoneVolumeMultiplier;
+        float targetMult = muted ? 0f : 1f;
+
+        if (!muted && s.clip != null && !s.source.isPlaying)
+        {
+            s.source.UnPause();
+            if (!s.source.isPlaying)
+            {
+                s.source.Play();
+            }
+        }
+
+        if (duration <= 0.01f)
+        {
+            s.zoneVolumeMultiplier = targetMult;
+            s.source.volume = s.volume * bgmMasterVolume * s.zoneVolumeMultiplier;
+        }
+        else
+        {
+            float timer = 0f;
+            while (timer < duration)
+            {
+                timer += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(timer / duration);
+                s.zoneVolumeMultiplier = Mathf.Lerp(startMult, targetMult, t);
+                s.source.volume = s.volume * bgmMasterVolume * s.zoneVolumeMultiplier;
+                yield return null;
+            }
+            s.zoneVolumeMultiplier = targetMult;
+            s.source.volume = s.volume * bgmMasterVolume * s.zoneVolumeMultiplier;
+        }
+
+        if (muted && s.source.isPlaying)
+        {
+            s.source.Pause();
+        }
+
+        bgmZoneFadeCoroutines[bgmName] = null;
+    }
+
+    /// <summary>
     /// Memainkan BGM berdasarkan nama. Jika BGM lain sedang bermain, akan dilakukan crossfade otomatis.
     /// Contoh: AudioManager.Instance.PlayBGM("HutanBGM");
     /// </summary>
     /// <param name="name">Nama BGM yang sudah didaftarkan di Inspector</param>
     public void PlayBGM(string name)
     {
+        if (playAllBGMSimultaneously)
+        {
+            PlayAllBGM();
+            return;
+        }
+
         Sound s = FindSound(bgmSounds, name);
         if (s == null)
         {
@@ -177,6 +304,19 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void StopBGM()
     {
+        if (playAllBGMSimultaneously && bgmSounds != null)
+        {
+            foreach (Sound s in bgmSounds)
+            {
+                if (s != null && s.source != null && s.source.isPlaying)
+                {
+                    s.source.Stop();
+                }
+            }
+            currentBGM = null;
+            return;
+        }
+
         if (currentBGM != null && currentBGM.source.isPlaying)
         {
             if (crossfadeCoroutine != null)
@@ -195,7 +335,18 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PauseBGM()
     {
-        if (currentBGM != null && currentBGM.source.isPlaying)
+        if (bgmSounds != null)
+        {
+            foreach (Sound s in bgmSounds)
+            {
+                if (s != null && s.source != null && s.source.isPlaying)
+                {
+                    s.source.Pause();
+                }
+            }
+        }
+
+        if (currentBGM != null && currentBGM.source != null && currentBGM.source.isPlaying)
         {
             currentBGM.source.Pause();
         }
@@ -206,7 +357,19 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void ResumeBGM()
     {
-        if (currentBGM != null && !currentBGM.source.isPlaying)
+        if (playAllBGMSimultaneously && bgmSounds != null)
+        {
+            foreach (Sound s in bgmSounds)
+            {
+                if (s != null && s.source != null && s.clip != null && !s.source.isPlaying && s.zoneVolumeMultiplier > 0.001f)
+                {
+                    s.source.UnPause();
+                }
+            }
+            return;
+        }
+
+        if (currentBGM != null && currentBGM.source != null && !currentBGM.source.isPlaying)
         {
             currentBGM.source.UnPause();
         }
@@ -245,10 +408,21 @@ public class AudioManager : MonoBehaviour
     {
         bgmMasterVolume = Mathf.Clamp01(volume);
 
-        // Update volume BGM yang sedang bermain secara realtime
+        // Update volume semua BGM secara realtime
+        if (bgmSounds != null)
+        {
+            foreach (Sound s in bgmSounds)
+            {
+                if (s != null && s.source != null)
+                {
+                    s.source.volume = s.volume * bgmMasterVolume * s.zoneVolumeMultiplier;
+                }
+            }
+        }
+
         if (currentBGM != null && currentBGM.source != null)
         {
-            currentBGM.source.volume = currentBGM.volume * bgmMasterVolume;
+            currentBGM.source.volume = currentBGM.volume * bgmMasterVolume * currentBGM.zoneVolumeMultiplier;
         }
     }
 
@@ -258,6 +432,32 @@ public class AudioManager : MonoBehaviour
     public void SetSFXVolume(float volume)
     {
         sfxMasterVolume = Mathf.Clamp01(volume);
+        if (sfxSounds != null)
+        {
+            foreach (var s in sfxSounds)
+            {
+                if (s != null && s.source != null)
+                {
+                    s.source.volume = s.volume * sfxMasterVolume;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pause audio saat pause menu dibuka.
+    /// </summary>
+    public void PauseOnMenuOpen()
+    {
+        PauseBGM();
+    }
+
+    /// <summary>
+    /// Resume audio saat pause menu ditutup.
+    /// </summary>
+    public void ResumeOnMenuClose()
+    {
+        ResumeBGM();
     }
 
     /// <summary>

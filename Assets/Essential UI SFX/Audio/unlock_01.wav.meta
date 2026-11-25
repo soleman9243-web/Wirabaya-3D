@@ -1,0 +1,29 @@
+fileFormatVersion: 2
+guid: 8312d1d991f0e934ebe6891da3d3778f
+AudioImporter:
+  externalObjects: {}
+  serializedVersion: 7
+  defaultSettings:
+    loadType: 0
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 1
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 0
+  preloadAudioData: 1
+  loadInBackground: 0
+  ambisonic: 0
+  3D: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 425992
+  packageName: 'Essential UI Sound Effects: 150 Free Interface SFX'
+  packageVersion: 1.0.1
+  assetPath: Assets/Essential UI SFX/Audio/unlock_01.wav
+  uploadId: 1057884

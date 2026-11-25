@@ -63,7 +63,72 @@ namespace StarterAssets
 
         public AudioClip[] FootstepAudioClips;
 
+        [Tooltip("Suara langkah kaki khusus saat menginjak rumput (Unity Terrain Paint Details atau objek ber-Tag 'Grass')")]
+        public AudioClip[] GrassFootstepAudioClips;
+
+        [Tooltip("Opsional: Suara khusus saat lari/sprint di rumput. Jika kosong, otomatis memakai Grass Footstep Audio Clips.")]
+        public AudioClip[] GrassRunAudioClips;
+
+        [Tooltip("Opsional: Suara langkah khusus saat berada di area Hutan (buat BoxCollider IsTrigger bernama 'Hutan' atau 'Forest').")]
+        public AudioClip[] ForestFootstepAudioClips;
+
+        [Tooltip("Opsional: Suara langkah di lantai rumah/kayu (objek bernama mengandung 'Wood' / 'Rumah' / 'Lantai').")]
+        public AudioClip[] HouseFootstepAudioClips;
+
+        [Tooltip("Opsional: Suara langkah di air dangkal (objek di Layer 'Water' atau bernama mengandung 'Water' / 'Air').")]
+        public AudioClip[] WaterFootstepAudioClips;
+
+        [Header("Footstep Trim & Feel")]
+        [Tooltip("Detik mulai pemutaran audio (untuk melewati bagian hening di awal file audio panjang).")]
+        public float FootstepStartTime = 0f;
+
+        [Tooltip("Durasi maksimal bunyi per 1 langkah kaki dalam detik untuk file audio panjang (misal 0.35). Isi 0 untuk putar penuh.")]
+        public float FootstepMaxDuration = 0.35f;
+
+        [Tooltip("Untuk file audio panjang (> 1.2 detik), acak titik potong mulainya agar setiap langkah bervariasi.")]
+        public bool RandomizeStartForLongClips = true;
+
+        [Tooltip("Sedikit mengacak pitch tiap langkah agar suara langkah terdengar alami.")]
+        public bool RandomizeFootstepPitch = true;
+
+        [Range(0f, 1f)]
+        [Tooltip("Volume suara semak/rumput yang ditumpuk di atas suara langkah biasa saat menginjak rumput.")]
+        public float GrassOverlayVolume = 0.5f;
+
+        [Range(0f, 1f)]
+        [Tooltip("Pengali volume footstep biasa saat berada di atas rumput (0.45 = 45% agar tidak bertabrakan dengan suara rumput).")]
+        public float FootstepVolumeOnGrassMultiplier = 0.45f;
+
+        [Range(0.1f, 4f)]
+        [Tooltip("Pengali volume langkah kaki saat di dalam rumah (1.0 = normal, 2.5 = lebih kencang).")]
+        public float HouseFootstepVolumeMultiplier = 2.5f;
+
+        [Tooltip("Jeda langkah otomatis saat jalan (detik) jika animasi tidak punya Animation Event OnFootstep.")]
+        public float WalkStepInterval = 0.48f;
+
+        [Tooltip("Jeda langkah otomatis saat lari (detik) jika animasi lari tidak punya Animation Event OnFootstep.")]
+        public float RunStepInterval = 0.24f;
+
+        [Range(1f, 3f)]
+        [Tooltip("Kecepatan/pitch audio rumput saat berlari penuh (1.0 = normal, 1.95 = hampir 2x lebih cepat).")]
+        public float GrassRunPitchMultiplier = 1.95f;
+
         [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
+
+        [Header("Bush Rustle Audio (Terrain Tree)")]
+        [Tooltip("Slot AudioClip suara gemerisik saat melewati semak/bush (Tree Terrain). Tinggal drag-and-drop file SFX bush di sini.")]
+        public AudioClip[] BushRustleAudioClips;
+
+        [Range(0f, 1f)]
+        [Tooltip("Volume suara gemerisik saat bergerak melewati semak/bush.")]
+        public float BushAudioVolume = 0.6f;
+
+        [Range(0.5f, 4f)]
+        [Tooltip("Radius deteksi semak/bush di sekitar karakter (meter).")]
+        public float BushDetectionRadius = 1.4f;
+
+        [Tooltip("Kata kunci nama prefab Tree Terrain yang dianggap sebagai Bush (pisahkan dengan koma).")]
+        public string BushTreeKeywords = "bush,semak,shrub";
 
 
 
@@ -228,6 +293,31 @@ namespace StarterAssets
 
         private GameObject _mainCamera;
         private PlayerControl _playerControl;
+        private AudioSource _footstepAudioSource;
+        private AudioSource _grassLoopSource;
+        private AudioSource _bushLoopSource;
+        private float _lastGrassCheckTime = -1f;
+        private float _lastBushCheckTime = -1f;
+        private bool _isCurrentlyOnGrass = false;
+        private bool _isCurrentlyInBush = false;
+        private Terrain _cachedBushTerrain;
+        private readonly System.Collections.Generic.List<Vector3> _cachedBushPositions =
+            new System.Collections.Generic.List<Vector3>();
+        private readonly AudioSource[] _footstepVoices = new AudioSource[2];
+        private readonly Coroutine[] _footstepVoiceRoutines = new Coroutine[2];
+        private int _nextFootstepVoice = 0;
+        private float _lastFootstepTime = -10f;
+        private float _lastAnimEventFootstepTime = -10f;
+        private bool _isSprintExhausted = false;
+        private Transform _leftFootBone;
+        private Transform _rightFootBone;
+        private bool _footBonesInitialized;
+        private float _prevLeftFootH;
+        private float _prevRightFootH;
+        private bool _leftFootMovingDown;
+        private bool _rightFootMovingDown;
+        private readonly System.Collections.Generic.Dictionary<AudioClip, System.Collections.Generic.List<float>> _cachedClipPeaks =
+            new System.Collections.Generic.Dictionary<AudioClip, System.Collections.Generic.List<float>>();
 
 
 
@@ -239,13 +329,19 @@ namespace StarterAssets
 
         // ===== NO JUMP ZONE =====
         private bool _isOnNoJumpZone = false;
+        private bool _wasInHouseZone = false;
         private int _noJumpLayerIndex;
+
+        public bool IsInHouse => _isOnNoJumpZone || HouseAudioZone.IsPlayerInside;
 
         // ===== VARIABEL UNTUK PARKOUR SYSTEM =====
 
         private bool _hasControl = true;
         [Tooltip("Jumlah stamina yang berkurang per detik saat berlari")]
         public float SprintStaminaCost = 15f;
+
+        [Tooltip("Stamina minimal agar bisa lari kembali setelah stamina habis (mencegah lari putus-putus saat stamina 0).")]
+        public float MinStaminaToResumeSprint = 15f;
 
         // ===== SISTEM ADVANCED LOCOMOTION & TERRAIN SLOPES =====
         private bool _wasGroundedLastFrame = true;
@@ -344,7 +440,11 @@ namespace StarterAssets
         private void Update()
 
         {
-            if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen)) return;
+            if (Time.timeScale == 0f || (Wirabaya.UI.SettingsMenuController.Instance != null && Wirabaya.UI.SettingsMenuController.Instance.IsMenuOpen))
+            {
+                if (_grassLoopSource != null && _grassLoopSource.isPlaying) _grassLoopSource.Pause();
+                return;
+            }
 
             _hasAnimator = TryGetComponent(out _animator);
 
@@ -374,6 +474,22 @@ namespace StarterAssets
 
             Move();
 
+            HandleFootstepFallback();
+
+            UpdateContinuousGrassAudio();
+
+            UpdateContinuousBushAudio();
+
+            bool isInHouseNow = IsInHouse;
+            if (isInHouseNow != _wasInHouseZone)
+            {
+                _wasInHouseZone = isInHouseNow;
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.SetIndoorState(isInHouseNow);
+                }
+            }
+
         }
 
 
@@ -394,6 +510,8 @@ namespace StarterAssets
 
 
             CameraRotation();
+
+            HandleFootBoneTouchdown();
 
         }
 
@@ -531,19 +649,44 @@ namespace StarterAssets
             // --- LOGIKA PENGURANGAN STAMINA LARI ---
             bool isMoving = _input.move != Vector2.zero;
             bool isHoldingSword = _playerControl != null && _playerControl.hasSwordEquipped && !_playerControl.isSwordSheathed;
-            bool canSprint = !isHoldingSword || PlayerStatus.Instance.stamina > 0;
+            bool hasPlayerStatus = PlayerStatus.Instance != null;
+
+            if (hasPlayerStatus)
+            {
+                if (PlayerStatus.Instance.stamina <= 0f)
+                {
+                    _isSprintExhausted = true;
+                }
+                else if (_isSprintExhausted && PlayerStatus.Instance.stamina >= MinStaminaToResumeSprint)
+                {
+                    _isSprintExhausted = false;
+                }
+            }
+            else
+            {
+                _isSprintExhausted = false;
+            }
+
+            bool isInHouse = IsInHouse;
+            bool canSprint = !isInHouse && (!hasPlayerStatus || (!_isSprintExhausted && PlayerStatus.Instance.stamina > 0f));
+
+            if (!canSprint)
+            {
+                _input.sprint = false; // Kunci agar benar-benar tidak bisa lari saat di dalam rumah atau stamina habis
+            }
 
             if (_input.sprint && canSprint && isMoving)
             {
-                if (isHoldingSword)
+                if (hasPlayerStatus)
                 {
-                    // Kurangi stamina secara konstan per detik
+                    // Kurangi stamina secara konstan per detik baik saat memegang pedang maupun tidak
                     PlayerStatus.Instance.UseStamina(SprintStaminaCost * Time.deltaTime);
+                    if (PlayerStatus.Instance.stamina <= 0f)
+                    {
+                        _isSprintExhausted = true;
+                        _input.sprint = false;
+                    }
                 }
-            }
-            else if (isHoldingSword && PlayerStatus.Instance.stamina <= 0)
-            {
-                _input.sprint = false; // Paksa berhenti lari jika stamina menyentuh 0
             }
 
             // Set target speed berdasarkan ketersediaan stamina
@@ -883,25 +1026,708 @@ namespace StarterAssets
 
 
         private void OnFootstep(AnimationEvent animationEvent)
-
         {
-
-            if (animationEvent.animatorClipInfo.weight > 0.5f)
-
+            if (animationEvent.animatorClipInfo.weight > 0.25f)
             {
+                bool isSprinting = _input != null && _input.sprint;
+                float minCooldown = isSprinting ? 0.20f : 0.44f;
+                if (Time.time - _lastFootstepTime < minCooldown) return;
 
-                if (FootstepAudioClips.Length > 0)
+                _lastAnimEventFootstepTime = Time.time;
+                TriggerFootstep();
+            }
+        }
 
-                {
-
-                    var index = Random.Range(0, FootstepAudioClips.Length);
-
-                    AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
-
-                }
-
+        private void HandleFootBoneTouchdown()
+        {
+            if (!Grounded || DisableMovement || _input == null || _input.move == Vector2.zero || _speed <= 0.4f)
+            {
+                _leftFootMovingDown = false;
+                _rightFootMovingDown = false;
+                return;
             }
 
+            if (!_footBonesInitialized && _hasAnimator && _animator != null && _animator.isHuman)
+            {
+                _leftFootBone = _animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+                _rightFootBone = _animator.GetBoneTransform(HumanBodyBones.RightFoot);
+                _footBonesInitialized = true;
+                if (_leftFootBone != null) _prevLeftFootH = _leftFootBone.position.y - transform.position.y;
+                if (_rightFootBone != null) _prevRightFootH = _rightFootBone.position.y - transform.position.y;
+            }
+
+            if (_leftFootBone == null || _rightFootBone == null) return;
+
+            bool isSprinting = _input.sprint;
+            // Jika Animation Event OnFootstep aktif dipakai saat jalan, biarkan animasi yang mengatur tempo jalan agar tidak ganda
+            if (!isSprinting && Time.time - _lastAnimEventFootstepTime < 0.7f)
+            {
+                _prevLeftFootH = _leftFootBone.position.y - transform.position.y;
+                _prevRightFootH = _rightFootBone.position.y - transform.position.y;
+                return;
+            }
+
+            float minCooldown = isSprinting ? 0.21f : 0.46f;
+
+            float leftH = _leftFootBone.position.y - transform.position.y;
+            float leftDelta = leftH - _prevLeftFootH;
+            _prevLeftFootH = leftH;
+
+            if (leftDelta < -0.005f)
+            {
+                _leftFootMovingDown = true;
+            }
+            else if (_leftFootMovingDown && leftDelta >= 0f && leftH < 0.32f)
+            {
+                _leftFootMovingDown = false;
+                if (Time.time - _lastFootstepTime >= minCooldown)
+                {
+                    TriggerFootstep();
+                }
+            }
+
+            float rightH = _rightFootBone.position.y - transform.position.y;
+            float rightDelta = rightH - _prevRightFootH;
+            _prevRightFootH = rightH;
+
+            if (rightDelta < -0.005f)
+            {
+                _rightFootMovingDown = true;
+            }
+            else if (_rightFootMovingDown && rightDelta >= 0f && rightH < 0.32f)
+            {
+                _rightFootMovingDown = false;
+                if (Time.time - _lastFootstepTime >= minCooldown)
+                {
+                    TriggerFootstep();
+                }
+            }
+        }
+
+        private void HandleFootstepFallback()
+        {
+            if (!Grounded || DisableMovement || _input == null || _input.move == Vector2.zero || _speed <= 0.4f)
+            {
+                return;
+            }
+
+            bool hasFootBones = _leftFootBone != null && _rightFootBone != null;
+            bool isSprinting = _input.sprint;
+            float interval = isSprinting ? RunStepInterval : WalkStepInterval;
+            float tolerance = hasFootBones ? 0.12f : 0f;
+
+            if (Time.time - _lastFootstepTime >= interval + tolerance)
+            {
+                TriggerFootstep();
+            }
+        }
+
+        private void TriggerFootstep()
+        {
+            _lastFootstepTime = Time.time;
+            AudioClip[] baseClips = SelectBaseFootstepClips(out bool isOnGrass);
+
+            // Jika di atas rumput dan audio rumput tersedia, biarkan suara rumput berjalan sendiri tanpa ditimpa footstep biasa
+            if (isOnGrass)
+            {
+                AudioClip[] grassClips = GetGrassClips();
+                if (grassClips != null && grassClips.Length > 0)
+                {
+                    return;
+                }
+            }
+
+            if (baseClips != null && baseClips.Length > 0)
+            {
+                var index = Random.Range(0, baseClips.Length);
+                if (baseClips[index] != null)
+                {
+                    float stepVolume = FootstepAudioVolume;
+                    if (baseClips == HouseFootstepAudioClips)
+                    {
+                        stepVolume *= HouseFootstepVolumeMultiplier;
+                    }
+                    PlayFootstepClip(baseClips[index], stepVolume);
+                }
+            }
+        }
+
+        private void UpdateContinuousGrassAudio()
+        {
+            bool isMovingOnGround = Grounded && !DisableMovement && _input != null && _input.move != Vector2.zero && _speed > 0.4f;
+
+            if (isMovingOnGround)
+            {
+                if (Time.time - _lastGrassCheckTime >= 0.08f)
+                {
+                    _lastGrassCheckTime = Time.time;
+                    SelectBaseFootstepClips(out _isCurrentlyOnGrass);
+                }
+            }
+            else
+            {
+                _isCurrentlyOnGrass = false;
+            }
+
+            AudioClip[] grassClips = GetGrassClips();
+            bool shouldPlay = isMovingOnGround && _isCurrentlyOnGrass && grassClips != null && grassClips.Length > 0;
+            float targetVol = shouldPlay ? FootstepAudioVolume : 0f;
+
+            if (shouldPlay)
+            {
+                AudioSource src = GetOrCreateGrassLoopSource();
+                float speedRatio = Mathf.InverseLerp(MoveSpeed, Mathf.Max(MoveSpeed + 0.1f, SprintSpeed), _speed);
+                float targetPitch = Mathf.Lerp(1.0f, GrassRunPitchMultiplier, speedRatio);
+
+                AudioClip desiredClip = grassClips[0];
+                if (desiredClip != null && src.clip != desiredClip)
+                {
+                    src.Stop();
+                    src.clip = desiredClip;
+                    src.pitch = targetPitch;
+                    src.Play();
+                }
+                else if (!src.isPlaying && src.clip != null)
+                {
+                    src.pitch = targetPitch;
+                    src.UnPause();
+                    if (!src.isPlaying) src.Play();
+                }
+
+                src.pitch = Mathf.Lerp(src.pitch, targetPitch, Time.deltaTime * 15f);
+                src.volume = Mathf.MoveTowards(src.volume, targetVol, Time.deltaTime * 6f);
+            }
+            else if (_grassLoopSource != null && _grassLoopSource.isPlaying)
+            {
+                _grassLoopSource.volume = Mathf.MoveTowards(_grassLoopSource.volume, 0f, Time.deltaTime * 6f);
+                if (_grassLoopSource.volume <= 0.005f)
+                {
+                    _grassLoopSource.volume = 0f;
+                    _grassLoopSource.Pause();
+                }
+            }
+        }
+
+        private AudioSource GetOrCreateGrassLoopSource()
+        {
+            if (_grassLoopSource != null) return _grassLoopSource;
+
+            Transform child = transform.Find("GrassLoopAudio");
+            if (child == null)
+            {
+                GameObject go = new GameObject("GrassLoopAudio");
+                go.transform.SetParent(transform, false);
+                child = go.transform;
+            }
+
+            _grassLoopSource = child.GetComponent<AudioSource>();
+            if (_grassLoopSource == null)
+            {
+                _grassLoopSource = child.gameObject.AddComponent<AudioSource>();
+            }
+
+            _grassLoopSource.playOnAwake = false;
+            _grassLoopSource.loop = true;
+            _grassLoopSource.volume = 0f;
+            _grassLoopSource.spatialBlend = 0.5f;
+            return _grassLoopSource;
+        }
+
+        private void UpdateContinuousBushAudio()
+        {
+            bool hasBushClips = BushRustleAudioClips != null && BushRustleAudioClips.Length > 0 && BushRustleAudioClips[0] != null;
+            bool isMoving = Grounded && !DisableMovement && !IsInHouse && _input != null && _input.move != Vector2.zero && _speed > 0.4f;
+
+            if (isMoving && hasBushClips)
+            {
+                if (Time.time - _lastBushCheckTime >= 0.08f)
+                {
+                    _lastBushCheckTime = Time.time;
+                    _isCurrentlyInBush = IsMovingInsideTerrainBush(transform.position);
+                }
+            }
+            else
+            {
+                _isCurrentlyInBush = false;
+            }
+
+            bool shouldPlay = isMoving && _isCurrentlyInBush && hasBushClips;
+            float targetVol = shouldPlay ? BushAudioVolume : 0f;
+
+            if (shouldPlay)
+            {
+                AudioSource src = GetOrCreateBushLoopSource();
+                float speedRatio = Mathf.InverseLerp(MoveSpeed, Mathf.Max(MoveSpeed + 0.1f, SprintSpeed), _speed);
+                float targetPitch = Mathf.Lerp(1.0f, 1.45f, speedRatio);
+
+                AudioClip desiredClip = BushRustleAudioClips[0];
+                if (src.clip != desiredClip)
+                {
+                    src.Stop();
+                    src.clip = desiredClip;
+                    src.pitch = targetPitch;
+                    src.Play();
+                }
+                else if (!src.isPlaying && src.clip != null)
+                {
+                    src.pitch = targetPitch;
+                    src.UnPause();
+                    if (!src.isPlaying) src.Play();
+                }
+
+                src.pitch = Mathf.Lerp(src.pitch, targetPitch, Time.deltaTime * 12f);
+                src.volume = Mathf.MoveTowards(src.volume, targetVol, Time.deltaTime * 6f);
+            }
+            else if (_bushLoopSource != null && _bushLoopSource.isPlaying)
+            {
+                _bushLoopSource.volume = Mathf.MoveTowards(_bushLoopSource.volume, 0f, Time.deltaTime * 6f);
+                if (_bushLoopSource.volume <= 0.005f)
+                {
+                    _bushLoopSource.volume = 0f;
+                    _bushLoopSource.Pause();
+                }
+            }
+        }
+
+        private AudioSource GetOrCreateBushLoopSource()
+        {
+            if (_bushLoopSource != null) return _bushLoopSource;
+
+            Transform child = transform.Find("BushLoopAudio");
+            if (child == null)
+            {
+                GameObject go = new GameObject("BushLoopAudio");
+                go.transform.SetParent(transform, false);
+                child = go.transform;
+            }
+
+            _bushLoopSource = child.GetComponent<AudioSource>();
+            if (_bushLoopSource == null)
+            {
+                _bushLoopSource = child.gameObject.AddComponent<AudioSource>();
+            }
+
+            _bushLoopSource.playOnAwake = false;
+            _bushLoopSource.loop = true;
+            _bushLoopSource.volume = 0f;
+            _bushLoopSource.spatialBlend = 0.5f;
+            return _bushLoopSource;
+        }
+
+        private bool IsMovingInsideTerrainBush(Vector3 worldPos)
+        {
+            Terrain terrain = Terrain.activeTerrain;
+            if (terrain == null || terrain.terrainData == null) return false;
+
+            if (_cachedBushTerrain != terrain)
+            {
+                RebuildTerrainBushCache(terrain);
+            }
+
+            if (_cachedBushPositions.Count == 0) return false;
+
+            float radiusSq = BushDetectionRadius * BushDetectionRadius;
+            for (int i = 0; i < _cachedBushPositions.Count; i++)
+            {
+                Vector3 bp = _cachedBushPositions[i];
+                float dx = worldPos.x - bp.x;
+                float dz = worldPos.z - bp.z;
+                if ((dx * dx + dz * dz) <= radiusSq && Mathf.Abs(worldPos.y - bp.y) <= 2.5f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RebuildTerrainBushCache(Terrain terrain)
+        {
+            _cachedBushTerrain = terrain;
+            _cachedBushPositions.Clear();
+
+            TerrainData data = terrain.terrainData;
+            if (data == null || data.treePrototypes == null || data.treeInstances == null) return;
+
+            string[] keywords = string.IsNullOrEmpty(BushTreeKeywords)
+                ? new[] { "bush", "semak", "shrub" }
+                : BushTreeKeywords.Split(',');
+
+            var bushProtoIndices = new System.Collections.Generic.HashSet<int>();
+            TreePrototype[] prototypes = data.treePrototypes;
+            for (int i = 0; i < prototypes.Length; i++)
+            {
+                GameObject prefab = prototypes[i].prefab;
+                if (prefab == null) continue;
+
+                for (int k = 0; k < keywords.Length; k++)
+                {
+                    string kw = keywords[k].Trim();
+                    if (!string.IsNullOrEmpty(kw) && prefab.name.IndexOf(kw, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        bushProtoIndices.Add(i);
+                        break;
+                    }
+                }
+            }
+
+            if (bushProtoIndices.Count == 0) return;
+
+            Vector3 terrainPos = terrain.transform.position;
+            Vector3 terrainSize = data.size;
+            TreeInstance[] instances = data.treeInstances;
+            for (int i = 0; i < instances.Length; i++)
+            {
+                if (!bushProtoIndices.Contains(instances[i].prototypeIndex)) continue;
+
+                Vector3 np = instances[i].position;
+                Vector3 wp = new Vector3(
+                    terrainPos.x + np.x * terrainSize.x,
+                    terrainPos.y + np.y * terrainSize.y,
+                    terrainPos.z + np.z * terrainSize.z
+                );
+                _cachedBushPositions.Add(wp);
+            }
+        }
+
+        private AudioClip[] SelectBaseFootstepClips(out bool isOnGrass)
+        {
+            isOnGrass = false;
+
+            if ((_isOnNoJumpZone || HouseAudioZone.IsPlayerInside) && HouseFootstepAudioClips != null && HouseFootstepAudioClips.Length > 0)
+            {
+                return HouseFootstepAudioClips;
+            }
+
+            bool inForestZone = false;
+            int waterLayer = LayerMask.NameToLayer("Water");
+
+            // Cek apakah karakter sedang berada di dalam Trigger zona (misal Zona Rumah / Hutan / Air)
+            Collider[] overlaps = Physics.OverlapSphere(transform.position + Vector3.up * 0.25f, 0.4f, ~0, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < overlaps.Length; i++)
+            {
+                Collider col = overlaps[i];
+                if (col == null || col.transform.IsChildOf(transform)) continue;
+
+                string objName = col.gameObject.name;
+                if ((waterLayer != -1 && col.gameObject.layer == waterLayer) || ContainsAny(objName, "water", "air"))
+                {
+                    if (WaterFootstepAudioClips != null && WaterFootstepAudioClips.Length > 0)
+                        return WaterFootstepAudioClips;
+                }
+
+                if (col.GetComponent<HouseAudioZone>() != null || ContainsAny(objName, "rumah", "house", "indoor", "home"))
+                {
+                    if (HouseFootstepAudioClips != null && HouseFootstepAudioClips.Length > 0)
+                        return HouseFootstepAudioClips;
+                }
+
+                if (ContainsAny(objName, "hutan", "forest"))
+                {
+                    inForestZone = true;
+                }
+            }
+
+            Vector3 rayOrigin = transform.position + Vector3.up * 0.35f;
+            if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 1.5f, GroundLayers, QueryTriggerInteraction.Ignore))
+            {
+                string hitName = hit.collider.gameObject.name;
+
+                if ((waterLayer != -1 && hit.collider.gameObject.layer == waterLayer) || ContainsAny(hitName, "water", "air"))
+                {
+                    if (WaterFootstepAudioClips != null && WaterFootstepAudioClips.Length > 0)
+                        return WaterFootstepAudioClips;
+                }
+
+                if ((_noJumpLayerIndex != -1 && hit.collider.gameObject.layer == _noJumpLayerIndex) || IsHouseTransform(hit.collider.transform))
+                {
+                    if (HouseFootstepAudioClips != null && HouseFootstepAudioClips.Length > 0)
+                        return HouseFootstepAudioClips;
+                }
+
+                if (ContainsAny(hitName, "grass", "rumput"))
+                {
+                    isOnGrass = true;
+                }
+
+                Terrain terrain = hit.collider.GetComponent<Terrain>();
+                if (terrain != null && IsStandingOnTerrainGrass(terrain, hit.point))
+                {
+                    isOnGrass = true;
+                }
+            }
+
+            if (inForestZone && ForestFootstepAudioClips != null && ForestFootstepAudioClips.Length > 0)
+            {
+                return ForestFootstepAudioClips;
+            }
+
+            return FootstepAudioClips;
+        }
+
+        private static bool IsHouseTransform(Transform tr)
+        {
+            Transform current = tr;
+            int depth = 0;
+            while (current != null && depth < 6)
+            {
+                string tag = current.gameObject.tag;
+                if (string.Equals(tag, "House", System.StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(tag, "Wood", System.StringComparison.OrdinalIgnoreCase) ||
+                    ContainsAny(current.name, "wood", "house", "rumah", "lantai", "papan", "floor", "home", "joglo", "pendopo", "pondok", "indoor", "kayu"))
+                {
+                    return true;
+                }
+                current = current.parent;
+                depth++;
+            }
+            return false;
+        }
+
+        private static bool ContainsAny(string text, params string[] keywords)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            for (int i = 0; i < keywords.Length; i++)
+            {
+                if (text.IndexOf(keywords[i], System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+            return false;
+        }
+
+        private AudioClip[] GetGrassClips()
+        {
+            if (_input != null && _input.sprint && !_isSprintExhausted && GrassRunAudioClips != null && GrassRunAudioClips.Length > 0)
+            {
+                return GrassRunAudioClips;
+            }
+            return GrassFootstepAudioClips;
+        }
+
+        private bool IsStandingOnTerrainGrass(Terrain terrain, Vector3 worldPos)
+        {
+            TerrainData data = terrain.terrainData;
+            if (data == null || data.detailPrototypes == null || data.detailPrototypes.Length == 0)
+            {
+                return false;
+            }
+
+            Vector3 terrainPos = terrain.transform.position;
+            float normX = (worldPos.x - terrainPos.x) / data.size.x;
+            float normZ = (worldPos.z - terrainPos.z) / data.size.z;
+
+            if (normX < 0f || normX > 1f || normZ < 0f || normZ > 1f)
+            {
+                return false;
+            }
+
+            int detailX = Mathf.Clamp(Mathf.FloorToInt(normX * data.detailWidth), 0, data.detailWidth - 1);
+            int detailZ = Mathf.Clamp(Mathf.FloorToInt(normZ * data.detailHeight), 0, data.detailHeight - 1);
+
+            for (int layer = 0; layer < data.detailPrototypes.Length; layer++)
+            {
+                int[,] detail = data.GetDetailLayer(detailX, detailZ, 1, 1, layer);
+                if (detail[0, 0] > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void PlayFootstepClip(AudioClip clip, float targetVolume)
+        {
+            if (targetVolume <= 0.001f) return;
+
+            bool isLongClip = clip.length > 1.2f;
+            if (isLongClip && (FootstepMaxDuration > 0f || FootstepStartTime > 0f))
+            {
+                int voiceIdx = _nextFootstepVoice;
+                _nextFootstepVoice = (_nextFootstepVoice + 1) % 2;
+
+                AudioSource voice = GetOrCreateFootstepVoice(voiceIdx);
+                if (_footstepVoiceRoutines[voiceIdx] != null)
+                {
+                    StopCoroutine(_footstepVoiceRoutines[voiceIdx]);
+                }
+
+                float minStart = Mathf.Clamp(FootstepStartTime, 0f, Mathf.Max(0f, clip.length - 0.15f));
+                float playDuration = FootstepMaxDuration > 0f ? Mathf.Max(0.22f, FootstepMaxDuration) : 0.4f;
+                float maxStart = Mathf.Max(minStart, clip.length - playDuration - 0.05f);
+
+                float chosenTime = minStart;
+                if (RandomizeStartForLongClips)
+                {
+                    var peaks = GetOrScanClipPeaks(clip);
+                    if (peaks != null && peaks.Count > 0)
+                    {
+                        chosenTime = peaks[Random.Range(0, peaks.Count)];
+                    }
+                    else if (maxStart > minStart)
+                    {
+                        chosenTime = Random.Range(minStart, maxStart);
+                    }
+                }
+
+                float startTime = Mathf.Clamp(chosenTime, 0f, Mathf.Max(0f, clip.length - 0.1f));
+                float pitch = RandomizeFootstepPitch ? Random.Range(0.94f, 1.06f) : 1f;
+                _footstepVoiceRoutines[voiceIdx] = StartCoroutine(PlayFootstepSliceRoutine(voice, clip, startTime, playDuration, pitch, targetVolume));
+            }
+            else
+            {
+                AudioSource source = GetOrCreateFootstepSource();
+                source.pitch = RandomizeFootstepPitch ? Random.Range(0.92f, 1.08f) : 1f;
+                source.PlayOneShot(clip, targetVolume);
+            }
+        }
+
+        private System.Collections.IEnumerator PlayFootstepSliceRoutine(AudioSource voice, AudioClip clip, float startTime, float duration, float pitch, float targetVolume)
+        {
+            voice.Stop();
+            voice.clip = clip;
+            voice.pitch = pitch;
+            voice.time = startTime;
+            voice.volume = 0f;
+            voice.Play();
+
+            float fadeIn = Mathf.Min(0.03f, duration * 0.15f);
+            float fadeOut = Mathf.Min(0.18f, duration * 0.45f);
+            float sustain = Mathf.Max(0f, duration - fadeIn - fadeOut);
+
+            float t = 0f;
+            while (t < fadeIn)
+            {
+                t += Time.deltaTime;
+                voice.volume = Mathf.Lerp(0f, targetVolume, t / fadeIn);
+                yield return null;
+            }
+            voice.volume = targetVolume;
+
+            if (sustain > 0f)
+            {
+                yield return new WaitForSeconds(sustain);
+            }
+
+            t = 0f;
+            while (t < fadeOut)
+            {
+                t += Time.deltaTime;
+                voice.volume = Mathf.Lerp(targetVolume, 0f, t / fadeOut);
+                yield return null;
+            }
+
+            voice.volume = 0f;
+            voice.Stop();
+        }
+
+        private AudioSource GetOrCreateFootstepVoice(int index)
+        {
+            if (_footstepVoices[index] != null) return _footstepVoices[index];
+
+            string childName = $"FootstepAudio_Voice{index}";
+            Transform child = transform.Find(childName);
+            if (child == null)
+            {
+                GameObject go = new GameObject(childName);
+                go.transform.SetParent(transform, false);
+                child = go.transform;
+            }
+
+            AudioSource src = child.GetComponent<AudioSource>();
+            if (src == null)
+            {
+                src = child.gameObject.AddComponent<AudioSource>();
+            }
+
+            src.playOnAwake = false;
+            src.loop = false;
+            src.spatialBlend = 0.5f;
+            _footstepVoices[index] = src;
+            return src;
+        }
+
+        private System.Collections.Generic.List<float> GetOrScanClipPeaks(AudioClip clip)
+        {
+            if (clip == null) return null;
+            if (_cachedClipPeaks.TryGetValue(clip, out var cached)) return cached;
+
+            var peaks = new System.Collections.Generic.List<float>();
+            try
+            {
+                if (clip.loadType == AudioClipLoadType.DecompressOnLoad || clip.loadState == AudioDataLoadState.Loaded)
+                {
+                    int channels = clip.channels;
+                    int freq = clip.frequency;
+                    int totalSamples = clip.samples;
+                    float[] data = new float[totalSamples * channels];
+
+                    if (clip.GetData(data, 0))
+                    {
+                        int stepSamples = Mathf.Max(1, freq / 25); // window 40ms
+                        float maxAmp = 0f;
+                        for (int i = 0; i < data.Length; i += channels * 4)
+                        {
+                            float a = Mathf.Abs(data[i]);
+                            if (a > maxAmp) maxAmp = a;
+                        }
+
+                        float threshold = maxAmp * 0.28f;
+                        float lastPeakTime = -1f;
+                        float maxAllowedTime = FootstepMaxDuration > 0f
+                            ? Mathf.Max(0f, clip.length - FootstepMaxDuration - 0.05f)
+                            : clip.length - 0.1f;
+
+                        for (int s = 0; s < totalSamples; s += stepSamples)
+                        {
+                            float t = (float)s / freq;
+                            if (t < FootstepStartTime || t > maxAllowedTime) continue;
+
+                            float windowMax = 0f;
+                            int end = Mathf.Min(totalSamples, s + stepSamples);
+                            for (int k = s; k < end; k++)
+                            {
+                                float v = Mathf.Abs(data[k * channels]);
+                                if (v > windowMax) windowMax = v;
+                            }
+
+                            if (windowMax >= threshold && (t - lastPeakTime) >= 0.35f)
+                            {
+                                peaks.Add(Mathf.Max(0f, t - 0.02f));
+                                lastPeakTime = t;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            _cachedClipPeaks[clip] = peaks;
+            return peaks;
+        }
+
+        private AudioSource GetOrCreateFootstepSource()
+        {
+            if (_footstepAudioSource != null) return _footstepAudioSource;
+
+            Transform child = transform.Find("FootstepAudio");
+            if (child == null)
+            {
+                GameObject go = new GameObject("FootstepAudio");
+                go.transform.SetParent(transform, false);
+                child = go.transform;
+            }
+
+            _footstepAudioSource = child.GetComponent<AudioSource>();
+            if (_footstepAudioSource == null)
+            {
+                _footstepAudioSource = child.gameObject.AddComponent<AudioSource>();
+            }
+
+            _footstepAudioSource.playOnAwake = false;
+            _footstepAudioSource.loop = false;
+            _footstepAudioSource.spatialBlend = 0.5f;
+            return _footstepAudioSource;
         }
 
 
@@ -925,7 +1751,10 @@ namespace StarterAssets
         {
 
             // ===== NO JUMP ZONE DETECTION =====
-            _isOnNoJumpZone = (hit.gameObject.layer == _noJumpLayerIndex);
+            if (_noJumpLayerIndex != -1 && hit.normal.y > 0.3f)
+            {
+                _isOnNoJumpZone = (hit.gameObject.layer == _noJumpLayerIndex);
+            }
 
             Rigidbody rb = hit.collider.attachedRigidbody;
 

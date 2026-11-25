@@ -83,6 +83,7 @@ namespace Unity.FantasyKingdom
 
         // === Private ===
         private Cinemachine3rdPersonFollow _thirdPersonFollow;
+        private ThirdPersonController _thirdPersonController;
         private bool _wasSprinting = false;
         private float _sprintTimer = 0f;
 
@@ -105,6 +106,12 @@ namespace Unity.FantasyKingdom
                 playerInputs = Object.FindObjectOfType<StarterAssetsInputs>();
 #endif
             }
+
+#if UNITY_2023_1_OR_NEWER
+            _thirdPersonController = Object.FindFirstObjectByType<ThirdPersonController>();
+#else
+            _thirdPersonController = Object.FindObjectOfType<ThirdPersonController>();
+#endif
 
             if (virtualCamera != null)
             {
@@ -160,6 +167,11 @@ namespace Unity.FantasyKingdom
 
         private bool GetSprintState()
         {
+            if (_thirdPersonController != null && _thirdPersonController.IsInHouse)
+            {
+                return false;
+            }
+
             if (playerInputs != null)
             {
                 bool isMoving = playerInputs.move.sqrMagnitude > 0.01f;

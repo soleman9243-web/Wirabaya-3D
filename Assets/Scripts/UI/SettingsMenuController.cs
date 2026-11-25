@@ -124,6 +124,7 @@ namespace Wirabaya.UI
         private bool isUpdatingSensitivityUI = false;
 
         private List<CanvasGroup> uiButtonCanvasGroups = new List<CanvasGroup>();
+        private readonly List<GameObject> extraControlTabObjects = new List<GameObject>();
         private CanvasGroup backgroundBlurCanvasGroup;
 
         // State recorder untuk HUD agar dikembalikan saat resume
@@ -219,6 +220,7 @@ namespace Wirabaya.UI
                 // Setup pilihan dropdown riil dan tata letak sorting order
                 SetupDropdownOptions();
                 SetupDropdownTemplates();
+                CollectOrphanedControlObjects();
 
                 // Setup Volume blur kamera URP jika diaktifkan
                 if (enableWorldBlur)
@@ -257,7 +259,7 @@ namespace Wirabaya.UI
                 menuCanvas = gameObject.AddComponent<Canvas>();
             }
             menuCanvas.overrideSorting = true;
-            menuCanvas.sortingOrder = 30000;
+            menuCanvas.sortingOrder = 100;
 
             menuRaycaster = GetComponent<GraphicRaycaster>();
             if (menuRaycaster == null)
@@ -292,16 +294,74 @@ namespace Wirabaya.UI
 
         private void SetupDropdownOptions()
         {
-            if (screenModeDropdown != null && screenModeDropdown.options.Count <= 1)
+            if (screenModeDropdown != null && (screenModeDropdown.options.Count <= 1 || screenModeDropdown.options[0].text.StartsWith("Option")))
             {
                 screenModeDropdown.ClearOptions();
                 screenModeDropdown.AddOptions(new List<string> { "Fullscreen", "Borderless Window", "Windowed" });
+                screenModeDropdown.RefreshShownValue();
             }
 
-            if (motionBlurDropdown != null && motionBlurDropdown.options.Count <= 1)
+            if (motionBlurDropdown != null && (motionBlurDropdown.options.Count <= 1 || motionBlurDropdown.options[0].text.StartsWith("Option")))
             {
                 motionBlurDropdown.ClearOptions();
                 motionBlurDropdown.AddOptions(new List<string> { "Off", "Low", "Medium", "High" });
+                motionBlurDropdown.RefreshShownValue();
+            }
+        }
+
+        private void CollectOrphanedControlObjects()
+        {
+            extraControlTabObjects.Clear();
+
+            void RegisterControlRoot(Transform tr)
+            {
+                if (tr == null || tr == transform) return;
+                Transform cur = tr;
+                while (cur.parent != null && cur.parent != transform)
+                {
+                    if (controlsParent != null && cur.parent == controlsParent.transform) return;
+                    cur = cur.parent;
+                }
+                if (controlsParent != null && cur == controlsParent.transform) return;
+                if (audioParent != null && cur == audioParent.transform) return;
+                if (buttonControls != null && cur == buttonControls.transform) return;
+                if (buttonAudio != null && cur == buttonAudio.transform) return;
+                if (buttonQuit != null && cur == buttonQuit.transform) return;
+                if (backgroundBlur != null && cur == backgroundBlur.transform) return;
+                if (cur.name == "Background" || cur.name == "Image" || cur.name == "Template") return;
+
+                if (!extraControlTabObjects.Contains(cur.gameObject))
+                {
+                    extraControlTabObjects.Add(cur.gameObject);
+                }
+            }
+
+            if (motionBlurDropdown != null)
+            {
+                RegisterControlRoot(motionBlurDropdown.transform);
+                if (motionBlurDropdown.captionText != null) RegisterControlRoot(motionBlurDropdown.captionText.transform);
+            }
+            if (screenModeDropdown != null) RegisterControlRoot(screenModeDropdown.transform);
+            if (sensitivitySlider != null) RegisterControlRoot(sensitivitySlider.transform);
+            if (sensitivityInputField != null) RegisterControlRoot(sensitivityInputField.transform);
+
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform ch = transform.GetChild(i);
+                if (ch.name == "MOTION BLUR" || ch.name == "Screen Mode" || ch.name == "Sensitivity" || ch.name == "Label" || ch.name == "Arrow")
+                {
+                    RegisterControlRoot(ch);
+                }
+
+                // Jika teks label "controls" atau bagian dropdown terlepas sebagai sibling langsung di bawah sETTINGS,
+                // matikan raycastTarget-nya agar tidak memblokir klik mouse menuju Button/Dropdown di belakangnya.
+                if (ch.name == "Text (TMP)" || ch.name == "Label" || ch.name == "Arrow")
+                {
+                    var tmp = ch.GetComponent<TMP_Text>();
+                    if (tmp != null) tmp.raycastTarget = false;
+                    var img = ch.GetComponent<Image>();
+                    if (img != null) img.raycastTarget = false;
+                }
             }
         }
 
@@ -357,8 +417,43 @@ namespace Wirabaya.UI
                 {
                     screenModeDropdown.Hide();
                 }
+
+                if (gameObject.activeInHierarchy)
+                {
+                    StartCoroutine(EnforceDropdownOnTopNextFrame(dropdown));
+                }
             });
             trigger.triggers.Add(entry);
+        }
+
+        private IEnumerator EnforceDropdownOnTopNextFrame(TMP_Dropdown dropdown)
+        {
+            yield return null;
+            EnforceDropdownSorting(dropdown);
+        }
+
+        private void EnforceDropdownSorting(TMP_Dropdown dropdown)
+        {
+            if (dropdown == null) return;
+
+            void BoostList(Transform list)
+            {
+                if (list == null) return;
+                Canvas c = list.GetComponent<Canvas>();
+                if (c == null) c = list.gameObject.AddComponent<Canvas>();
+                c.overrideSorting = true;
+                c.sortingOrder = 32000;
+            }
+
+            BoostList(dropdown.transform.Find("Dropdown List"));
+            if (dropdown.transform.parent != null)
+            {
+                BoostList(dropdown.transform.parent.Find("Dropdown List"));
+            }
+            if (dropdown.template != null && dropdown.template.parent != null)
+            {
+                BoostList(dropdown.template.parent.Find("Dropdown List"));
+            }
         }
 
         public void CloseAllDropdowns()
@@ -457,9 +552,8 @@ namespace Wirabaya.UI
                 if (backgroundBlur != null && child.gameObject == backgroundBlur) continue;
                 if (child.name == "Image") continue;
 
-                // Abaikan background hijau
+                // Abaikan background hijau (panel miring kiri), tapi tetap ikutkan Background jika terpisah (judul Settings)
                 if (greenPanel != null && (child == greenPanel || child == greenPanel.parent)) continue;
-                if (child.name == "Background") continue;
 
                 // Daftarkan sebagai elemen UI
                 CanvasGroup cg = child.GetComponent<CanvasGroup>();
@@ -742,28 +836,30 @@ namespace Wirabaya.UI
 
                 FreezePlayerAndCamera(true);
 
-                // Jika ada dropdown yang sedang terbuka, dan pengguna mengklik di luar list atau di elemen lain, tutup dropdown!
+                // Pastikan dropdown yang terbuka selalu di paling depan dan menutup jika klik di luar
                 if (IsAnyDropdownOpen())
                 {
-                    bool mousePressed = false;
-                    #if ENABLE_INPUT_SYSTEM
-                    if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-                    {
-                        mousePressed = true;
-                    }
-                    #endif
-                    try
-                    {
-                        if (!mousePressed && Input.GetMouseButtonDown(0))
-                        {
-                            mousePressed = true;
-                        }
-                    }
-                    catch { }
-
-                    if (mousePressed && IsClickOutsideDropdowns())
+                    EnforceDropdownSorting(screenModeDropdown);
+                    EnforceDropdownSorting(motionBlurDropdown);
+                    if (IsLeftMousePressedThisFrame() && IsClickOutsideDropdowns())
                     {
                         CloseAllDropdowns();
+                    }
+                }
+            }
+            else if (!isMenuOpen && !isClosing && Time.timeScale > 0f)
+            {
+                // Pengaman Click-to-Lock: jika kursor terlepas saat gameplay (misal oleh Unity Editor saat tekan ESC),
+                // klik di layar game akan langsung mengunci dan menyembunyikan kursor kembali.
+                if (IsLeftMousePressedThisFrame() && Cursor.lockState != CursorLockMode.Locked)
+                {
+                    bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+                    var inputs = FindAnyObjectByType<StarterAssets.StarterAssetsInputs>();
+                    bool gameplayWantsLock = inputs == null || inputs.cursorLocked;
+
+                    if (!overUI && gameplayWantsLock)
+                    {
+                        LockAndHideCursor();
                     }
                 }
             }
@@ -820,6 +916,11 @@ namespace Wirabaya.UI
             SetMenuVisualState(true);
 
             Time.timeScale = 0f;
+            AudioListener.pause = true;
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PauseOnMenuOpen();
+            }
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             FreezePlayerAndCamera(true);
@@ -844,24 +945,43 @@ namespace Wirabaya.UI
                 }
             }
 
-            // 2. Setup Background & Logo (Panel Hijau Miring)
-            Transform bgTr = transform.Find("Background");
-            if (bgTr != null)
-            {
-                bgTr.gameObject.SetActive(true);
-                bgTr.SetSiblingIndex(1);
-                Image bgImg = bgTr.GetComponent<Image>();
-                if (bgImg != null) bgImg.enabled = false;
-
-                Transform logoChild = bgTr.Find("Logo");
-                if (logoChild != null) logoChild.gameObject.SetActive(true);
-            }
-
+            // 2. Setup Panel Miring (Logo) & Judul Settings (Background)
             if (greenPanel == null)
             {
                 Transform logoTr = transform.Find("Background/Logo");
                 if (logoTr == null) logoTr = transform.Find("Logo");
                 if (logoTr != null) greenPanel = logoTr.GetComponent<RectTransform>();
+            }
+
+            if (greenPanel != null && greenPanel.parent == transform)
+            {
+                greenPanel.SetSiblingIndex(1);
+            }
+
+            Transform bgTr = transform.Find("Background");
+            if (bgTr != null)
+            {
+                bgTr.gameObject.SetActive(true);
+                Image bgImg = bgTr.GetComponent<Image>();
+                if (bgImg != null && bgImg.sprite != null)
+                {
+                    bgImg.enabled = true;
+                }
+
+                Transform logoChild = bgTr.Find("Logo");
+                if (logoChild != null)
+                {
+                    logoChild.gameObject.SetActive(true);
+                    if (bgImg != null && bgImg.sprite == null) bgImg.enabled = false;
+                }
+                else if (greenPanel != null && greenPanel.parent == transform)
+                {
+                    // Pastikan judul Settings (Background) tampil di atas panel miring (Logo)
+                    if (bgTr.GetSiblingIndex() <= greenPanel.GetSiblingIndex())
+                    {
+                        bgTr.SetSiblingIndex(greenPanel.GetSiblingIndex() + 1);
+                    }
+                }
             }
 
             if (greenPanel != null && !hasRecordedOriginalPos)
@@ -961,6 +1081,7 @@ namespace Wirabaya.UI
             isMenuOpen = false;
 
             CloseAllDropdowns();
+            LockAndHideCursor();
 
             // Nonaktifkan interaksi seketika agar tombol tidak bisa diklik saat fade-out
             for (int i = 0; i < uiButtonCanvasGroups.Count; i++)
@@ -1049,12 +1170,42 @@ namespace Wirabaya.UI
             RestoreGameplayHUD();
 
             Time.timeScale = 1f;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            AudioListener.pause = false;
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.ResumeOnMenuClose();
+            }
+            LockAndHideCursor();
             FreezePlayerAndCamera(false);
 
             isClosing = false;
             isTransitioning = false;
+        }
+
+        private void LockAndHideCursor()
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        private bool IsLeftMousePressedThisFrame()
+        {
+            #if ENABLE_INPUT_SYSTEM
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                return true;
+            }
+            #endif
+            try
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                    return true;
+                }
+            }
+            catch { }
+
+            return false;
         }
 
         private void FreezePlayerAndCamera(bool freeze)
@@ -1161,6 +1312,12 @@ namespace Wirabaya.UI
         {
             CloseAllDropdowns();
             if (controlsParent != null) controlsParent.SetActive(true);
+            for (int i = 0; i < extraControlTabObjects.Count; i++)
+            {
+                if (extraControlTabObjects[i] != null) extraControlTabObjects[i].SetActive(true);
+            }
+            if (screenModeDropdown != null && screenModeDropdown.template != null) screenModeDropdown.template.gameObject.SetActive(false);
+            if (motionBlurDropdown != null && motionBlurDropdown.template != null) motionBlurDropdown.template.gameObject.SetActive(false);
             if (audioParent != null) audioParent.SetActive(false);
         }
 
@@ -1169,6 +1326,10 @@ namespace Wirabaya.UI
             CloseAllDropdowns();
             if (audioParent != null) audioParent.SetActive(true);
             if (controlsParent != null) controlsParent.SetActive(false);
+            for (int i = 0; i < extraControlTabObjects.Count; i++)
+            {
+                if (extraControlTabObjects[i] != null) extraControlTabObjects[i].SetActive(false);
+            }
         }
 
         public void SetMasterVolume(float value)
@@ -1305,15 +1466,26 @@ namespace Wirabaya.UI
 
         public void SetMotionBlurQuality(int index)
         {
+            Wirabaya.Rendering.SmoothMotionBlurFeature.QualityLevelOverride = index;
             PlayerPrefs.SetInt(KEY_MOTION_BLUR, index);
             PlayerPrefs.Save();
         }
 
         private void LoadSavedSettings()
         {
+            // Enforce default 100% (1.0f) volumes di awal untuk semua audio (Master, BGM, SFX)
+            if (!PlayerPrefs.HasKey("Setting_Default100Initialized_v2"))
+            {
+                PlayerPrefs.SetFloat(KEY_MASTER_VOL, 1f);
+                PlayerPrefs.SetFloat(KEY_BGM_VOL, 1f);
+                PlayerPrefs.SetFloat(KEY_SFX_VOL, 1f);
+                PlayerPrefs.SetInt("Setting_Default100Initialized_v2", 1);
+                PlayerPrefs.Save();
+            }
+
             float masterVol = PlayerPrefs.GetFloat(KEY_MASTER_VOL, 1f);
-            float bgmVol = PlayerPrefs.GetFloat(KEY_BGM_VOL, 0.8f);
-            float sfxVol = PlayerPrefs.GetFloat(KEY_SFX_VOL, 0.8f);
+            float bgmVol = PlayerPrefs.GetFloat(KEY_BGM_VOL, 1f);
+            float sfxVol = PlayerPrefs.GetFloat(KEY_SFX_VOL, 1f);
 
             float sensitivity = PlayerPrefs.GetFloat(KEY_SENSITIVITY, 50f);
             if (sensitivity <= 1f && sensitivity > 0f)
@@ -1376,14 +1548,17 @@ namespace Wirabaya.UI
             if (screenModeDropdown != null)
             {
                 screenModeDropdown.interactable = true;
-                screenModeDropdown.value = screenMode;
+                screenModeDropdown.value = Mathf.Clamp(screenMode, 0, Mathf.Max(0, screenModeDropdown.options.Count - 1));
+                screenModeDropdown.RefreshShownValue();
             }
 
             if (motionBlurDropdown != null)
             {
                 motionBlurDropdown.interactable = true;
-                motionBlurDropdown.value = motionBlur;
+                motionBlurDropdown.value = Mathf.Clamp(motionBlur, 0, Mathf.Max(0, motionBlurDropdown.options.Count - 1));
+                motionBlurDropdown.RefreshShownValue();
             }
+            SetMotionBlurQuality(motionBlur);
         }
 
         public void OnQuitClicked()

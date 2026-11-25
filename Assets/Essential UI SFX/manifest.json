@@ -1,0 +1,225 @@
+{
+  "pack": "Essential UI SFX",
+  "families": 30,
+  "variations": 5,
+  "total": 150,
+  "sample_rate": 44100,
+  "channels": 1,
+  "bit_depth": 16,
+  "formats": [
+    "wav",
+    "ogg"
+  ],
+  "sounds": {
+    "click": [
+      "wav/click_01.wav",
+      "wav/click_02.wav",
+      "wav/click_03.wav",
+      "wav/click_04.wav",
+      "wav/click_05.wav"
+    ],
+    "hover": [
+      "wav/hover_01.wav",
+      "wav/hover_02.wav",
+      "wav/hover_03.wav",
+      "wav/hover_04.wav",
+      "wav/hover_05.wav"
+    ],
+    "keypress": [
+      "wav/keypress_01.wav",
+      "wav/keypress_02.wav",
+      "wav/keypress_03.wav",
+      "wav/keypress_04.wav",
+      "wav/keypress_05.wav"
+    ],
+    "select": [
+      "wav/select_01.wav",
+      "wav/select_02.wav",
+      "wav/select_03.wav",
+      "wav/select_04.wav",
+      "wav/select_05.wav"
+    ],
+    "confirm": [
+      "wav/confirm_01.wav",
+      "wav/confirm_02.wav",
+      "wav/confirm_03.wav",
+      "wav/confirm_04.wav",
+      "wav/confirm_05.wav"
+    ],
+    "cancel": [
+      "wav/cancel_01.wav",
+      "wav/cancel_02.wav",
+      "wav/cancel_03.wav",
+      "wav/cancel_04.wav",
+      "wav/cancel_05.wav"
+    ],
+    "error": [
+      "wav/error_01.wav",
+      "wav/error_02.wav",
+      "wav/error_03.wav",
+      "wav/error_04.wav",
+      "wav/error_05.wav"
+    ],
+    "alert": [
+      "wav/alert_01.wav",
+      "wav/alert_02.wav",
+      "wav/alert_03.wav",
+      "wav/alert_04.wav",
+      "wav/alert_05.wav"
+    ],
+    "notify": [
+      "wav/notify_01.wav",
+      "wav/notify_02.wav",
+      "wav/notify_03.wav",
+      "wav/notify_04.wav",
+      "wav/notify_05.wav"
+    ],
+    "toggle_on": [
+      "wav/toggle_on_01.wav",
+      "wav/toggle_on_02.wav",
+      "wav/toggle_on_03.wav",
+      "wav/toggle_on_04.wav",
+      "wav/toggle_on_05.wav"
+    ],
+    "toggle_off": [
+      "wav/toggle_off_01.wav",
+      "wav/toggle_off_02.wav",
+      "wav/toggle_off_03.wav",
+      "wav/toggle_off_04.wav",
+      "wav/toggle_off_05.wav"
+    ],
+    "open": [
+      "wav/open_01.wav",
+      "wav/open_02.wav",
+      "wav/open_03.wav",
+      "wav/open_04.wav",
+      "wav/open_05.wav"
+    ],
+    "close": [
+      "wav/close_01.wav",
+      "wav/close_02.wav",
+      "wav/close_03.wav",
+      "wav/close_04.wav",
+      "wav/close_05.wav"
+    ],
+    "transition": [
+      "wav/transition_01.wav",
+      "wav/transition_02.wav",
+      "wav/transition_03.wav",
+      "wav/transition_04.wav",
+      "wav/transition_05.wav"
+    ],
+    "reward": [
+      "wav/reward_01.wav",
+      "wav/reward_02.wav",
+      "wav/reward_03.wav",
+      "wav/reward_04.wav",
+      "wav/reward_05.wav"
+    ],
+    "unlock": [
+      "wav/unlock_01.wav",
+      "wav/unlock_02.wav",
+      "wav/unlock_03.wav",
+      "wav/unlock_04.wav",
+      "wav/unlock_05.wav"
+    ],
+    "scan": [
+      "wav/scan_01.wav",
+      "wav/scan_02.wav",
+      "wav/scan_03.wav",
+      "wav/scan_04.wav",
+      "wav/scan_05.wav"
+    ],
+    "pop": [
+      "wav/pop_01.wav",
+      "wav/pop_02.wav",
+      "wav/pop_03.wav",
+      "wav/pop_04.wav",
+      "wav/pop_05.wav"
+    ],
+    "swipe": [
+      "wav/swipe_01.wav",
+      "wav/swipe_02.wav",
+      "wav/swipe_03.wav",
+      "wav/swipe_04.wav",
+      "wav/swipe_05.wav"
+    ],
+    "tick": [
+      "wav/tick_01.wav",
+      "wav/tick_02.wav",
+      "wav/tick_03.wav",
+      "wav/tick_04.wav",
+      "wav/tick_05.wav"
+    ],
+    "drop": [
+      "wav/drop_01.wav",
+      "wav/drop_02.wav",
+      "wav/drop_03.wav",
+      "wav/drop_04.wav",
+      "wav/drop_05.wav"
+    ],
+    "dialogue": [
+      "wav/dialogue_01.wav",
+      "wav/dialogue_02.wav",
+      "wav/dialogue_03.wav",
+      "wav/dialogue_04.wav",
+      "wav/dialogue_05.wav"
+    ],
+    "coin": [
+      "wav/coin_01.wav",
+      "wav/coin_02.wav",
+      "wav/coin_03.wav",
+      "wav/coin_04.wav",
+      "wav/coin_05.wav"
+    ],
+    "purchase": [
+      "wav/purchase_01.wav",
+      "wav/purchase_02.wav",
+      "wav/purchase_03.wav",
+      "wav/purchase_04.wav",
+      "wav/purchase_05.wav"
+    ],
+    "equip": [
+      "wav/equip_01.wav",
+      "wav/equip_02.wav",
+      "wav/equip_03.wav",
+      "wav/equip_04.wav",
+      "wav/equip_05.wav"
+    ],
+    "page": [
+      "wav/page_01.wav",
+      "wav/page_02.wav",
+      "wav/page_03.wav",
+      "wav/page_04.wav",
+      "wav/page_05.wav"
+    ],
+    "save": [
+      "wav/save_01.wav",
+      "wav/save_02.wav",
+      "wav/save_03.wav",
+      "wav/save_04.wav",
+      "wav/save_05.wav"
+    ],
+    "charge": [
+      "wav/charge_01.wav",
+      "wav/charge_02.wav",
+      "wav/charge_03.wav",
+      "wav/charge_04.wav",
+      "wav/charge_05.wav"
+    ],
+    "levelup": [
+      "wav/levelup_01.wav",
+      "wav/levelup_02.wav",
+      "wav/levelup_03.wav",
+      "wav/levelup_04.wav",
+      "wav/levelup_05.wav"
+    ],
+    "deny": [
+      "wav/deny_01.wav",
+      "wav/deny_02.wav",
+      "wav/deny_03.wav",
+      "wav/deny_04.wav",
+      "wav/deny_05.wav"
+    ]
+  }
+}

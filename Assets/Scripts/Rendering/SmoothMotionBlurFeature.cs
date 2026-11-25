@@ -26,6 +26,8 @@ namespace Wirabaya.Rendering
             public int samples = 24;
         }
 
+        public static int QualityLevelOverride = -1;
+
         public Settings settings = new Settings();
 
         Material m_Material;
@@ -51,7 +53,7 @@ namespace Wirabaya.Rendering
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (m_Material == null || m_Pass == null || !settings.enabled)
+            if (m_Material == null || m_Pass == null || !settings.enabled || QualityLevelOverride == 0)
                 return;
             if (renderingData.cameraData.cameraType != CameraType.Game)
                 return;
@@ -118,13 +120,29 @@ namespace Wirabaya.Rendering
 
                 using (var builder = renderGraph.AddRasterRenderPass<BlurPassData>("Smooth Motion Blur", out var blurData, profilingSampler))
                 {
+                    float effectiveShutter = m_Settings.shutter;
+                    float effectiveMaxBlur = m_Settings.maxBlur;
+                    float effectiveSamples = m_Settings.samples;
+
+                    if (QualityLevelOverride == 1)
+                    {
+                        effectiveShutter = m_Settings.shutter * 0.5f;
+                        effectiveSamples = Mathf.Max(8, m_Settings.samples / 2);
+                    }
+                    else if (QualityLevelOverride == 3)
+                    {
+                        effectiveShutter = m_Settings.shutter * 1.35f;
+                        effectiveMaxBlur = Mathf.Min(0.1f, m_Settings.maxBlur * 1.25f);
+                        effectiveSamples = Mathf.Min(48, Mathf.RoundToInt(m_Settings.samples * 1.5f));
+                    }
+
                     blurData.material = m_Material;
                     blurData.source = resourceData.cameraColor;
                     blurData.depth = resourceData.cameraDepthTexture;
                     blurData.motionVectors = resourceData.motionVectorColor;
-                    blurData.shutter = m_Settings.shutter;
-                    blurData.maxBlur = m_Settings.maxBlur;
-                    blurData.samples = m_Settings.samples;
+                    blurData.shutter = effectiveShutter;
+                    blurData.maxBlur = effectiveMaxBlur;
+                    blurData.samples = effectiveSamples;
 
                     builder.UseTexture(blurData.source, AccessFlags.Read);
                     builder.UseTexture(blurData.depth, AccessFlags.Read);

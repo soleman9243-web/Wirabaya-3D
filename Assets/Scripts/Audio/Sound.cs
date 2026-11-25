@@ -22,7 +22,7 @@ public class Sound
     public float pitch = 1f;
 
     [Tooltip("Apakah suara ini di-loop terus-menerus? (Biasanya true untuk BGM)")]
-    public bool loop = false;
+    public bool loop = true;
 
     /// <summary>
     /// AudioSource yang akan di-generate otomatis oleh AudioManager saat Awake().
@@ -30,4 +30,10 @@ public class Sound
     /// </summary>
     [HideInInspector]
     public AudioSource source;
+
+    /// <summary>
+    /// Pengali volume sementara dari zona (misal 0 saat di-mute di dalam rumah, 1 saat normal).
+    /// </summary>
+    [HideInInspector]
+    public float zoneVolumeMultiplier = 1f;
 }
