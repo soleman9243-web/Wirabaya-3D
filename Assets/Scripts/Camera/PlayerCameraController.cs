@@ -9,7 +9,8 @@ namespace Unity.FantasyKingdom
     /// Tambahkan fitur kamera baru di sini (sprint zoom, shake, dll).
     /// Pasang di GameObject yang sama dengan CinemachineVirtualCamera.
     /// </summary>
-    [RequireComponent(typeof(CinemachineVirtualCamera))]
+    // [RequireComponent] dihapus karena virtualCamera sudah di-assign manual ke PlayerFollowCamera.
+    // Kalau tetap ada, PlayerArmature dipaksa punya VCam → semua child VCam jadi "slave" Cinemachine.
     public class PlayerCameraController : MonoBehaviour
     {
         [Header("Target References")]

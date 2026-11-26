@@ -466,6 +466,25 @@ public class DialogueManager : MonoBehaviour
         {
             activeCam = null;
         }
+
+        // === DEBUG: Lacak SEMUA kamera via CinemachineCore ===
+        Debug.Log($"[SwitchCamera] camID={camID} | activeCam={(activeCam != null ? activeCam.name : "NULL")} | priority={(activeCam != null ? activeCam.Priority : -1)}");
+        
+        // Pakai CinemachineCore untuk list semua kamera (satu per baris agar tidak terpotong)
+        int vcamCount = CinemachineCore.Instance.VirtualCameraCount;
+        Debug.Log($"[SwitchCamera] === CINEMACHINE REGISTRY === Total={vcamCount}");
+        for (int dbgI = 0; dbgI < vcamCount; dbgI++)
+        {
+            var vc = CinemachineCore.Instance.GetVirtualCamera(dbgI);
+            Debug.Log($"[VCAM {dbgI}] {vc.gameObject.name} → Priority={vc.Priority} | Active={vc.isActiveAndEnabled} | Type={vc.GetType().Name}");
+        }
+        
+        var brain = CinemachineCore.Instance.BrainCount > 0 ? CinemachineCore.Instance.GetActiveBrain(0) : null;
+        if (brain != null)
+        {
+            var liveCam = brain.ActiveVirtualCamera as CinemachineVirtualCameraBase;
+            Debug.Log($"[SwitchCamera] Brain.LiveCamera={brain.ActiveVirtualCamera?.Name ?? "NULL"} | LivePriority={(liveCam != null ? liveCam.Priority : -1)}");
+        }
     }
 
     private void SetTalkingAnimation(string camID)
